@@ -1,4 +1,4 @@
-const { createUser, getAllUsers, updateOneUser, deleteUser } = require('../models/userModel');
+const { createUser, getAllUsers, updateOneUser, deleteUser , fetchUserById } = require('../models/userModel');
 
 // Add user
 const addUser = async (req, res) => {
@@ -23,6 +23,23 @@ const getUsers = async (req, res) => {
     res.status(500).json({ message: "Error fetching users", error: error.message });
     console.error("Error fetching users:", error);
   }
+};
+const getUserById = async (req, res) => { 
+  try {
+    const { id } = req.params;
+    const user = await fetchUserById(id);
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      console.log(`User with id ${id} not found`);
+      return;
+    }
+    res.status(200).json(user);
+    console.log(`Retrieved user with id ${id}`);
+  }
+  catch (error) {
+    res.status(500).json({ message: "Error fetching user", error: error.message });
+    console.error(`Error fetching user with id ${req.params.id}:`, error);
+  } 
 };
 
 // Update user
@@ -62,4 +79,4 @@ const removeUser = async (req, res) => {
   }
 };
 
-module.exports = { addUser, getUsers, updateUser, removeUser };
+module.exports = { addUser, getUsers, updateUser, removeUser , getUserById};

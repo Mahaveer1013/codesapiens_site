@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Globe, Github, Building, Eye, EyeOff, User, Phone, School, Mail, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -14,6 +14,39 @@ export default function CodeSapiensPlatform() {
     email: '',
     password: '',
   });
+  const [profile, setProfile] = useState(null);
+
+ useEffect(() => {
+  const fetchProfile = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setProfile(null);
+      return;
+    }
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('uid', user.id)  // <-- make sure this matches your table's PK
+      .single();
+
+      console.log('Fetched profile:', data, error);
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+    } else {
+      setProfile(data);
+    }
+    
+  };
+
+  fetchProfile();
+}, [mode, loading]);
+
+
+ 
 
   const handleInputChange = (e) => {
     setFormData({
@@ -97,6 +130,27 @@ export default function CodeSapiensPlatform() {
     },
   ];
 
+  // Conditional rendering for admin / user
+  const renderContent = () => {
+    if (!profile) return null;
+
+    if (profile.role === 'admin') {
+      return (
+        <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-lg mt-4">
+          <h2 className="font-bold text-lg mb-2">Admin Dashboard</h2>
+          <p>Welcome, {profile.full_name}! You can manage users and content here.</p>
+        </div>
+      );
+    } else {
+      return (
+        <div className="p-4 bg-green-50 border border-green-300 rounded-lg mt-4">
+          <h2 className="font-bold text-lg mb-2">Student Dashboard</h2>
+          <p>Welcome, {profile.full_name}! Explore workshops, earn badges, and connect.</p>
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -108,7 +162,9 @@ export default function CodeSapiensPlatform() {
             </div>
             <span className="text-lg sm:text-xl font-semibold text-gray-900">CodeSapiens</span>
           </div>
-          <span className="text-sm sm:text-base text-gray-600 mt-2 sm:mt-0">Student Community Management Platform</span>
+          <span className="text-sm sm:text-base text-gray-600 mt-2 sm:mt-0">
+            Student Community Management Platform
+          </span>
         </div>
       </header>
 
@@ -143,17 +199,6 @@ export default function CodeSapiensPlatform() {
                   </div>
                 );
               })}
-            </div>
-          </div>
-
-          {/* Issue Badge */}
-          <div className="mt-6 sm:mt-8">
-            <div className="inline-flex items-center bg-red-500 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium">
-              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full mr-2"></span>
-              1 Issue
-              <button className="ml-2 hover:bg-red-600 rounded p-1">
-                <span className="sr-only">Close</span>×
-              </button>
             </div>
           </div>
         </div>
@@ -227,7 +272,7 @@ export default function CodeSapiensPlatform() {
               </>
             )}
 
-            {/* Email Address */}
+            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Email Address</label>
               <div className="relative">
@@ -286,7 +331,7 @@ export default function CodeSapiensPlatform() {
                 : 'Sign In'}
             </button>
 
-            {/* Toggle between Sign In and Sign Up */}
+            {/* Toggle Sign In / Sign Up */}
             <div className="text-center">
               <p className="text-sm sm:text-base text-gray-600">
                 {mode === 'signUp' ? 'Already have an account? ' : 'No account yet? '}
@@ -301,7 +346,7 @@ export default function CodeSapiensPlatform() {
               </p>
             </div>
 
-            {/* Message Display */}
+            {/* Message */}
             {message && (
               <div
                 className={`p-2 sm:p-3 rounded-lg text-xs sm:text-sm ${
@@ -314,6 +359,9 @@ export default function CodeSapiensPlatform() {
               </div>
             )}
           </form>
+
+          {/* Render Dashboard if logged in */}
+          {profile && renderContent()}
         </div>
       </div>
     </div>

@@ -1,10 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Users, UserCheck, Calendar, TrendingUp, Search, Bell, Plus, BarChart3, Settings, MoreHorizontal, Check, X, Menu } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [profile, setProfile] = useState(null);
+
+   useEffect(() => {
+    const fetchProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+  
+      if (!user) {
+        setProfile(null);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('uid', user.id)  // <-- make sure this matches your table's PK
+        .single();
+  
+        console.log('Fetched profile:', data, error);
+  
+      if (error) {
+        console.error('Error fetching profile:', error);
+      } else {
+        setProfile(data);
+      }
+      
+      if(data.role === "student")
+      {
+        window.location.href = "/dashboard";
+      }
+    };
+  
+    fetchProfile();
+  },[]);
+  
 
   // Sample data
   const stats = [

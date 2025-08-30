@@ -1,5 +1,6 @@
 // models/userModel.js
 const sql = require('../db/postgresClient');
+const supabase = require('../db/supabaseClient');
 
 const createUser = async ({
   uid,
@@ -53,6 +54,26 @@ const getAllUsers = async () => {
     throw err;
   }
 };
+const fetchUserById = async (id) => {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("uid", id)   // match UID
+      .single();       // ensures only one row is returned
+
+    if (error) {
+      console.error("Error fetching user by ID:", error.message);
+      return null;
+    }
+
+    return data; // user object
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    throw err;
+  }
+};
+
 
 const updateOneUser = async (uid, updates) => {
   try {
@@ -87,4 +108,4 @@ const deleteUser = async (uid) => {
   }
 };
 
-module.exports = { createUser, getAllUsers, updateOneUser, deleteUser };
+module.exports = { createUser, getAllUsers, updateOneUser, deleteUser ,fetchUserById };
