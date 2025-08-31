@@ -17,11 +17,12 @@ import {
   Loader2
 } from 'lucide-react';
 import { authFetch } from '../lib/authFetch';
+import { fetchId } from '../lib/authContext';
 
 // Mock authFetch function - replace with your actual implementation
 
 
-const UserProfile = ({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }) => {
+const UserProfile = () => {
   const [activeTab, setActiveTab] = useState('Overview');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -34,7 +35,17 @@ const UserProfile = ({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }) => {
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+
   const tabs = ['Overview', 'Skills', 'Achievements', 'Activity'];
+
+  const [userId, setUserIdState] = useState(null);
+  
+        const fetchIdAndSet = async () => {
+          const id = await fetchId();
+          setUserIdState(id);
+        }
+        fetchIdAndSet();
+
 
   // Fetch user data from API
   useEffect(() => {
