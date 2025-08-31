@@ -1,219 +1,307 @@
-import React, { useState,useEffect } from 'react';
-import { Users, UserCheck, Calendar, TrendingUp, Search, Bell, Plus, BarChart3, Settings, MoreHorizontal, Check, X, Menu } from 'lucide-react';
+// Handle add student
+  const handleAddStudent = () => {
+    // In a real app, this would open a modal or navigate to add student page
+    alert('Add Student functionality would be implemented here');
+  };
+
+  // Handle send notice
+  const handleSendNotice = () => {
+    // In a real app, this would open a notice composition modal
+    alert('Send Notice functionality would be implemented here');
+  };import React, { useState, useEffect } from 'react';
+import { Users, UserCheck, Calendar, TrendingUp, Search, Bell, Plus, BarChart3, Settings, MoreHorizontal, Check, X, Menu, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [stats, setStats] = useState({
+    totalStudents: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-   useEffect(() => {
-    const fetchProfile = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-  
-      if (!user) {
-        setProfile(null);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('uid', user.id)  // <-- make sure this matches your table's PK
-        .single();
-  
-        console.log('Fetched profile:', data, error);
-  
-      if (error) {
-        console.error('Error fetching profile:', error);
-      } else {
-        setProfile(data);
-      }
-      
-      if(data.role === "student")
-      {
-        window.location.href = "/dashboard";
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        setAuthChecking(true);
+        setLoading(true);
+        setError(null);
+
+        // Get the current authenticated user
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError) {
+          console.error('Auth error:', authError);
+          setIsAuthenticated(false);
+          setAuthChecking(false);
+          return;
+        }
+
+        if (!user) {
+          setIsAuthenticated(false);
+          setAuthChecking(false);
+          return;
+        }
+
+        // Fetch admin profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('uid', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          setError('Failed to fetch admin profile');
+          return;
+        }
+
+        // Check if user is admin
+        if (profileData?.role !== 'admin') {
+          // Redirect non-admin users to student dashboard
+          window.location.href = '/dashboard';
+          return;
+        }
+
+        setProfile(profileData);
+        setIsAuthenticated(true);
+
+        // Fetch all students data
+        const { data: studentsData, error: studentsError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('role', 'student')
+          .order('created_at', { ascending: false });
+
+        if (studentsError) {
+          console.error('Error fetching students:', studentsError);
+          setError('Failed to fetch students data');
+          return;
+        }
+
+        // Skip events fetching for now since table doesn't exist
+        // TODO: Create events table in Supabase and uncomment this section
+        /*
+        const { data: eventsData, error: eventsError } = await supabase
+          .from('events')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (eventsError) {
+          console.error('Error fetching events:', eventsError);
+          setEvents([]);
+        } else {
+          setEvents(eventsData || []);
+        }
+        */
+        setEvents([]); // Set empty array for now
+
+        // Transform students data
+        const transformedStudents = studentsData?.map((student, index) => ({
+          id: student.uid,
+          name: student.display_name || student.email?.split('@')[0] || `Student ${index + 1}`,
+          email: student.email,
+          avatar: student.display_name?.charAt(0).toUpperCase() || student.email?.charAt(0).toUpperCase() || 'S',
+          status: student.admin_approved ? 'active' : 'inactive',
+          lastSeen: getRelativeTime(student.updated_at || student.created_at),
+          points: student.points || 0,
+          sessions: student.sessions_attended || 0,
+          badges: student.badges_earned || 0,
+          college: student.college,
+          adminApproved: student.admin_approved || false,
+          emailVerified: student.email_verified || false,
+          phoneVerified: student.phone_verified || false,
+          skills: student.skills || [],
+          bio: student.bio || '',
+          volunteeringHours: student.volunteering_hours || 0
+        })) || [];
+
+        setStudents(transformedStudents);
+
+        // Calculate stats from actual data
+        const totalStudents = transformedStudents.length;
+
+        setStats({
+          totalStudents
+        });
+
+      } catch (err) {
+        setError(err.message);
+        console.error('Error in fetchAdminData:', err);
+      } finally {
+        setLoading(false);
+        setAuthChecking(false);
       }
     };
-  
-    fetchProfile();
-  },[]);
-  
 
-  // Sample data
-  const stats = [
-    {
-      title: "Total Students",
-      value: "2,847",
-      change: "+12%",
-      icon: Users,
-      color: "bg-blue-100",
-      iconColor: "text-blue-600"
-    },
-    {
-      title: "Active Students", 
-      value: "2,340",
-      change: "+8%",
-      icon: UserCheck,
-      color: "bg-green-100",
-      iconColor: "text-green-600"
-    },
-    {
-      title: "Total Events",
-      value: "156", 
-      change: "+24%",
-      icon: Calendar,
-      color: "bg-purple-100",
-      iconColor: "text-purple-600"
-    },
-    {
-      title: "Avg. Attendance",
-      value: "87%",
-      change: "+5%",
-      icon: TrendingUp,
-      color: "bg-orange-100",
-      iconColor: "text-orange-600"
-    }
-  ];
+    fetchAdminData();
+  }, []);
 
-  const students = [
-    {
-      id: 1,
-      name: "Arun",
-      email: "727723eucs090@skcet.ac.in",
-      avatar: "A",
-      status: "active",
-      lastSeen: "2 min ago"
-    },
-    {
-      id: 2,
-      name: "Priya Sharma",
-      email: "727723eucs045@skcet.ac.in", 
-      avatar: "P",
-      status: "inactive",
-      lastSeen: "2 days ago"
-    },
-    {
-      id: 3,
-      name: "Rahul Kumar",
-      email: "727723eucs078@skcet.ac.in",
-      avatar: "R", 
-      status: "active",
-      lastSeen: "1 hour ago"
-    },
-    {
-      id: 4,
-      name: "Anitha Reddy",
-      email: "727723eucs012@skcet.ac.in",
-      avatar: "A",
-      status: "active", 
-      lastSeen: "5 min ago"
-    },
-    {
-      id: 5,
-      name: "Karthik Menon",
-      email: "727723eucs089@skcet.ac.in",
-      avatar: "K",
-      status: "inactive",
-      lastSeen: "1 week ago"
-    }
-  ];
+  // Helper function to get relative time
+  const getRelativeTime = (dateString) => {
+    if (!dateString) return 'Never';
+    
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    return `${Math.floor(diffInSeconds / 604800)}w ago`;
+  };
 
-  let filteredStudents = students.filter(student => {
+  // Handle student approval - removed functionality
+  const handleStudentApproval = async (studentId, approve) => {
+    // Functionality removed as requested
+  };
+
+  // Handle add student
+  const handleAddStudent = () => {
+    // In a real app, this would open a modal or navigate to add student page
+    alert('Add Student functionality would be implemented here');
+  };
+
+  // Handle send notice
+  const handleSendNotice = () => {
+    // In a real app, this would open a notice composition modal
+    alert('Send Notice functionality would be implemented here');
+  };
+
+  // Filter students based on search and filter
+  const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.email.toLowerCase().includes(searchTerm.toLowerCase());
+                         student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (student.college && student.college.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFilter = filter === '' || student.status === filter;
     return matchesSearch && matchesFilter;
   });
 
   const quickActions = [
-    { icon: Plus, label: "Add Student", shortLabel: "Add", color: "bg-blue-600 hover:bg-blue-700" },
-    { icon: Bell, label: "Send Notice", shortLabel: "Notice", color: "bg-green-600 hover:bg-green-700" },
-    { icon: BarChart3, label: "View Analytics", shortLabel: "Analytics", color: "bg-purple-600 hover:bg-purple-700" },
-    { icon: TrendingUp, label: "Generate Report", shortLabel: "Report", color: "bg-orange-600 hover:bg-orange-700" }
+    { 
+      icon: BarChart3, 
+      label: "View Analytics", 
+      shortLabel: "Analytics", 
+      color: "bg-purple-600 hover:bg-purple-700",
+      onClick: () => alert('Analytics page would open here')
+    },
+    { 
+      icon: TrendingUp, 
+      label: "Generate Report", 
+      shortLabel: "Report", 
+      color: "bg-orange-600 hover:bg-orange-700",
+      onClick: () => alert('Report generation would start here')
+    }
   ];
+
+  const statsCards = [
+    {
+      title: "Total Students",
+      value: stats.totalStudents.toString(),
+      change: "+12%",
+      icon: Users,
+      color: "bg-blue-100",
+      iconColor: "text-blue-600"
+    }
+  ];
+
+  // Auth checking state
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+          <p className="text-gray-600">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Unauthenticated state
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+          <p className="text-gray-600 mb-4">Please log in to access the admin dashboard.</p>
+          <button 
+            onClick={() => window.location.href = '/login'}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+            <p className="text-gray-600">Loading admin dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div className="flex items-center justify-between px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-red-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs sm:text-sm">A</span>
-            </div>
-            <div>
-              <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">Admin Dashboard</h1>
-              <p className="text-xs text-gray-500 sm:hidden">SKCET Management</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
-            <div className="relative">
-              <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 hover:text-gray-800 cursor-pointer" />
-              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full"></div>
-            </div>
-            
-            {/* Mobile Menu Button */}
-            <button 
-              className="sm:hidden p-2 text-gray-600 hover:text-gray-800"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            {/* Desktop User Info */}
-            <div className="hidden sm:flex items-center space-x-2 lg:space-x-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-red-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-xs sm:text-sm">JR</span>
-              </div>
-              <div className="text-xs sm:text-sm hidden md:block">
-                <div className="font-medium text-gray-900">Jayasurya R</div>
-                <div className="text-gray-500">Administrator</div>
-              </div>
-              <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 hover:text-gray-800 cursor-pointer" />
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu Dropdown */}
-        {isMobileMenuOpen && (
-          <div className="sm:hidden border-t bg-white px-3 py-3">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-sm">JR</span>
-              </div>
-              <div className="text-sm">
-                <div className="font-medium text-gray-900">Jayasurya R</div>
-                <div className="text-gray-500">Administrator</div>
-              </div>
-            </div>
-            <div className="border-t pt-3">
-              <button className="flex items-center space-x-2 w-full p-2 text-gray-700 hover:bg-gray-100 rounded">
-                <Settings className="w-4 h-4" />
-                <span className="text-sm">Settings</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </header>
-
       {/* Main Content */}
       <main className="p-3 sm:p-4 lg:p-6">
         {/* Welcome Section */}
         <div className="mb-6 sm:mb-8">
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex flex-col sm:flex-row sm:items-center">
-            <span>Welcome, Administrator!</span>
+            <span>Welcome, {profile?.display_name || 'Administrator'}!</span>
             <span className="text-2xl sm:ml-2">👋</span>
           </h2>
           <p className="text-gray-600 text-sm sm:text-base">Manage your student community, events, and track engagement metrics.</p>
+          {profile && (
+            <div className="mt-2 text-sm text-gray-500">
+              {profile.college} • {profile.email}
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
-          {stats.map((stat, index) => {
+          {statsCards.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
               <div key={index} className="bg-white rounded-lg p-3 sm:p-4 lg:p-6 shadow-sm border hover:shadow-md transition-shadow">
@@ -257,7 +345,7 @@ const Dashboard = () => {
                     <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Search students..."
+                      placeholder="Search students by name, email, or college..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -275,11 +363,13 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
                 {filteredStudents.length === 0 ? (
                   <div className="p-8 text-center">
                     <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-500">No students found</p>
+                    <p className="text-gray-500">
+                      {students.length === 0 ? 'No students registered yet' : 'No students found matching your search'}
+                    </p>
                   </div>
                 ) : (
                   filteredStudents.map((student) => (
@@ -294,6 +384,33 @@ const Dashboard = () => {
                               <div className="min-w-0 flex-1">
                                 <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">{student.name}</h4>
                                 <p className="text-xs sm:text-sm text-gray-500 truncate">{student.email}</p>
+                                <div className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
+                                  <span>{student.points} points</span>
+                                  <span>•</span>
+                                  <span>{student.sessions} sessions</span>
+                                  <span>•</span>
+                                  <span>{student.badges} badges</span>
+                                  {student.college && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="truncate max-w-24">{student.college}</span>
+                                    </>
+                                  )}
+                                </div>
+                                {student.skills.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {student.skills.slice(0, 2).map((skill, idx) => (
+                                      <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">
+                                        {skill}
+                                      </span>
+                                    ))}
+                                    {student.skills.length > 2 && (
+                                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded">
+                                        +{student.skills.length - 2}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                               <div className="flex items-center justify-between sm:justify-end mt-2 sm:mt-0 sm:ml-4">
                                 <div className="flex items-center space-x-2">
@@ -306,16 +423,10 @@ const Dashboard = () => {
                                       ? 'bg-green-100 text-green-800' 
                                       : 'bg-gray-100 text-gray-800'
                                   }`}>
-                                    {student.status}
+                                    {student.adminApproved ? 'Active' : 'Inactive'}
                                   </span>
                                 </div>
                                 <div className="flex space-x-1">
-                                  <button className="p-1.5 text-green-600 hover:bg-green-100 rounded transition-colors">
-                                    <Check className="w-3 h-3 sm:w-4 sm:h-4" />
-                                  </button>
-                                  <button className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors">
-                                    <X className="w-3 h-3 sm:w-4 sm:h-4" />
-                                  </button>
                                   <button className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors">
                                     <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4" />
                                   </button>
@@ -336,12 +447,13 @@ const Dashboard = () => {
           <div className="space-y-4 sm:space-y-6 order-1 xl:order-2">
             <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-1 gap-2 sm:gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-1 gap-2 sm:gap-3">
                 {quickActions.map((action, index) => {
                   const IconComponent = action.icon;
                   return (
                     <button 
                       key={index}
+                      onClick={action.onClick}
                       className={`flex flex-col sm:flex-row xl:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 xl:space-x-2 ${action.color} text-white py-3 sm:py-2 xl:py-3 px-2 sm:px-3 xl:px-4 rounded-lg transition-colors text-xs sm:text-sm font-medium`}
                     >
                       <IconComponent className="w-4 h-4" />
@@ -357,43 +469,19 @@ const Dashboard = () => {
             <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 hidden sm:block">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
               <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">Arun joined the community</p>
-                    <p className="text-xs text-gray-500">2 minutes ago</p>
+                {students.slice(0, 3).map((student, index) => (
+                  <div key={index} className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-900">{student.name} joined the community</p>
+                      <p className="text-xs text-gray-500">{student.lastSeen}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">New event created: Tech Workshop</p>
-                    <p className="text-xs text-gray-500">1 hour ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">Monthly report generated</p>
-                    <p className="text-xs text-gray-500">3 hours ago</p>
-                  </div>
-                </div>
+                ))}
+                {students.length === 0 && (
+                  <p className="text-sm text-gray-500">No recent activity</p>
+                )}
               </div>
-            </div>
-
-            {/* Issues Notification */}
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-5 h-5 sm:w-6 sm:h-6 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold text-xs">!</span>
-                </div>
-                <span className="text-red-800 font-medium text-sm flex-1">2 Pending Issues</span>
-                <X className="w-4 h-4 text-red-600 cursor-pointer flex-shrink-0" />
-              </div>
-              <p className="text-red-700 text-xs sm:text-sm leading-relaxed">There are pending student verification requests that need your attention.</p>
-              <button className="mt-3 text-xs text-red-700 font-medium hover:text-red-900 underline">
-                View Details
-              </button>
             </div>
           </div>
         </div>
@@ -401,10 +489,14 @@ const Dashboard = () => {
         {/* Mobile Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-3 py-2 sm:hidden">
           <div className="flex justify-around">
-            {quickActions.slice(0, 4).map((action, index) => {
+            {quickActions.map((action, index) => {
               const IconComponent = action.icon;
               return (
-                <button key={index} className="flex flex-col items-center space-y-1 py-2 px-3">
+                <button 
+                  key={index} 
+                  onClick={action.onClick}
+                  className="flex flex-col items-center space-y-1 py-2 px-3"
+                >
                   <IconComponent className="w-5 h-5 text-gray-600" />
                   <span className="text-xs text-gray-600">{action.shortLabel}</span>
                 </button>

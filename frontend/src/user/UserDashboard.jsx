@@ -1,30 +1,8 @@
 import React, { useState, useEffect } from "react";
-import {
-  Calendar,
-  Trophy,
-  Users,
-  TrendingUp,
-  Bell,
-  Settings,
-  X,
-} from "lucide-react";
-import { authFetch } from "../lib/authFetch";
-import { fetchId } from "../lib/authContext";
+import { Calendar, Trophy, Users, TrendingUp, Settings, X } from "lucide-react";
 
-// Note: Replace localStorage with your actual auth token storage method
-// const authFetch = async (url, options = {}) => {
-//   // For Claude.ai artifact demo - in your real app, get token from your auth system
-//   const token = 'your-auth-token-here'; // Replace with actual token retrieval
-
-//   return fetch(url, {
-//     ...options,
-//     headers: {
-//       'Content-Type': 'application/json',
-//       'Authorization': `Bearer ${token}`, // adjust based on your auth scheme
-//       ...options.headers,
-//     },
-//   });
-// };
+// Import your actual Supabase client
+import { supabase } from "../lib/supabaseClient";
 
 export default function UserDashboard() {
   const [userData, setUserData] = useState(null);
@@ -33,90 +11,96 @@ export default function UserDashboard() {
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const [userId, setUserIdState] = useState(null);
-    
-          const fetchIdAndSet = async () => {
-            const id = await fetchId();
-            setUserIdState(id);
-          }
-          fetchIdAndSet();
-
   useEffect(() => {
-    // Check auth state first to prevent login page flash
-    const checkAuthAndFetchData = async () => {
+    const fetchUserData = async () => {
       try {
         setAuthChecking(true);
+        setLoading(true);
+        setError(null);
 
-        // First, validate authentication
-        const token = "your-auth-token-here"; // Replace with actual token retrieval
-        if (!token) {
+        // Get the current authenticated user
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError) {
+          console.error('Auth error:', authError);
           setIsAuthenticated(false);
           setAuthChecking(false);
           return;
         }
 
-        // Validate token by making a test request
-        const authResponse = await authFetch(
-          `http://localhost:3000/users/${userId}`
-        );
-
-        if (!authResponse.ok) {
-          if (authResponse.status === 401 || authResponse.status === 403) {
-            setIsAuthenticated(false);
-            setAuthChecking(false);
-            // Redirect to login here in your real app
-            // window.location.href = '/login';
-            return;
-          }
-          throw new Error(`Failed to fetch user data: ${authResponse.status}`);
+        if (!user) {
+          setIsAuthenticated(false);
+          setAuthChecking(false);
+          return;
         }
 
-        // Auth is valid, proceed with data fetching
         setIsAuthenticated(true);
-        setLoading(true);
-        setError(null);
 
-        const data = await authResponse.json();
+        // Fetch user profile from the users table
+        const { data, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('uid', user.id)
+          .single();
 
-        // Transform snake_case API response to camelCase for component usage
-        const transformedData = {
-          uid: data.uid,
-          displayName: data.display_name || "",
-          email: data.email || "",
-          phoneNumber: data.phone_number || "",
-          avatar: data.avatar || "",
-          adminApproved: data.admin_approved || false,
-          badgesEarned: data.badges_earned || 0,
-          bio: data.bio || "",
-          college: data.college || "",
-          createdAt: data.created_at,
-          emailVerified: data.email_verified || false,
-          githubUrl: data.github_url || "",
-          linkedinUrl: data.linkedin_url || "",
-          phoneVerified: data.phone_verified || false,
-          points: data.points || 0,
-          portfolioUrl: data.portfolio_url || "",
-          role: data.role || "",
-          sessionsAttended: data.sessions_attended || 0,
-          skills: data.skills || [],
-          updatedAt: data.updated_at,
-          volunteeringHours: data.volunteering_hours || 0,
-        };
+        console.log('Fetched profile:', data, profileError);
 
-        setUserData(transformedData);
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          setError(profileError.message);
+          return;
+        }
+
+        if (data) {
+          // Handle role-based redirect
+          if (data.role === "admin") {
+            window.location.href = "/admin";
+            return;
+          }
+
+          // Transform the data from snake_case to camelCase
+          const transformedData = {
+            uid: data.uid,
+            displayName: data.display_name || "",
+            email: data.email || user.email || "",
+            phoneNumber: data.phone_number || "",
+            avatar: data.avatar || "",
+            adminApproved: data.admin_approved || false,
+            badgesEarned: data.badges_earned || 0,
+            bio: data.bio || "",
+            college: data.college || "",
+            createdAt: data.created_at,
+            emailVerified: data.email_verified || user.email_confirmed_at !== null,
+            githubUrl: data.github_url || "",
+            linkedinUrl: data.linkedin_url || "",
+            phoneVerified: data.phone_verified || false,
+            points: data.points || 0,
+            portfolioUrl: data.portfolio_url || "",
+            role: data.role || "",
+            sessionsAttended: data.sessions_attended || 0,
+            skills: data.skills || [],
+            updatedAt: data.updated_at,
+            volunteeringHours: data.volunteering_hours || 0,
+          };
+
+          setUserData(transformedData);
+        } else {
+          setError("User profile not found");
+        }
       } catch (err) {
         setError(err.message);
-        console.error("Error fetching user data:", err);
+        console.error("Error in fetchUserData:", err);
       } finally {
         setLoading(false);
         setAuthChecking(false);
       }
     };
 
-    if (userId) {
-      checkAuthAndFetchData();
-    }
-  }, [userId]);
+    fetchUserData();
+  }, []);
 
   const stats = userData
     ? [

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Settings, Menu, X, ChevronDown, User, Loader2 } from 'lucide-react';
-import { authFetch } from '../lib/authFetch'; 
-import { supabase } from '../lib/supabaseClient';
-import { fetchId } from '../lib/authContext';
 
-// Mock authFetch function - replace with your actual implementation
+// Import your actual Supabase client
+import { supabase } from '../lib/supabaseClient';
+
+// Mock Supabase for demonstration - replace with your actual client
 
 export default function UserNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -12,43 +12,55 @@ export default function UserNavbar() {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [userId, setUserIdState] = useState(null);
-  
-        const fetchIdAndSet = async () => {
-          const id = await fetchId();
-          setUserIdState(id);
-        }
-        fetchIdAndSet();
-
-  
   
   // Refs for click outside detection
   const profileDropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
-  // Fetch user data
+  // Fetch user data using Supabase
   useEffect(() => {
     const fetchUserData = async () => {
-       
       try {
         setLoading(true);
         setError(null);
 
-        const response = await authFetch(`http://localhost:3000/users/${userId}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch user data: ${response.status}`);
+        // Get the current authenticated user
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError) {
+          throw new Error(`Authentication error: ${authError.message}`);
         }
 
-        const data = await response.json();
-        
-        // Transform API data
+        if (!user) {
+          throw new Error('No authenticated user found');
+        }
+
+        // Fetch user profile from the users table
+        const { data, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('uid', user.id)
+          .single();
+
+        if (profileError) {
+          throw new Error(`Failed to fetch user profile: ${profileError.message}`);
+        }
+
+        if (!data) {
+          throw new Error('User profile not found');
+        }
+
+        // Transform the data
         const transformedUser = {
           uid: data.uid,
-          displayName: data.display_name || 'User',
-          email: data.email || '',
+          displayName: data.display_name || user.email?.split('@')[0] || 'User',
+          email: data.email || user.email || '',
           avatar: data.avatar || '',
-          initials: (data.display_name || data.email || 'U')
+          role: data.role || '',
+          initials: (data.display_name || user.email || 'U')
             .split(' ')
             .map(name => name.charAt(0))
             .join('')
@@ -57,6 +69,7 @@ export default function UserNavbar() {
         };
 
         setUserData(transformedUser);
+
       } catch (err) {
         setError(err.message);
         console.error('Error fetching user data:', err);
@@ -67,6 +80,7 @@ export default function UserNavbar() {
           displayName: 'User',
           email: 'user@example.com',
           avatar: '',
+          role: 'student',
           initials: 'U'
         });
       } finally {
@@ -74,10 +88,8 @@ export default function UserNavbar() {
       }
     };
 
-    if (userId) {
-      fetchUserData();
-    }
-  }, [userId]);
+    fetchUserData();
+  }, []);
 
   // Handle clicks outside dropdowns
   useEffect(() => {
@@ -113,22 +125,43 @@ export default function UserNavbar() {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
-    setIsProfileDropdownOpen(false); // Close profile dropdown when opening mobile menu
+    setIsProfileDropdownOpen(false);
   };
 
   const toggleProfileDropdown = () => {
     setIsProfileDropdownOpen(!isProfileDropdownOpen);
-    setIsMobileMenuOpen(false); // Close mobile menu when opening profile dropdown
+    setIsMobileMenuOpen(false);
   };
 
   const handleNavClick = (href) => {
     // Close all dropdowns when navigating
     setIsMobileMenuOpen(false);
     setIsProfileDropdownOpen(false);
-    localStorage.clear();    
+    
     // Handle navigation
     if (href && href !== '#') {
       window.location.href = href;
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Error signing out:', error);
+      }
+      
+      // Clear any local state and redirect
+      setUserData(null);
+      setIsMobileMenuOpen(false);
+      setIsProfileDropdownOpen(false);
+      
+      // Redirect to login or home page
+      window.location.href = '/login';
+    } catch (err) {
+      console.error('Sign out error:', err);
     }
   };
 
@@ -290,11 +323,7 @@ export default function UserNavbar() {
                     </button>
                     <div className="border-t border-gray-100 mt-2 pt-2">
                       <button 
-                        onClick={() => {
-                          // Handle logout logic here
-                          console.log('Logging out...');
-                          handleNavClick('/');
-                        }}
+                        onClick={handleSignOut}
                         className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                       >
                         Sign Out
@@ -384,10 +413,7 @@ export default function UserNavbar() {
                     Help & Support
                   </button>
                   <button 
-                    onClick={() => {
-                      console.log('Logging out...');
-                      handleNavClick('#');
-                    }}
+                    onClick={handleSignOut}
                     className="w-full text-left block text-sm text-red-600 hover:text-red-700 py-1"
                   >
                     Sign Out

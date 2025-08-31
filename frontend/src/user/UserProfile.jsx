@@ -14,13 +14,11 @@ import {
   Globe,
   Menu,
   X,
-  Loader2
+  Loader2,
+  Trophy
 } from 'lucide-react';
-import { authFetch } from '../lib/authFetch';
-import { fetchId } from '../lib/authContext';
-
-// Mock authFetch function - replace with your actual implementation
-
+// Import your Supabase client
+import { supabase } from '../lib/supabaseClient';
 
 const UserProfile = () => {
   const [activeTab, setActiveTab] = useState('Overview');
@@ -35,122 +33,137 @@ const UserProfile = () => {
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-
   const tabs = ['Overview', 'Skills', 'Achievements', 'Activity'];
 
-  const [userId, setUserIdState] = useState(null);
-  
-        const fetchIdAndSet = async () => {
-          const id = await fetchId();
-          setUserIdState(id);
-        }
-        fetchIdAndSet();
-
-
-  // Fetch user data from API
+  // Fetch user data from Supabase
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         setAuthChecking(true);
-        
-        // Check authentication first
-        const token = 'your-auth-token-here'; // Replace with actual token retrieval
-        if (!token) {
+        setLoading(true);
+        setError(null);
+
+        // Get the current authenticated user
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError) {
+          console.error('Auth error:', authError);
           setIsAuthenticated(false);
           setAuthChecking(false);
           return;
         }
 
-        // Validate token and fetch user data
-        const userResponse = await authFetch(`http://localhost:3000/users/${userId}`);
-        
-        if (!userResponse.ok) {
-          if (userResponse.status === 401 || userResponse.status === 403) {
-            setIsAuthenticated(false);
-            setAuthChecking(false);
-            return;
-          }
-          throw new Error(`Failed to fetch user data: ${userResponse.status}`);
+        if (!user) {
+          setIsAuthenticated(false);
+          setAuthChecking(false);
+          return;
         }
 
         setIsAuthenticated(true);
-        setLoading(true);
-        setError(null);
 
-        const userData = await userResponse.json();
+        // Fetch user profile from the users table
+        const { data, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('uid', user.id)
+          .single();
 
-        // Transform API data to component format
-        const transformedUser = {
-          uid: userData.uid,
-          displayName: userData.display_name || 'User',
-          email: userData.email || '',
-          phoneNumber: userData.phone_number || '',
-          avatar: userData.avatar || '',
-          bio: userData.bio || 'No bio available',
-          college: userData.college || 'Not specified',
-          role: userData.role || 'Student',
-          githubUrl: userData.github_url || '',
-          linkedinUrl: userData.linkedin_url || '',
-          portfolioUrl: userData.portfolio_url || '',
-          location: 'Coimbatore, Tamil Nadu', // You might want to add this to your API
-          volunteeringHours: userData.volunteering_hours || 0,
-          projectsCompleted: 8, // This might come from a separate projects API
-          emailVerified: userData.email_verified || false,
-          phoneVerified: userData.phone_verified || false,
-          createdAt: userData.created_at,
-          updatedAt: userData.updated_at
-        };
+        console.log('Fetched profile:', data, profileError);
 
-        // Create stats from user data
-        const stats = [
-          {
-            label: "Points",
-            value: userData.points?.toString() || "0",
-            icon: TrendingUp,
-            color: "text-orange-500",
-            bgColor: "bg-orange-50"
-          },
-          {
-            label: "Badges", 
-            value: userData.badges_earned?.toString() || "0",
-            icon: Award,
-            color: "text-purple-500",
-            bgColor: "bg-purple-50"
-          },
-          {
-            label: "Sessions",
-            value: userData.sessions_attended?.toString() || "0",
-            icon: Calendar,
-            color: "text-blue-500", 
-            bgColor: "bg-blue-50"
-          },
-          {
-            label: "Rank",
-            value: "#--", // You might want to calculate this from a leaderboard API
-            icon: Hash,
-            color: "text-green-500",
-            bgColor: "bg-green-50"
-          }
-        ];
-
-        // Parse skills if they're stored as JSON string
-        let skills = [];
-        if (userData.skills) {
-          try {
-            skills = Array.isArray(userData.skills) ? userData.skills : JSON.parse(userData.skills);
-          } catch (e) {
-            skills = typeof userData.skills === 'string' ? [userData.skills] : [];
-          }
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          setError(profileError.message);
+          return;
         }
 
-        setUserData(transformedUser);
-        setUserStats(stats);
-        setUserSkills(skills);
+        if (data) {
+          // Transform the data from snake_case to camelCase for component use
+          const transformedUser = {
+            uid: data.uid,
+            displayName: data.display_name || 'User',
+            email: data.email || user.email || '',
+            phoneNumber: data.phone_number || '',
+            avatar: data.avatar || '',
+            bio: data.bio || 'No bio available',
+            college: data.college || 'Not specified',
+            role: data.role || 'Student',
+            githubUrl: data.github_url || '',
+            linkedinUrl: data.linkedin_url || '',
+            portfolioUrl: data.portfolio_url || '',
+            location: 'Coimbatore, Tamil Nadu', // You might want to add this to your database
+            volunteeringHours: data.volunteering_hours || 0,
+            projectsCompleted: 8, // This might come from a separate projects table
+            emailVerified: data.email_verified || user.email_confirmed_at !== null,
+            phoneVerified: data.phone_verified || false,
+            adminApproved: data.admin_approved || false,
+            badgesEarned: data.badges_earned || 0,
+            points: data.points || 0,
+            sessionsAttended: data.sessions_attended || 0,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at
+          };
 
-        // You might want to fetch additional data from other endpoints
-        // fetchUserActivity();
-        // fetchUserAchievements();
+          // Create stats from user data
+          const stats = [
+            {
+              label: "Points",
+              value: data.points?.toString() || "0",
+              icon: TrendingUp,
+              color: "text-orange-500",
+              bgColor: "bg-orange-50"
+            },
+            {
+              label: "Badges", 
+              value: data.badges_earned?.toString() || "0",
+              icon: Award,
+              color: "text-purple-500",
+              bgColor: "bg-purple-50"
+            },
+            {
+              label: "Sessions",
+              value: data.sessions_attended?.toString() || "0",
+              icon: Calendar,
+              color: "text-blue-500", 
+              bgColor: "bg-blue-50"
+            },
+            {
+              label: "Rank",
+              value: "#--", // You might want to calculate this from a leaderboard query
+              icon: Hash,
+              color: "text-green-500",
+              bgColor: "bg-green-50"
+            }
+          ];
 
+          // Parse skills if they're stored as JSON string or array
+          let skills = [];
+          if (data.skills) {
+            try {
+              if (Array.isArray(data.skills)) {
+                skills = data.skills;
+              } else if (typeof data.skills === 'string') {
+                skills = JSON.parse(data.skills);
+              }
+            } catch (e) {
+              console.error('Error parsing skills:', e);
+              skills = typeof data.skills === 'string' ? [data.skills] : [];
+            }
+          }
+
+          setUserData(transformedUser);
+          setUserStats(stats);
+          setUserSkills(skills);
+
+          // You can add additional data fetching here if needed
+          // await fetchUserActivity(user.id);
+          // await fetchUserAchievements(user.id);
+
+        } else {
+          setError("User profile not found");
+        }
       } catch (err) {
         setError(err.message);
         console.error('Error fetching user data:', err);
@@ -160,12 +173,44 @@ const UserProfile = () => {
       }
     };
 
-    if (userId) {
-      fetchUserData();
-    }
-  }, [userId]);
+    fetchUserData();
+  }, []);
 
-  // Mock data for demonstration - replace with API calls
+  // Optional: Function to fetch user activity from additional tables
+  const fetchUserActivity = async (userId) => {
+    try {
+      // Example query for user activities - adjust based on your schema
+      const { data, error } = await supabase
+        .from('user_activities') // Assuming you have an activities table
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setUserActivity(data || []);
+    } catch (err) {
+      console.error('Error fetching user activity:', err);
+    }
+  };
+
+  // Optional: Function to fetch user achievements
+  const fetchUserAchievements = async (userId) => {
+    try {
+      // Example query for user badges/achievements - adjust based on your schema
+      const { data, error } = await supabase
+        .from('user_badges') // Assuming you have a badges table
+        .select('*')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      setUserAchievements({ badges: data || [], certificates: [] });
+    } catch (err) {
+      console.error('Error fetching user achievements:', err);
+    }
+  };
+
+  // Mock data for demonstration - you can replace these with actual API calls
   const mockPersonalInfo = userData ? [
     { label: "College", value: userData.college },
     { label: "Role", value: userData.role },
@@ -194,7 +239,7 @@ const UserProfile = () => {
     }
   ] : [];
 
-  // Mock activity data - replace with API call
+  // Mock activity data - replace with actual data from your activities table
   const mockRecentActivity = [
     { action: "Completed Machine Learning Workshop", time: "2 hours ago", type: "achievement" },
     { action: "Submitted Project: E-commerce Website", time: "1 day ago", type: "project" },
