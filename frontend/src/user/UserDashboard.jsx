@@ -2,35 +2,100 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Trophy, Users, TrendingUp, Bell, Settings, X } from 'lucide-react';
 import { authFetch } from '../lib/authFetch';
 
+// Note: Replace localStorage with your actual auth token storage method
+// const authFetch = async (url, options = {}) => {
+//   // For Claude.ai artifact demo - in your real app, get token from your auth system
+//   const token = 'your-auth-token-here'; // Replace with actual token retrieval
+  
+//   return fetch(url, {
+//     ...options,
+//     headers: {
+//       'Content-Type': 'application/json',
+//       'Authorization': `Bearer ${token}`, // adjust based on your auth scheme
+//       ...options.headers,
+//     },
+//   });
+// };
+
 export default function UserDashboard({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }) {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    // Check auth state first to prevent login page flash
+    const checkAuthAndFetchData = async () => {
       try {
+        setAuthChecking(true);
+        
+        // First, validate authentication
+        const token = 'your-auth-token-here'; // Replace with actual token retrieval
+        if (!token) {
+          setIsAuthenticated(false);
+          setAuthChecking(false);
+          return;
+        }
+
+        // Validate token by making a test request
+        const authResponse = await authFetch(`http://localhost:3000/users/${userId}`);
+        
+        if (!authResponse.ok) {
+          if (authResponse.status === 401 || authResponse.status === 403) {
+            setIsAuthenticated(false);
+            setAuthChecking(false);
+            // Redirect to login here in your real app
+            // window.location.href = '/login';
+            return;
+          }
+          throw new Error(`Failed to fetch user data: ${authResponse.status}`);
+        }
+        
+        // Auth is valid, proceed with data fetching
+        setIsAuthenticated(true);
         setLoading(true);
         setError(null);
         
-        const response = await authFetch(`http://localhost:3000/users/${userId}`);
+        const data = await authResponse.json();
         
-        if (!response.ok) {
-          throw new Error(`Failed to fetch user data: ${response.status}`);
-        }
+        // Transform snake_case API response to camelCase for component usage
+        const transformedData = {
+          uid: data.uid,
+          displayName: data.display_name || '',
+          email: data.email || '',
+          phoneNumber: data.phone_number || '',
+          avatar: data.avatar || '',
+          adminApproved: data.admin_approved || false,
+          badgesEarned: data.badges_earned || 0,
+          bio: data.bio || '',
+          college: data.college || '',
+          createdAt: data.created_at,
+          emailVerified: data.email_verified || false,
+          githubUrl: data.github_url || '',
+          linkedinUrl: data.linkedin_url || '',
+          phoneVerified: data.phone_verified || false,
+          points: data.points || 0,
+          portfolioUrl: data.portfolio_url || '',
+          role: data.role || '',
+          sessionsAttended: data.sessions_attended || 0,
+          skills: data.skills || [],
+          updatedAt: data.updated_at,
+          volunteeringHours: data.volunteering_hours || 0
+        };
         
-        const data = await response.json();
-        setUserData(data);
+        setUserData(transformedData);
       } catch (err) {
         setError(err.message);
         console.error('Error fetching user data:', err);
       } finally {
         setLoading(false);
+        setAuthChecking(false);
       }
     };
 
     if (userId) {
-      fetchUserData();
+      checkAuthAndFetchData();
     }
   }, [userId]);
 
@@ -67,8 +132,36 @@ export default function UserDashboard({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Main Content */}
-      <main className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
+      {/* Auth Checking State - Prevents login page flash */}
+      {authChecking && (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Verifying authentication...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Unauthenticated State */}
+      {!authChecking && !isAuthenticated && (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+            <p className="text-gray-600 mb-4">Please log in to access your dashboard.</p>
+            <button 
+              onClick={() => window.location.href = '/login'}
+              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content - Only show when authenticated */}
+      {!authChecking && isAuthenticated && (
+        <main className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
         {/* Loading State */}
         {loading && (
           <div className="flex items-center justify-center min-h-[400px]">
@@ -99,20 +192,26 @@ export default function UserDashboard({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }
             {/* Welcome Section */}
             <div className="mb-8">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                Welcome back, {userData.displayName || 'Student'}! 👋
+                Welcome back, {userData.displayName || userData.email?.split('@')[0] || 'Student'}! 👋
               </h1>
               <p className="text-gray-600">Here's what's happening in your student community today.</p>
               {userData.bio && (
                 <p className="text-gray-500 text-sm mt-1">{userData.bio}</p>
               )}
               <div className="flex items-center mt-2 space-x-4 text-sm text-gray-500">
-                <span>{userData.college}</span>
+                <span>{userData.college || 'No college set'}</span>
                 <span>•</span>
                 <span>{userData.role?.charAt(0).toUpperCase() + userData.role?.slice(1)}</span>
                 {userData.emailVerified && (
                   <>
                     <span>•</span>
                     <span className="text-green-600">✓ Email Verified</span>
+                  </>
+                )}
+                {!userData.emailVerified && (
+                  <>
+                    <span>•</span>
+                    <span className="text-yellow-600">⚠ Email Not Verified</span>
                   </>
                 )}
               </div>
@@ -136,7 +235,7 @@ export default function UserDashboard({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }
             </div>
 
             {/* Skills Section */}
-            {userData.skills && userData.skills.length > 0 && (
+            {userData.skills && userData.skills.length > 0 ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Skills</h2>
                 <div className="flex flex-wrap gap-2">
@@ -148,6 +247,19 @@ export default function UserDashboard({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }
                       {skill}
                     </span>
                   ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Skills</h2>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <Settings className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500">No skills added yet. Add your skills to help others find you!</p>
+                  <button className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                    Add Skills
+                  </button>
                 </div>
               </div>
             )}
@@ -167,6 +279,9 @@ export default function UserDashboard({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No upcoming events</h3>
                   <p className="text-gray-500">Check back later for new events!</p>
+                  <button className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                    Browse Events
+                  </button>
                 </div>
               </div>
 
@@ -182,16 +297,26 @@ export default function UserDashboard({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }
                     <Trophy className="w-8 h-8 text-gray-400" />
                   </div>
                   {userData.badgesEarned > 0 ? (
-                    <p className="text-gray-700">You have {userData.badgesEarned} badge{userData.badgesEarned !== 1 ? 's' : ''}!</p>
+                    <>
+                      <p className="text-gray-700 mb-2">You have {userData.badgesEarned} badge{userData.badgesEarned !== 1 ? 's' : ''}!</p>
+                      <button className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200">
+                        View All Badges
+                      </button>
+                    </>
                   ) : (
-                    <p className="text-gray-500 text-sm">No badges earned yet</p>
+                    <>
+                      <p className="text-gray-500 text-sm mb-2">No badges earned yet</p>
+                      <button className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200">
+                        Earn Your First Badge
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Profile Links */}
-            {(userData.githubUrl || userData.linkedinUrl || userData.portfolioUrl) && (
+            {(userData.githubUrl || userData.linkedinUrl || userData.portfolioUrl) ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Links</h2>
                 <div className="flex flex-wrap gap-3">
@@ -227,7 +352,63 @@ export default function UserDashboard({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }
                   )}
                 </div>
               </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Links</h2>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <Settings className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 mb-2">No profile links added yet</p>
+                  <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                    Add Profile Links
+                  </button>
+                </div>
+              </div>
             )}
+
+            {/* User Info Debug Panel (remove in production) */}
+            <div className="bg-gray-100 rounded-xl p-6 mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Debug: User Data</h2>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <strong>Email:</strong> {userData.email || 'Not set'}
+                </div>
+                <div>
+                  <strong>Display Name:</strong> {userData.displayName || 'Not set'}
+                </div>
+                <div>
+                  <strong>College:</strong> {userData.college || 'Not set'}
+                </div>
+                <div>
+                  <strong>Bio:</strong> {userData.bio || 'Not set'}
+                </div>
+                <div>
+                  <strong>Role:</strong> {userData.role}
+                </div>
+                <div>
+                  <strong>Email Verified:</strong> {userData.emailVerified ? 'Yes' : 'No'}
+                </div>
+                <div>
+                  <strong>Points:</strong> {userData.points}
+                </div>
+                <div>
+                  <strong>Badges:</strong> {userData.badgesEarned}
+                </div>
+                <div>
+                  <strong>Sessions:</strong> {userData.sessionsAttended}
+                </div>
+                <div>
+                  <strong>Volunteer Hours:</strong> {userData.volunteeringHours}
+                </div>
+                <div>
+                  <strong>Skills Count:</strong> {userData.skills?.length || 0}
+                </div>
+                <div>
+                  <strong>Admin Approved:</strong> {userData.adminApproved ? 'Yes' : 'No'}
+                </div>
+              </div>
+            </div>
 
             {/* Quick Actions */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -266,6 +447,7 @@ export default function UserDashboard({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }
           </>
         )}
       </main>
+      )}
     </div>
   );
 }

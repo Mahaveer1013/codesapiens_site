@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   Edit, 
@@ -13,58 +13,267 @@ import {
   Linkedin,
   Globe,
   Menu,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
+import { authFetch } from '../lib/authFetch';
 
-const UserProfile = () => {
+// Mock authFetch function - replace with your actual implementation
+
+
+const UserProfile = ({ userId = 'Y1EzpOflBVTcRrugjowvuFDG2tq' }) => {
   const [activeTab, setActiveTab] = useState('Overview');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [userStats, setUserStats] = useState(null);
+  const [userActivity, setUserActivity] = useState([]);
+  const [userSkills, setUserSkills] = useState([]);
+  const [userAchievements, setUserAchievements] = useState({ badges: [], certificates: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const tabs = ['Overview', 'Skills', 'Achievements', 'Activity'];
 
-  const stats = [
-    {
-      label: "Points",
-      value: "1,250",
-      icon: TrendingUp,
-      color: "text-orange-500",
-      bgColor: "bg-orange-50"
-    },
-    {
-      label: "Badges", 
-      value: "5",
-      icon: Award,
-      color: "text-purple-500",
-      bgColor: "bg-purple-50"
-    },
-    {
-      label: "Sessions",
-      value: "12",
-      icon: Calendar,
-      color: "text-blue-500", 
-      bgColor: "bg-blue-50"
-    },
-    {
-      label: "Rank",
-      value: "#15",
-      icon: Hash,
-      color: "text-green-500",
-      bgColor: "bg-green-50"
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setAuthChecking(true);
+        
+        // Check authentication first
+        const token = 'your-auth-token-here'; // Replace with actual token retrieval
+        if (!token) {
+          setIsAuthenticated(false);
+          setAuthChecking(false);
+          return;
+        }
+
+        // Validate token and fetch user data
+        const userResponse = await authFetch(`http://localhost:3000/users/${userId}`);
+        
+        if (!userResponse.ok) {
+          if (userResponse.status === 401 || userResponse.status === 403) {
+            setIsAuthenticated(false);
+            setAuthChecking(false);
+            return;
+          }
+          throw new Error(`Failed to fetch user data: ${userResponse.status}`);
+        }
+
+        setIsAuthenticated(true);
+        setLoading(true);
+        setError(null);
+
+        const userData = await userResponse.json();
+
+        // Transform API data to component format
+        const transformedUser = {
+          uid: userData.uid,
+          displayName: userData.display_name || 'User',
+          email: userData.email || '',
+          phoneNumber: userData.phone_number || '',
+          avatar: userData.avatar || '',
+          bio: userData.bio || 'No bio available',
+          college: userData.college || 'Not specified',
+          role: userData.role || 'Student',
+          githubUrl: userData.github_url || '',
+          linkedinUrl: userData.linkedin_url || '',
+          portfolioUrl: userData.portfolio_url || '',
+          location: 'Coimbatore, Tamil Nadu', // You might want to add this to your API
+          volunteeringHours: userData.volunteering_hours || 0,
+          projectsCompleted: 8, // This might come from a separate projects API
+          emailVerified: userData.email_verified || false,
+          phoneVerified: userData.phone_verified || false,
+          createdAt: userData.created_at,
+          updatedAt: userData.updated_at
+        };
+
+        // Create stats from user data
+        const stats = [
+          {
+            label: "Points",
+            value: userData.points?.toString() || "0",
+            icon: TrendingUp,
+            color: "text-orange-500",
+            bgColor: "bg-orange-50"
+          },
+          {
+            label: "Badges", 
+            value: userData.badges_earned?.toString() || "0",
+            icon: Award,
+            color: "text-purple-500",
+            bgColor: "bg-purple-50"
+          },
+          {
+            label: "Sessions",
+            value: userData.sessions_attended?.toString() || "0",
+            icon: Calendar,
+            color: "text-blue-500", 
+            bgColor: "bg-blue-50"
+          },
+          {
+            label: "Rank",
+            value: "#--", // You might want to calculate this from a leaderboard API
+            icon: Hash,
+            color: "text-green-500",
+            bgColor: "bg-green-50"
+          }
+        ];
+
+        // Parse skills if they're stored as JSON string
+        let skills = [];
+        if (userData.skills) {
+          try {
+            skills = Array.isArray(userData.skills) ? userData.skills : JSON.parse(userData.skills);
+          } catch (e) {
+            skills = typeof userData.skills === 'string' ? [userData.skills] : [];
+          }
+        }
+
+        setUserData(transformedUser);
+        setUserStats(stats);
+        setUserSkills(skills);
+
+        // You might want to fetch additional data from other endpoints
+        // fetchUserActivity();
+        // fetchUserAchievements();
+
+      } catch (err) {
+        setError(err.message);
+        console.error('Error fetching user data:', err);
+      } finally {
+        setLoading(false);
+        setAuthChecking(false);
+      }
+    };
+
+    if (userId) {
+      fetchUserData();
     }
+  }, [userId]);
+
+  // Mock data for demonstration - replace with API calls
+  const mockPersonalInfo = userData ? [
+    { label: "College", value: userData.college },
+    { label: "Role", value: userData.role },
+    { label: "Volunteering Hours", value: userData.volunteeringHours?.toString() || "0" },
+    { label: "Projects Completed", value: userData.projectsCompleted?.toString() || "0" }
+  ] : [];
+
+  const socialLinks = userData ? [
+    { 
+      label: "GitHub Profile", 
+      icon: Github, 
+      href: userData.githubUrl || "#",
+      available: !!userData.githubUrl 
+    },
+    { 
+      label: "LinkedIn Profile", 
+      icon: Linkedin, 
+      href: userData.linkedinUrl || "#",
+      available: !!userData.linkedinUrl 
+    },
+    { 
+      label: "Portfolio Website", 
+      icon: Globe, 
+      href: userData.portfolioUrl || "#",
+      available: !!userData.portfolioUrl 
+    }
+  ] : [];
+
+  // Mock activity data - replace with API call
+  const mockRecentActivity = [
+    { action: "Completed Machine Learning Workshop", time: "2 hours ago", type: "achievement" },
+    { action: "Submitted Project: E-commerce Website", time: "1 day ago", type: "project" },
+    { action: "Earned JavaScript Certification Badge", time: "3 days ago", type: "badge" },
+    { action: "Attended React.js Study Session", time: "1 week ago", type: "session" }
   ];
 
-  const personalInfo = [
-    { label: "College", value: "Sri Krishna College of Engineering and Technology" },
-    { label: "Role", value: "Student" },
-    { label: "Volunteering Hours", value: "25" },
-    { label: "Projects Completed", value: "8" }
+  // Mock skills data with proficiency levels
+  const mockTechnicalSkills = userSkills.length > 0 ? 
+    userSkills.slice(0, 5).map((skill, index) => ({
+      skill: skill,
+      level: 90 - (index * 5), // Mock proficiency levels
+      color: ["bg-yellow-500", "bg-blue-500", "bg-green-500", "bg-green-600", "bg-purple-500"][index] || "bg-gray-500"
+    })) : 
+    [
+      { skill: "No skills added", level: 0, color: "bg-gray-300" }
+    ];
+
+  const mockSoftSkills = [
+    "Leadership", "Communication", "Team Work", "Problem Solving",
+    "Critical Thinking", "Time Management", "Adaptability", "Creativity"
   ];
 
-  const socialLinks = [
-    { label: "GitHub Profile", icon: Github, href: "#" },
-    { label: "LinkedIn Profile", icon: Linkedin, href: "#" },
-    { label: "Portfolio Website", icon: Globe, href: "#" }
-  ];
+  // Auth checking state
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+          <p className="text-gray-600">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Unauthenticated state
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+          <p className="text-gray-600 mb-4">Please log in to view this profile.</p>
+          <button 
+            onClick={() => window.location.href = '/login'}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+            <p className="text-gray-600">Loading profile data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Profile</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userData) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,29 +283,50 @@ const UserProfile = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
             {/* Avatar */}
             <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-              <span className="text-white font-bold text-xl sm:text-2xl lg:text-3xl">A</span>
+              {userData.avatar ? (
+                <img 
+                  src={userData.avatar} 
+                  alt={userData.displayName}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-white font-bold text-xl sm:text-2xl lg:text-3xl">
+                  {userData.displayName?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              )}
             </div>
             
             {/* Profile Info */}
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Arun Kumar</h1>
+              <div className="flex items-center space-x-3 mb-2">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                  {userData.displayName}
+                </h1>
+                {userData.emailVerified && (
+                  <span className="text-green-500 text-sm bg-green-50 px-2 py-1 rounded-full">
+                    ✓ Verified
+                  </span>
+                )}
+              </div>
               <p className="text-sm sm:text-base text-gray-600 mb-4 leading-relaxed">
-                Passionate about web development and machine learning. Always eager to learn new technologies and contribute to innovative projects.
+                {userData.bio}
               </p>
               
               {/* Contact Info */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
                   <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="truncate">727723eucs090@skcet.ac.in</span>
+                  <span className="truncate">{userData.email}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span>+91 9876543210</span>
-                </div>
+                {userData.phoneNumber && (
+                  <div className="flex items-center space-x-2">
+                    <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span>{userData.phoneNumber}</span>
+                  </div>
+                )}
                 <div className="flex items-center space-x-2">
                   <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span>Coimbatore, Tamil Nadu</span>
+                  <span>{userData.location}</span>
                 </div>
               </div>
             </div>
@@ -106,7 +336,7 @@ const UserProfile = () => {
         {/* Stats Cards */}
         <div className="px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-            {stats.map((stat, index) => {
+            {userStats && userStats.map((stat, index) => {
               const IconComponent = stat.icon;
               return (
                 <div key={index} className="bg-gray-50 rounded-lg p-3 sm:p-4 border hover:shadow-sm transition-shadow">
@@ -170,7 +400,7 @@ const UserProfile = () => {
               </div>
               <div className="p-4 sm:p-6">
                 <div className="space-y-4">
-                  {personalInfo.map((info, index) => (
+                  {mockPersonalInfo.map((info, index) => (
                     <div key={index} className="flex flex-col sm:flex-row sm:justify-between py-2">
                       <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">{info.label}</span>
                       <span className="text-sm text-gray-900 sm:text-right sm:max-w-xs">{info.value}</span>
@@ -197,9 +427,18 @@ const UserProfile = () => {
                           </div>
                           <span className="text-sm font-medium text-gray-700">{link.label}</span>
                         </div>
-                        <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                          View
-                        </button>
+                        {link.available ? (
+                          <a 
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Not set</span>
+                        )}
                       </div>
                     );
                   })}
@@ -214,12 +453,7 @@ const UserProfile = () => {
               </div>
               <div className="p-4 sm:p-6">
                 <div className="space-y-4">
-                  {[
-                    { action: "Completed Machine Learning Workshop", time: "2 hours ago", type: "achievement" },
-                    { action: "Submitted Project: E-commerce Website", time: "1 day ago", type: "project" },
-                    { action: "Earned JavaScript Certification Badge", time: "3 days ago", type: "badge" },
-                    { action: "Attended React.js Study Session", time: "1 week ago", type: "session" }
-                  ].map((activity, index) => (
+                  {mockRecentActivity.map((activity, index) => (
                     <div key={index} className="flex items-center space-x-3 py-3 border-b border-gray-100 last:border-b-0">
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                         activity.type === 'achievement' ? 'bg-green-500' :
@@ -246,28 +480,31 @@ const UserProfile = () => {
                 <h3 className="text-lg font-semibold text-gray-900">Technical Skills</h3>
               </div>
               <div className="p-4 sm:p-6">
-                <div className="space-y-4">
-                  {[
-                    { skill: "JavaScript", level: 90, color: "bg-yellow-500" },
-                    { skill: "React.js", level: 85, color: "bg-blue-500" },
-                    { skill: "Python", level: 80, color: "bg-green-500" },
-                    { skill: "Node.js", level: 75, color: "bg-green-600" },
-                    { skill: "Machine Learning", level: 70, color: "bg-purple-500" }
-                  ].map((item, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-700">{item.skill}</span>
-                        <span className="text-sm text-gray-500">{item.level}%</span>
+                {userSkills.length > 0 ? (
+                  <div className="space-y-4">
+                    {mockTechnicalSkills.map((item, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-700">{item.skill}</span>
+                          <span className="text-sm text-gray-500">{item.level}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${item.color} transition-all duration-300`}
+                            style={{ width: `${item.level}%` }}
+                          ></div>
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${item.color} transition-all duration-300`}
-                          style={{ width: `${item.level}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">No technical skills added yet</p>
+                    <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                      Add Skills
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -278,10 +515,7 @@ const UserProfile = () => {
               </div>
               <div className="p-4 sm:p-6">
                 <div className="grid grid-cols-2 gap-3">
-                  {[
-                    "Leadership", "Communication", "Team Work", "Problem Solving",
-                    "Critical Thinking", "Time Management", "Adaptability", "Creativity"
-                  ].map((skill, index) => (
+                  {mockSoftSkills.map((skill, index) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-3 text-center">
                       <span className="text-sm font-medium text-gray-700">{skill}</span>
                     </div>
@@ -300,21 +534,16 @@ const UserProfile = () => {
                 <h3 className="text-lg font-semibold text-gray-900">Earned Badges</h3>
               </div>
               <div className="p-4 sm:p-6">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {[
-                    { name: "JavaScript Master", color: "bg-yellow-100 text-yellow-800", icon: "🏆" },
-                    { name: "React Expert", color: "bg-blue-100 text-blue-800", icon: "⚛️" },
-                    { name: "Team Player", color: "bg-green-100 text-green-800", icon: "👥" },
-                    { name: "Code Reviewer", color: "bg-purple-100 text-purple-800", icon: "🔍" },
-                    { name: "Fast Learner", color: "bg-orange-100 text-orange-800", icon: "⚡" }
-                  ].map((badge, index) => (
-                    <div key={index} className="text-center p-4 border rounded-lg hover:shadow-sm transition-shadow">
-                      <div className="text-2xl mb-2">{badge.icon}</div>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>
-                        {badge.name}
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-center py-8">
+                  <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-4">
+                    {userStats && userStats[1]?.value !== "0" 
+                      ? `You have earned ${userStats[1]?.value} badges!` 
+                      : "No badges earned yet"}
+                  </p>
+                  <button className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+                    {userStats && userStats[1]?.value !== "0" ? "View All Badges" : "Earn Your First Badge"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -325,22 +554,12 @@ const UserProfile = () => {
                 <h3 className="text-lg font-semibold text-gray-900">Certifications</h3>
               </div>
               <div className="p-4 sm:p-6">
-                <div className="space-y-4">
-                  {[
-                    { name: "Full Stack Web Development", issuer: "SKCET Tech Hub", date: "Dec 2024" },
-                    { name: "Machine Learning Fundamentals", issuer: "Coursera", date: "Nov 2024" },
-                    { name: "React.js Advanced", issuer: "Meta Blueprint", date: "Oct 2024" }
-                  ].map((cert, index) => (
-                    <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors space-y-2 sm:space-y-0">
-                      <div>
-                        <h4 className="font-medium text-gray-900 text-sm sm:text-base">{cert.name}</h4>
-                        <p className="text-xs sm:text-sm text-gray-500">{cert.issuer}</p>
-                      </div>
-                      <div className="text-xs sm:text-sm text-gray-600 font-medium">
-                        {cert.date}
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-center py-8">
+                  <Award className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-4">No certifications added yet</p>
+                  <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                    Add Certificate
+                  </button>
                 </div>
               </div>
             </div>
@@ -353,52 +572,10 @@ const UserProfile = () => {
               <h3 className="text-lg font-semibold text-gray-900">Activity Timeline</h3>
             </div>
             <div className="p-4 sm:p-6">
-              <div className="space-y-6">
-                {[
-                  { 
-                    date: "Today", 
-                    activities: [
-                      { time: "2:30 PM", action: "Submitted assignment: Database Design", type: "submission" },
-                      { time: "10:15 AM", action: "Joined study group session", type: "participation" }
-                    ]
-                  },
-                  { 
-                    date: "Yesterday", 
-                    activities: [
-                      { time: "4:45 PM", action: "Completed React.js quiz", type: "completion" },
-                      { time: "11:30 AM", action: "Downloaded course materials", type: "access" }
-                    ]
-                  },
-                  { 
-                    date: "3 days ago", 
-                    activities: [
-                      { time: "6:20 PM", action: "Earned JavaScript certification", type: "achievement" },
-                      { time: "2:15 PM", action: "Started new course: Advanced React", type: "enrollment" }
-                    ]
-                  }
-                ].map((day, dayIndex) => (
-                  <div key={dayIndex}>
-                    <h4 className="font-semibold text-gray-900 mb-3 text-sm">{day.date}</h4>
-                    <div className="space-y-3 ml-4">
-                      {day.activities.map((activity, actIndex) => (
-                        <div key={actIndex} className="flex space-x-3">
-                          <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                            activity.type === 'achievement' ? 'bg-green-500' :
-                            activity.type === 'completion' ? 'bg-blue-500' :
-                            activity.type === 'submission' ? 'bg-purple-500' :
-                            activity.type === 'participation' ? 'bg-orange-500' : 'bg-gray-400'
-                          }`}></div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                              <p className="text-sm text-gray-900">{activity.action}</p>
-                              <span className="text-xs text-gray-500 mt-1 sm:mt-0">{activity.time}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center py-12">
+                <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">Activity timeline will be available soon</p>
+                <p className="text-sm text-gray-400">Check back later to see your recent activities</p>
               </div>
             </div>
           </div>
@@ -425,16 +602,6 @@ const UserProfile = () => {
             );
           })}
         </div>
-      </div>
-
-      {/* Mobile Notification Badge */}
-      <div className="fixed bottom-20 right-4 sm:hidden z-30">
-        <button className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
-          <span className="text-white font-bold text-sm">N</span>
-          <div className="absolute -top-1 -right-1 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-xs">3</span>
-          </div>
-        </button>
       </div>
 
       {/* Mobile padding bottom to account for fixed nav */}

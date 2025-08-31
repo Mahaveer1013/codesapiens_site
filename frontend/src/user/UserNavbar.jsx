@@ -28,7 +28,7 @@ export default function UserNavbar() {
           {/* Desktop Navigation - Centered */}
           <div className="hidden md:flex items-center justify-center flex-1 max-w-md mx-auto">
             <div className="flex items-center space-x-8">
-              <a href="#" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium transition-colors">
+              <a href="dashboard" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium transition-colors">
                 Dashboard
               </a>
               <a href="#" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md font-medium transition-colors">
@@ -88,8 +88,8 @@ export default function UserNavbar() {
                     </div>
                   </div>
                   <div className="py-2">
-                    <a href="#" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Profile Settings
+                    <a href="profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      Profile
                     </a>
                     <a href="#" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                       Account Preferences

@@ -6,7 +6,7 @@ const {verifyUser} = require('../middleware/authMiddleware.js');
 
 router.post('/', addUser);
 router.get('/', getUsers);
-router.get(`/:id`, getUserById);
+router.get(`/:id`,verifyUser, getUserById);
 router.put(`/:id`, updateUser);
 router.delete(`/:id`,removeUser);
 
