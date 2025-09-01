@@ -15,9 +15,11 @@ import {
   Menu,
   X,
   Loader2,
-  Trophy
+  Trophy,
+  Save,
+  XCircle,
+  ChevronDown
 } from 'lucide-react';
-// Import your Supabase client
 import { supabase } from '../lib/supabaseClient';
 
 const UserProfile = () => {
@@ -32,6 +34,11 @@ const UserProfile = () => {
   const [error, setError] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState(null);
+  const [colleges, setColleges] = useState([]);
+  const [collegeSearch, setCollegeSearch] = useState('');
+  const [collegeLoading, setCollegeLoading] = useState(false);
 
   const tabs = ['Overview', 'Skills', 'Achievements', 'Activity'];
 
@@ -43,11 +50,7 @@ const UserProfile = () => {
         setLoading(true);
         setError(null);
 
-        // Get the current authenticated user
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError) {
           console.error('Auth error:', authError);
@@ -64,7 +67,6 @@ const UserProfile = () => {
 
         setIsAuthenticated(true);
 
-        // Fetch user profile from the users table
         const { data, error: profileError } = await supabase
           .from('users')
           .select('*')
@@ -80,7 +82,6 @@ const UserProfile = () => {
         }
 
         if (data) {
-          // Transform the data from snake_case to camelCase for component use
           const transformedUser = {
             uid: data.uid,
             displayName: data.display_name || 'User',
@@ -93,9 +94,9 @@ const UserProfile = () => {
             githubUrl: data.github_url || '',
             linkedinUrl: data.linkedin_url || '',
             portfolioUrl: data.portfolio_url || '',
-            location: 'Coimbatore, Tamil Nadu', // You might want to add this to your database
+            location: 'Coimbatore, Tamil Nadu',
             volunteeringHours: data.volunteering_hours || 0,
-            projectsCompleted: 8, // This might come from a separate projects table
+            projectsCompleted: 8,
             emailVerified: data.email_verified || user.email_confirmed_at !== null,
             phoneVerified: data.phone_verified || false,
             adminApproved: data.admin_approved || false,
@@ -106,39 +107,13 @@ const UserProfile = () => {
             updatedAt: data.updated_at
           };
 
-          // Create stats from user data
           const stats = [
-            {
-              label: "Points",
-              value: data.points?.toString() || "0",
-              icon: TrendingUp,
-              color: "text-orange-500",
-              bgColor: "bg-orange-50"
-            },
-            {
-              label: "Badges", 
-              value: data.badges_earned?.toString() || "0",
-              icon: Award,
-              color: "text-purple-500",
-              bgColor: "bg-purple-50"
-            },
-            {
-              label: "Sessions",
-              value: data.sessions_attended?.toString() || "0",
-              icon: Calendar,
-              color: "text-blue-500", 
-              bgColor: "bg-blue-50"
-            },
-            {
-              label: "Rank",
-              value: "#--", // You might want to calculate this from a leaderboard query
-              icon: Hash,
-              color: "text-green-500",
-              bgColor: "bg-green-50"
-            }
+            { label: "Points", value: data.points?.toString() || "0", icon: TrendingUp, color: "text-orange-500", bgColor: "bg-orange-50" },
+            { label: "Badges", value: data.badges_earned?.toString() || "0", icon: Award, color: "text-purple-500", bgColor: "bg-purple-50" },
+            { label: "Sessions", value: data.sessions_attended?.toString() || "0", icon: Calendar, color: "text-blue-500", bgColor: "bg-blue-50" },
+            { label: "Rank", value: "#--", icon: Hash, color: "text-green-500", bgColor: "bg-green-50" }
           ];
 
-          // Parse skills if they're stored as JSON string or array
           let skills = [];
           if (data.skills) {
             try {
@@ -154,13 +129,9 @@ const UserProfile = () => {
           }
 
           setUserData(transformedUser);
+          setEditedData(transformedUser);
           setUserStats(stats);
           setUserSkills(skills);
-
-          // You can add additional data fetching here if needed
-          // await fetchUserActivity(user.id);
-          // await fetchUserAchievements(user.id);
-
         } else {
           setError("User profile not found");
         }
@@ -176,70 +147,129 @@ const UserProfile = () => {
     fetchUserData();
   }, []);
 
-  // Optional: Function to fetch user activity from additional tables
-  const fetchUserActivity = async (userId) => {
-    try {
-      // Example query for user activities - adjust based on your schema
-      const { data, error } = await supabase
-        .from('user_activities') // Assuming you have an activities table
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+  // Fetch colleges from API
+  useEffect(() => {
+    const fetchColleges = async () => {
+      if (collegeSearch.length < 3) {
+        setColleges([]);
+        setCollegeLoading(false);
+        return;
+      }
+      
+      try {
+        setCollegeLoading(true);
+        const response = await fetch('https://colleges-name-api.onrender.com/colleges/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'keyword': collegeSearch // Pass input keyword to header
+          },
+          body: JSON.stringify({}) // Empty body as keyword is now in header
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Extract only college names from the response
+        let collegeNames = [];
+        if (Array.isArray(data)) {
+          collegeNames = data.map(item => item[2]); // Extract college name from index 2
+        } else if (data.colleges && Array.isArray(data.colleges)) {
+          collegeNames = data.colleges.map(item => item[2]);
+        } else if (data.data && Array.isArray(data.data)) {
+          collegeNames = data.data.map(item => item[2]);
+        } else {
+          console.warn('Unexpected API response format:', data);
+          collegeNames = [];
+        }
 
+        setColleges(collegeNames);
+      } catch (err) {
+        console.error('Error fetching colleges:', err);
+        setColleges([]);
+        setError('Failed to fetch colleges. Please try again.');
+      } finally {
+        setCollegeLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchColleges, 300); // Debounce API calls
+    return () => clearTimeout(timeoutId);
+  }, [collegeSearch]);
+
+  const handleEditStart = () => {
+    setIsEditing(true);
+    setCollegeSearch(editedData.college || '');
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditedData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCollegeChange = (e) => {
+    const value = e.target.value;
+    setCollegeSearch(value);
+    setEditedData((prev) => ({ ...prev, college: value }));
+  };
+
+  const handleCollegeSelect = (collegeName) => {
+    setEditedData((prev) => ({ ...prev, college: collegeName }));
+    setCollegeSearch(collegeName);
+    setColleges([]);
+  };
+
+  const handleSave = async () => {
+    try {
+      const updateData = {
+        display_name: editedData.displayName,
+        phone_number: editedData.phoneNumber,
+        bio: editedData.bio,
+        college: editedData.college,
+        role: editedData.role,
+        github_url: editedData.githubUrl,
+        linkedin_url: editedData.linkedinUrl,
+        portfolio_url: editedData.portfolioUrl,
+        volunteering_hours: parseInt(editedData.volunteeringHours, 10) || 0
+      };
+      const { error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('uid', editedData.uid);
       if (error) throw error;
-      setUserActivity(data || []);
+      setUserData(editedData);
+      setIsEditing(false);
+      setColleges([]);
+      setCollegeSearch('');
     } catch (err) {
-      console.error('Error fetching user activity:', err);
+      console.error('Update error:', err);
+      setError(err.message);
     }
   };
 
-  // Optional: Function to fetch user achievements
-  const fetchUserAchievements = async (userId) => {
-    try {
-      // Example query for user badges/achievements - adjust based on your schema
-      const { data, error } = await supabase
-        .from('user_badges') // Assuming you have a badges table
-        .select('*')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      setUserAchievements({ badges: data || [], certificates: [] });
-    } catch (err) {
-      console.error('Error fetching user achievements:', err);
-    }
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedData({ ...userData });
+    setColleges([]);
+    setCollegeSearch('');
   };
 
-  // Mock data for demonstration - you can replace these with actual API calls
   const mockPersonalInfo = userData ? [
-    { label: "College", value: userData.college },
-    { label: "Role", value: userData.role },
-    { label: "Volunteering Hours", value: userData.volunteeringHours?.toString() || "0" },
-    { label: "Projects Completed", value: userData.projectsCompleted?.toString() || "0" }
+    { label: "College", value: userData.college, editable: true, type: "college" },
+    { label: "Role", value: userData.role, editable: true, type: "text" },
+    { label: "Volunteering Hours", value: userData.volunteeringHours?.toString() || "0", editable: true, type: "number" },
+    { label: "Projects Completed", value: userData.projectsCompleted?.toString() || "0", editable: false, type: "text" }
   ] : [];
 
   const socialLinks = userData ? [
-    { 
-      label: "GitHub Profile", 
-      icon: Github, 
-      href: userData.githubUrl || "#",
-      available: !!userData.githubUrl 
-    },
-    { 
-      label: "LinkedIn Profile", 
-      icon: Linkedin, 
-      href: userData.linkedinUrl || "#",
-      available: !!userData.linkedinUrl 
-    },
-    { 
-      label: "Portfolio Website", 
-      icon: Globe, 
-      href: userData.portfolioUrl || "#",
-      available: !!userData.portfolioUrl 
-    }
+    { label: "GitHub Profile", icon: Github, href: userData.githubUrl || "#", available: !!userData.githubUrl, name: "githubUrl" },
+    { label: "LinkedIn Profile", icon: Linkedin, href: userData.linkedinUrl || "#", available: !!userData.linkedinUrl, name: "linkedinUrl" },
+    { label: "Portfolio Website", icon: Globe, href: userData.portfolioUrl || "#", available: !!userData.portfolioUrl, name: "portfolioUrl" }
   ] : [];
 
-  // Mock activity data - replace with actual data from your activities table
   const mockRecentActivity = [
     { action: "Completed Machine Learning Workshop", time: "2 hours ago", type: "achievement" },
     { action: "Submitted Project: E-commerce Website", time: "1 day ago", type: "project" },
@@ -247,23 +277,19 @@ const UserProfile = () => {
     { action: "Attended React.js Study Session", time: "1 week ago", type: "session" }
   ];
 
-  // Mock skills data with proficiency levels
   const mockTechnicalSkills = userSkills.length > 0 ? 
     userSkills.slice(0, 5).map((skill, index) => ({
       skill: skill,
-      level: 90 - (index * 5), // Mock proficiency levels
+      level: 90 - (index * 5),
       color: ["bg-yellow-500", "bg-blue-500", "bg-green-500", "bg-green-600", "bg-purple-500"][index] || "bg-gray-500"
     })) : 
-    [
-      { skill: "No skills added", level: 0, color: "bg-gray-300" }
-    ];
+    [{ skill: "No skills added", level: 0, color: "bg-gray-300" }];
 
   const mockSoftSkills = [
     "Leadership", "Communication", "Team Work", "Problem Solving",
     "Critical Thinking", "Time Management", "Adaptability", "Creativity"
   ];
 
-  // Auth checking state
   if (authChecking) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -275,7 +301,6 @@ const UserProfile = () => {
     );
   }
 
-  // Unauthenticated state
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -294,7 +319,6 @@ const UserProfile = () => {
     );
   }
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -308,7 +332,6 @@ const UserProfile = () => {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -333,7 +356,7 @@ const UserProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Profile Header */}
+      {/* Header Section */}
       <div className="bg-white border-b">
         <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
@@ -352,44 +375,125 @@ const UserProfile = () => {
               )}
             </div>
             
-            {/* Profile Info */}
+            {/* User Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-3 mb-2">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-                  {userData.displayName}
-                </h1>
+                {isEditing ? (
+                  <input 
+                    type="text"
+                    name="displayName"
+                    value={editedData.displayName}
+                    onChange={handleInputChange}
+                    className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 border-b-2 border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
+                    placeholder="Enter display name"
+                  />
+                ) : (
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                    {userData.displayName}
+                  </h1>
+                )}
                 {userData.emailVerified && (
                   <span className="text-green-500 text-sm bg-green-50 px-2 py-1 rounded-full">
                     ✓ Verified
                   </span>
                 )}
+                {!isEditing ? (
+                  <button 
+                    onClick={handleEditStart}
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                    title="Edit profile"
+                  >
+                    <Edit className="w-5 h-5 text-gray-500 hover:text-blue-500" />
+                  </button>
+                ) : (
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={handleSave}
+                      className="p-1 hover:bg-green-100 rounded-full transition-colors"
+                      title="Save changes"
+                    >
+                      <Save className="w-5 h-5 text-green-500 hover:text-green-600" />
+                    </button>
+                    <button 
+                      onClick={handleCancel}
+                      className="p-1 hover:bg-red-100 rounded-full transition-colors"
+                      title="Cancel editing"
+                    >
+                      <XCircle className="w-5 h-5 text-red-500 hover:text-red-600" />
+                    </button>
+                  </div>
+                )}
               </div>
-              <p className="text-sm sm:text-base text-gray-600 mb-4 leading-relaxed">
-                {userData.bio}
-              </p>
+              
+              {/* Bio */}
+              {isEditing ? (
+                <textarea 
+                  name="bio"
+                  value={editedData.bio}
+                  onChange={handleInputChange}
+                  className="text-sm sm:text-base text-gray-600 mb-4 leading-relaxed w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  rows="3"
+                  placeholder="Tell us about yourself..."
+                />
+              ) : (
+                <p className="text-sm sm:text-base text-gray-600 mb-4 leading-relaxed">
+                  {userData.bio}
+                </p>
+              )}
               
               {/* Contact Info */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                {/* Email - Non-editable */}
                 <div className="flex items-center space-x-2">
                   <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <span className="truncate">{userData.email}</span>
                 </div>
-                {userData.phoneNumber && (
+                
+                {/* Phone */}
+                {isEditing ? (
+                  <div className="flex items-center space-x-2">
+                    <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <input 
+                      type="tel"
+                      name="phoneNumber"
+                      value={editedData.phoneNumber}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent flex-1"
+                      placeholder="Phone number"
+                    />
+                  </div>
+                ) : userData.phoneNumber && (
                   <div className="flex items-center space-x-2">
                     <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <span>{userData.phoneNumber}</span>
                   </div>
                 )}
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span>{userData.location}</span>
-                </div>
+                
+                {/* Location */}
+                {isEditing ? (
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <input 
+                      type="text"
+                      name="location"
+                      value={editedData.location}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent flex-1"
+                      placeholder="Location"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span>{userData.location}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
-
-        {/* Stats Cards */}
+        
+        {/* Stats Grid */}
         <div className="px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             {userStats && userStats.map((stat, index) => {
@@ -410,10 +514,9 @@ const UserProfile = () => {
             })}
           </div>
         </div>
-
-        {/* Tabs Navigation */}
+        
+        {/* Tabs */}
         <div className="px-3 sm:px-4 lg:px-6">
-          {/* Desktop Tabs */}
           <div className="hidden sm:flex space-x-8">
             {tabs.map((tab) => (
               <button
@@ -429,8 +532,6 @@ const UserProfile = () => {
               </button>
             ))}
           </div>
-
-          {/* Mobile Tabs */}
           <div className="sm:hidden">
             <select
               value={activeTab}
@@ -459,7 +560,68 @@ const UserProfile = () => {
                   {mockPersonalInfo.map((info, index) => (
                     <div key={index} className="flex flex-col sm:flex-row sm:justify-between py-2">
                       <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">{info.label}</span>
-                      <span className="text-sm text-gray-900 sm:text-right sm:max-w-xs">{info.value}</span>
+                      {isEditing && info.editable ? (
+                        <div className="sm:text-right sm:max-w-xs w-full">
+                          {info.type === "college" ? (
+                            <div className="relative">
+                              <input 
+                                type="text"
+                                value={collegeSearch}
+                                onChange={handleCollegeChange}
+                                className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full pr-8"
+                                placeholder="Search college (min 3 characters)..."
+                              />
+                              {collegeLoading && (
+                                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                                </div>
+                              )}
+                              {!collegeLoading && collegeSearch.length >= 3 && (
+                                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              )}
+                              {colleges.length > 0 && (
+                                <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1">
+                                  {colleges.map((college, i) => (
+                                    <button
+                                      key={i} 
+                                      onClick={() => handleCollegeSelect(college)}
+                                      className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                                    >
+                                      {college}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {collegeSearch.length >= 3 && colleges.length === 0 && !collegeLoading && (
+                                <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 p-4 text-center text-sm text-gray-500">
+                                  No colleges found
+                                </div>
+                              )}
+                            </div>
+                          ) : info.type === "number" ? (
+                            <input 
+                              type="number"
+                              name="volunteeringHours"
+                              value={editedData.volunteeringHours}
+                              onChange={handleInputChange}
+                              className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full"
+                              placeholder="Hours"
+                              min="0"
+                            />
+                          ) : (
+                            <input 
+                              type="text"
+                              name="role"
+                              value={editedData.role}
+                              onChange={handleInputChange}
+                              className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full"
+                              placeholder="Role"
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-900 sm:text-right sm:max-w-xs">{info.value}</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -483,12 +645,21 @@ const UserProfile = () => {
                           </div>
                           <span className="text-sm font-medium text-gray-700">{link.label}</span>
                         </div>
-                        {link.available ? (
+                        {isEditing ? (
+                          <input 
+                            type="url"
+                            name={link.name}
+                            value={editedData[link.name]}
+                            onChange={handleInputChange}
+                            className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 max-w-xs"
+                            placeholder="https://..."
+                          />
+                        ) : link.available ? (
                           <a 
                             href={link.href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
                           >
                             View
                           </a>
@@ -584,7 +755,6 @@ const UserProfile = () => {
 
         {activeTab === 'Achievements' && (
           <div className="space-y-6">
-            {/* Badges */}
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-4 sm:p-6 border-b">
                 <h3 className="text-lg font-semibold text-gray-900">Earned Badges</h3>
@@ -603,8 +773,6 @@ const UserProfile = () => {
                 </div>
               </div>
             </div>
-
-            {/* Certificates */}
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-4 sm:p-6 border-b">
                 <h3 className="text-lg font-semibold text-gray-900">Certifications</h3>
@@ -659,8 +827,6 @@ const UserProfile = () => {
           })}
         </div>
       </div>
-
-      {/* Mobile padding bottom to account for fixed nav */}
       <div className="h-20 sm:hidden"></div>
     </div>
   );

@@ -11,6 +11,7 @@
   };import React, { useState, useEffect } from 'react';
 import { Users, UserCheck, Calendar, TrendingUp, Search, Bell, Plus, BarChart3, Settings, MoreHorizontal, Check, X, Menu, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +26,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAdminData = async () => {
@@ -68,7 +70,7 @@ const Dashboard = () => {
         // Check if user is admin
         if (profileData?.role !== 'admin') {
           // Redirect non-admin users to student dashboard
-          window.location.href = '/dashboard';
+          window.location.href = '/';
           return;
         }
 
@@ -193,14 +195,7 @@ const Dashboard = () => {
       label: "View Analytics", 
       shortLabel: "Analytics", 
       color: "bg-purple-600 hover:bg-purple-700",
-      onClick: () => alert('Analytics page would open here')
-    },
-    { 
-      icon: TrendingUp, 
-      label: "Generate Report", 
-      shortLabel: "Report", 
-      color: "bg-orange-600 hover:bg-orange-700",
-      onClick: () => alert('Report generation would start here')
+      onClick: () => navigate('/analytics')
     }
   ];
 
