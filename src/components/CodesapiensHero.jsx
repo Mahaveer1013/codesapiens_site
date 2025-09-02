@@ -48,42 +48,16 @@ const CodeSapiensHero = () => {
   const upcomingEvents = [
     {
       id: 1,
-      title: "August Meetup 2025",
-      image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=600&fit=crop",
+      title: "September Meetup 2025",
+      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1756808600/WhatsApp_Image_2025-08-31_at_07.50.01_b61d2154_jymwvs.jpg",
       date: "August 2025",
-      time: "TBD",
-      location: "Mako IT Lab, Chennai, Tamil Nadu",
-      description: "First offline meetup of the year for students, devs, and tech enthusiasts to learn and network.",
+      time: "10:00 AM - 2:00 PM",
+      location: "ContentStack,  Velachery, Chennai, Tamil Nadu",
+      description: "Reserve your spot now at https://bento.me/codesapiens to join us for an exciting meetup filled with tech talks, networking, and hands-on workshops.",
       volunteersNeeded: [
         { role: "Event Coordination", count: 5, skills: "Organization, Communication" },
         { role: "Technical Support", count: 8, skills: "AV Equipment, Troubleshooting" },
         { role: "Registration Desk", count: 6, skills: "Customer Service, Attention to Detail" }
-      ]
-    },
-    {
-      id: 2,
-      title: "AI Engineering and Vibe Coding",
-      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=600&fit=crop",
-      date: "February 18, 2025",
-      time: "TBD",
-      location: "Rajalakshmi Engineering College, Chennai, Tamil Nadu",
-      description: "Workshop in collaboration with GDG on AI engineering and coding vibes.",
-      volunteersNeeded: [
-        { role: "Mentor Assistants", count: 4, skills: "AI, JavaScript, Python" },
-        { role: "Workshop Facilitators", count: 3, skills: "Teaching, Patience, Communication" }
-      ]
-    },
-    {
-      id: 3,
-      title: "Mentorship Programmes 2024",
-      image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop",
-      date: "Ongoing 2024-2025",
-      time: "Flexible",
-      location: "Online / Chennai, Tamil Nadu",
-      description: "Mentorship programs for students in tech and development.",
-      volunteersNeeded: [
-        { role: "Technical Mentors", count: 6, skills: "Flutter, React, AI/ML" },
-        { role: "Setup Assistance", count: 4, skills: "Problem Solving, Event Management" }
       ]
     }
   ];
@@ -427,7 +401,7 @@ const CodeSapiensHero = () => {
                       <img
                         src={event.image}
                         alt={event.title}
-                        className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-700"
+                        className="w-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
                     </div>
                   </div>
@@ -457,35 +431,8 @@ const CodeSapiensHero = () => {
                     </div>
                   </div>
                   
-                  {/* Volunteer Requirements */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-zinc-50 border border-zinc-200 p-6 rounded-md">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <UserPlus className="w-4 h-4 text-zinc-600" />
-                        <h4 className="text-sm font-light tracking-widest uppercase text-zinc-600">Volunteers</h4>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        {event.volunteersNeeded.map((volunteer, idx) => (
-                          <div key={idx} className="pb-3 border-b border-zinc-100 last:border-b-0 last:pb-0">
-                            <div className="flex justify-between items-start mb-1">
-                              <h5 className="font-light text-zinc-800 text-sm">{volunteer.role}</h5>
-                              <span className="text-xs text-zinc-500 bg-zinc-100 px-2 py-1 rounded">
-                                {volunteer.count}
-                              </span>
-                            </div>
-                            <p className="text-zinc-500 text-xs font-light">
-                              {volunteer.skills}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <a href="https://chat.whatsapp.com/Hk6NqyvuB6P49LuRmu8PqB" className="block w-full mt-4 py-2 border border-zinc-300 text-zinc-700 font-light tracking-widest uppercase text-xs hover:bg-zinc-900 hover:text-zinc-50 hover:border-zinc-900 transition-all duration-300 text-center">
-                        Apply
-                      </a>
-                    </div>
-                  </div>
+                 
+                
                 </div>
               </motion.div>
             ))}
