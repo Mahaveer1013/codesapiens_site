@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Github, Instagram, Linkedin, Twitter, Calendar, Users, Code, Award, Mail, Phone, MapPin, Clock, UserPlus, ArrowRight } from 'lucide-react';
+import { ChevronDown, Github, Instagram, Linkedin, Twitter, Calendar, Users, Code, Award, Mail, Phone, MapPin, Clock, UserPlus, ArrowRight, Youtube } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -64,14 +64,15 @@ const CodeSapiensHero = () => {
 
   // Sample volunteer photos (kept as placeholders)
   const volunteerPhotos = [
-    "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=400&fit=crop&face=center",
-    "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&face=center",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&face=center",
-    "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&face=center",
-    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&face=center",
-    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&face=center",
-    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&face=center",
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop&face=center"
+    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/2ABMHfqOsrpoL3OV-WhatsApp202025-08-312010.33.52_a8a27bbd_vzcgzq.jpg",
+    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/iAckgTxMcALuPbEx-IMG-20250112-WA0012_ym2grt.jpg",
+    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/4SrLYdwh0tpuLlkt-team_2.a2a0c6917be79e15dc29_wjosq7.jpg",
+    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/nLDGxnsr6bZkCx0A-team_3.d2fd9099126beb0b86a1_vxhpxo.jpg",
+    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/Tlgueu6loMYMKJMs-team_1.150894ea4376f6423091_vrf0fr.jpg",
+    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/5NmVUZRZI8sRCrZA-1735300455766_h8dhm2.jpg",
+    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997856/JWz1OvtKurqSRsC7-WhatsApp202025-08-312011.22.52_bff7c8bd_mrok7q.jpg",
+    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/3S8YnOu77Rt2wDJD-WhatsApp202025-08-312010.32.42_9b5cee10_puasao.jpg",
+    "https://res.cloudinary.com/dqudvximt/image/upload/v1756998060/q5tsA3KUOwgSOpIa-team_5.efc764325a5ffbaf1b6e_1_sidv9r.jpg"
   ];
 
   // Updated stats based on real data
@@ -221,13 +222,7 @@ const CodeSapiensHero = () => {
               <p className="text-lg font-light text-zinc-600 leading-relaxed mb-8">
                 Founded by Thiyaga B., CodeSapiens is a vibrant student community in Tamil Nadu with over 1,200 members, organizing technical meetups and webinars led by a 10-member student team.
               </p>
-              <button 
-                onClick={() => scrollToSection('events')}
-                className="inline-flex items-center space-x-3 text-zinc-700 font-light tracking-wide hover:text-zinc-900 transition-colors duration-300"
-              >
-                <span>About Us</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              
             </motion.div>
             <motion.div 
               className="relative"
@@ -474,7 +469,7 @@ const CodeSapiensHero = () => {
                     <img
                       src={photo}
                       alt={`Member ${index + 1}`}
-                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                      className="w-full h-full object-cover "
                     />
                   </div>
                 </div>
@@ -498,39 +493,22 @@ const CodeSapiensHero = () => {
             <div className="text-center mb-16">
               <span className="text-sm font-light tracking-widest uppercase text-zinc-400 mb-8 block">CodeSapiens</span>
               <h2 className="text-4xl lg:text-5xl font-extralight tracking-wide mb-8">
-                Collecting <span className="italic">Arts</span> since
+                Building  <span className="italic">Community</span> since
               </h2>
-              <div className="text-6xl lg:text-7xl font-extralight text-zinc-400 mb-12">©2024</div>
+              <div className="text-6xl lg:text-7xl font-extralight text-zinc-400 mb-12">©2017</div>
             </div>
 
             <div className="grid md:grid-cols-3 gap-12">
-              {/* Contact Info - Updated location */}
-              <div className="space-y-6">
-                <h3 className="text-xl font-light tracking-wide mb-6">Contact</h3>
-                <div className="space-y-4 text-sm font-light text-zinc-300">
-                  <div className="flex items-center space-x-3">
-                    <Mail className="w-4 h-4 text-zinc-500" />
-                    <span>contact@codesapiens.org</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Phone className="w-4 h-4 text-zinc-500" />
-                    <span>+91 7305591354</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <MapPin className="w-4 h-4 text-zinc-500" />
-                    <span>Chennai, Tamil Nadu</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Social Media - Updated real links */}
-              <div className="space-y-6">
+              <div className="space-y-6 mx-auto">
                 <h3 className="text-xl font-light tracking-wide mb-6">Follow</h3>
                 <div className="space-y-4">
                   {[
-                    { icon: Instagram, href: "https://www.instagram.com/codesapiens/", label: "Instagram" },
-                    { icon: Linkedin, href: "https://www.linkedin.com/company/codesapiens-community", label: "LinkedIn" },
-                    { icon: Twitter, href: "https://twitter.com/codesapiens_in", label: "Twitter" }
+                    { icon: Instagram, href: "https://www.instagram.com/codesapiens.in/", label: "Instagram" },
+                    { icon: Linkedin, href: "https://www.linkedin.com/company/codesapiens-community/posts/", label: "LinkedIn" },
+                    { icon: Twitter, href: "https://x.com/codesapiens_in", label: "Twitter" },
+                    { icon: Youtube, href: "https://youtube.com/@codesapiens-in?si=90EaPMYHcSZIHtMi", label: "Youtube" },
+                    { icon: Github, href: "https://github.com/Codesapiens-in", label: "Github" }
                   ].map((social, index) => {
                     const Icon = social.icon;
                     return (
@@ -544,21 +522,6 @@ const CodeSapiensHero = () => {
                       </a>
                     );
                   })}
-                </div>
-              </div>
-
-              {/* Newsletter */}
-              <div className="space-y-6">
-                <h3 className="text-xl font-light tracking-wide mb-6">Subscribe</h3>
-                <div className="space-y-4">
-                  <input
-                    type="email"
-                    placeholder="Email address"
-                    className="w-full bg-transparent border-b border-zinc-700 py-2 text-sm font-light text-zinc-50 placeholder-zinc-500 focus:border-zinc-400 focus:outline-none transition-colors duration-300"
-                  />
-                  <button className="text-sm font-light tracking-widest uppercase text-zinc-300 hover:text-zinc-50 transition-colors duration-300">
-                    Subscribe
-                  </button>
                 </div>
               </div>
             </div>
