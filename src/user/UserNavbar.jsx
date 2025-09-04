@@ -173,7 +173,7 @@ export default function UnifiedNavbar() {
       setIsProfileDropdownOpen(false);
       
       // Redirect to login or home page
-      window.location.href = '/login';
+      window.location.href = '/';
     } catch (err) {
       console.error('Sign out error:', err);
     }
@@ -397,21 +397,15 @@ export default function UnifiedNavbar() {
                 <User className="w-4 h-4 mr-2" />
                 Profile
               </button>
-              <button 
-                onClick={() => handleNavClick('/settings')}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Account Preferences
-              </button>
+              
             </>
           )}
-          <button 
+          {/* <button 
             onClick={() => handleNavClick('/help')}
             className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             Help & Support
-          </button>
+          </button> */}
           <div className="border-t border-gray-100 mt-2 pt-2">
             <button 
               onClick={handleSignOut}
@@ -601,12 +595,12 @@ export default function UnifiedNavbar() {
           <div className="flex items-center space-x-4 flex-shrink-0">
             {/* Notification Bell */}
             <div className="relative">
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+              {/* <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                 <Bell className="w-5 h-5" />
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs font-bold">{notificationCount}</span>
                 </span>
-              </button>
+              </button> */}
             </div>
 
             {/* User Profile Section */}
@@ -631,13 +625,13 @@ export default function UnifiedNavbar() {
               {renderProfileDropdown()}
             </div>
 
-            {/* Settings Icon */}
+            {/* Settings Icon
             <button 
               onClick={() => handleNavClick(isAdmin ? '/admin/settings' : '/settings')}
               className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <Settings className="w-5 h-5" />
-            </button>
+            </button> */}
 
             {/* Mobile Menu Button */}
             <button 

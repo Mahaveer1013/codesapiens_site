@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Globe, Github, Building, Eye, EyeOff, User, Phone, School, Mail, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
 export default function CodeSapiensPlatform() {
   const [mode, setMode] = useState('signIn'); // 'signIn' | 'signUp'
@@ -15,6 +16,7 @@ export default function CodeSapiensPlatform() {
     password: '',
   });
   const [profile, setProfile] = useState(null);
+  const navigate = useNavigate();
 
  useEffect(() => {
   const fetchProfile = async () => {
@@ -85,6 +87,7 @@ export default function CodeSapiensPlatform() {
           password: formData.password,
         });
         if (error) throw error;
+        navigate('/'); 
         setMessage('✅ Signed in!');
       }
     } catch (err) {
