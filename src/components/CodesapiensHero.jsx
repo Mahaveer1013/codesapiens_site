@@ -21,7 +21,7 @@ const CodeSapiensHero = () => {
     { 
       id: 2, 
       title: "July Meetup 2025", 
-      image: "https://creatorspace.imgix.net/users/cme79i2lk00qls401ar5qxqnc/dC8c5AeuyLulrDlu-WhatsApp%2520Image%25202025-08-18%2520at%252017.57.10_1135c6f6.jpg?w=750&h=750", 
+      image: "https://creatorspace.imgix.net/users/cme79i2lk00qls401ar5qxqnc/dC8c5AeuyLulrDlu-WhatsApp%2520Image%25202025-08-18%2520at%25252017.57.10_1135c6f6.jpg?w=750&h=750", 
       date: "July 2025", 
       description: "Online session introducing security concepts via Google hacking and CTFs.",
       participants: 44
@@ -62,17 +62,53 @@ const CodeSapiensHero = () => {
     }
   ];
 
-  // Sample volunteer photos (kept as placeholders)
-  const volunteerPhotos = [
-    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/2ABMHfqOsrpoL3OV-WhatsApp202025-08-312010.33.52_a8a27bbd_vzcgzq.jpg",
-    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/iAckgTxMcALuPbEx-IMG-20250112-WA0012_ym2grt.jpg",
-    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/4SrLYdwh0tpuLlkt-team_2.a2a0c6917be79e15dc29_wjosq7.jpg",
-    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/nLDGxnsr6bZkCx0A-team_3.d2fd9099126beb0b86a1_vxhpxo.jpg",
-    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/Tlgueu6loMYMKJMs-team_1.150894ea4376f6423091_vrf0fr.jpg",
-    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/5NmVUZRZI8sRCrZA-1735300455766_h8dhm2.jpg",
-    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997856/JWz1OvtKurqSRsC7-WhatsApp202025-08-312011.22.52_bff7c8bd_mrok7q.jpg",
-    "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/3S8YnOu77Rt2wDJD-WhatsApp202025-08-312010.32.42_9b5cee10_puasao.jpg",
-    "https://res.cloudinary.com/dqudvximt/image/upload/v1756998060/q5tsA3KUOwgSOpIa-team_5.efc764325a5ffbaf1b6e_1_sidv9r.jpg"
+  // Volunteers with photos, names, and separate LinkedIn links
+  const volunteers = [
+    {
+      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/2ABMHfqOsrpoL3OV-WhatsApp202025-08-312010.33.52_a8a27bbd_vzcgzq.jpg",
+      name: "Keerthana M G",
+      link: "https://in.linkedin.com/in/keerthana-m-g-12ba59256"
+    },
+    {
+      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/iAckgTxMcALuPbEx-IMG-20250112-WA0012_ym2grt.jpg",
+      name: "Mahaveer A",
+      link: "https://www.linkedin.com/in/mahaveer1013"
+    },
+    {
+      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/4SrLYdwh0tpuLlkt-team_2.a2a0c6917be79e15dc29_wjosq7.jpg",
+      name: "Justin Benito",
+      link: "https://www.linkedin.com/in/justinbenito"
+    },
+    {
+      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/nLDGxnsr6bZkCx0A-team_3.d2fd9099126beb0b86a1_vxhpxo.jpg",
+      name: "Koushik ram",
+      link: "https://www.linkedin.com/in/koushik-ram-118495239"
+    },
+    {
+      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/Tlgueu6loMYMKJMs-team_1.150894ea4376f6423091_vrf0fr.jpg",
+      name: "Athiram R S",
+      link: "https://www.linkedin.com/in/athi-ram-rs"
+    },
+    {
+      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/5NmVUZRZI8sRCrZA-1735300455766_h8dhm2.jpg",
+      name: "Pranav Vikraman",
+      link: "https://www.linkedin.com/in/pranav-vikraman-322020242"
+    },
+    {
+      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997856/JWz1OvtKurqSRsC7-WhatsApp202025-08-312011.22.52_bff7c8bd_mrok7q.jpg",
+      name: "Vignesh R",
+      link: "https://www.linkedin.com/in/vignesh-r-7727582b7"
+    },
+    {
+      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/3S8YnOu77Rt2wDJD-WhatsApp202025-08-312010.32.42_9b5cee10_puasao.jpg",
+      name: "Anand S",
+      link: "https://codesapiens-management-website.vercel.app"
+    },
+    {
+      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756998060/q5tsA3KUOwgSOpIa-team_5.efc764325a5ffbaf1b6e_1_sidv9r.jpg",
+      name: "Subhaharini P",
+      link: "https://www.linkedin.com/in/subhaharini-p-938568254"
+    }
   ];
 
   // Updated stats based on real data
@@ -119,8 +155,8 @@ const CodeSapiensHero = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-zinc-900 flex items-center justify-center rounded-full">
-                <Code className="w-4 h-4 text-zinc-50" />
+              <div className="w-10 h-10 flex items-center justify-center ">
+               <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1756797708/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz.jpg" alt="Logo" className="w-10 h-10 " />
               </div>
               <span className="text-xl font-light tracking-wider">CodeSapiens</span>
             </div>
@@ -458,21 +494,34 @@ const CodeSapiensHero = () => {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            {volunteerPhotos.map((photo, index) => (
+            {volunteers.map((volunteer, index) => (
               <motion.div
                 key={index}
                 variants={childVariants}
-                className="transform transition-all duration-700 hover:scale-105"
+                className="transform transition-all duration-700 hover:scale-105 cursor-pointer flex flex-col items-center"
+                onClick={() => window.open(volunteer.link, '_blank')}
               >
-                <div className="relative group">
-                  <div className="aspect-square overflow-hidden rounded-full shadow-md">
+                <div className="relative group mb-2">
+                  <div className="aspect-square overflow-hidden rounded-full shadow-md w-full max-w-[150px]">
                     <img
-                      src={photo}
-                      alt={`Member ${index + 1}`}
-                      className="w-full h-full object-cover "
+                      src={volunteer.photo}
+                      alt={volunteer.name}
+                      className="w-full h-full object-cover"
                     />
                   </div>
+                  <Linkedin 
+                    className="absolute bottom-1 right-1 w-5 h-5 sm:w-6 sm:h-6 text-white bg-blue-700 rounded-full p-1 opacity-80 group-hover:opacity-100 transition-opacity duration-300"
+                  />
                 </div>
+                <p className="text-center text-sm font-light text-zinc-900 mt-1">{volunteer.name}</p>
+                <a 
+                  href={volunteer.link} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-zinc-500 hover:text-zinc-700 transition-colors"
+                >
+                  View LinkedIn
+                </a>
               </motion.div>
             ))}
           </motion.div>
