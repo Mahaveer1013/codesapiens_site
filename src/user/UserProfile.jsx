@@ -4,7 +4,6 @@ import {
   Edit, 
   Mail, 
   Phone, 
-  MapPin, 
   TrendingUp, 
   Award, 
   Calendar, 
@@ -18,16 +17,21 @@ import {
   Trophy,
   Save,
   XCircle,
-  ChevronDown
+  ChevronDown,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import skillsList from '../assets/skills.json'; // Assuming the JSON is in the assets folder
 
 const UserProfile = () => {
   const [activeTab, setActiveTab] = useState('Overview');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [userActivity, setUserActivity] = useState([]);
   const [userSkills, setUserSkills] = useState([]);
+  const [newSkill, setNewSkill] = useState('');
+  const [editingSkillIndex, setEditingSkillIndex] = useState(null);
+  const [editingSkillValue, setEditingSkillValue] = useState('');
   const [userAchievements, setUserAchievements] = useState({ badges: [], certificates: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,6 +43,8 @@ const UserProfile = () => {
   const [collegeSearch, setCollegeSearch] = useState('');
   const [collegeLoading, setCollegeLoading] = useState(false);
   const [collegeError, setCollegeError] = useState(null);
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+  const [showEditSkillDropdown, setShowEditSkillDropdown] = useState(false);
 
   const tabs = ['Overview', 'Skills', 'Achievements', 'Activity'];
 
@@ -94,9 +100,7 @@ const UserProfile = () => {
             githubUrl: data.github_url || '',
             linkedinUrl: data.linkedin_url || '',
             portfolioUrl: data.portfolio_url || '',
-            location: 'Coimbatore, Tamil Nadu',
             volunteeringHours: data.volunteering_hours || 0,
-            projectsCompleted: 8,
             emailVerified: data.email_verified || user.email_confirmed_at !== null,
             phoneVerified: data.phone_verified || false,
             adminApproved: data.admin_approved || false,
@@ -164,7 +168,6 @@ const UserProfile = () => {
         
         const data = await response.json();
         
-        // Extract only college names from the response and trim them
         let collegeNames = [];
         if (Array.isArray(data)) {
           collegeNames = data.map(item => item[2].trim());
@@ -187,7 +190,7 @@ const UserProfile = () => {
       }
     };
 
-    const timeoutId = setTimeout(fetchColleges, 300); // Debounce API calls
+    const timeoutId = setTimeout(fetchColleges, 300);
     return () => clearTimeout(timeoutId);
   }, [collegeSearch]);
 
@@ -204,21 +207,79 @@ const UserProfile = () => {
   const handleCollegeChange = (e) => {
     const value = e.target.value;
     setCollegeSearch(value);
-    setCollegeError(null); // Clear error when typing
-  };
-
-  const handleCollegeSelect = (e, collegeName) => {
-    e.preventDefault(); // Prevent event propagation
-    e.stopPropagation(); // Stop event bubbling
-    const trimmedCollegeName = collegeName.trim(); // Remove any trailing spaces
-    setEditedData((prev) => ({ ...prev, college: trimmedCollegeName }));
-    setCollegeSearch(trimmedCollegeName);
-    setColleges([]); // Close dropdown
     setCollegeError(null);
   };
 
+  const handleCollegeSelect = (e, collegeName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const trimmedCollegeName = collegeName.trim();
+    setEditedData((prev) => ({ ...prev, college: trimmedCollegeName }));
+    setCollegeSearch(trimmedCollegeName);
+    setColleges([]);
+    setCollegeError(null);
+  };
+
+  const handleAddSkill = async () => {
+    if (!newSkill.trim() || !skillsList.skills.includes(newSkill.trim())) return;
+    const updatedSkills = [...userSkills, newSkill.trim()];
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ skills: updatedSkills })
+        .eq('uid', userData.uid);
+      if (error) throw error;
+      setUserSkills(updatedSkills);
+      setNewSkill('');
+      setShowSkillDropdown(false);
+    } catch (err) {
+      console.error('Error adding skill:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleEditSkill = (index) => {
+    setEditingSkillIndex(index);
+    setEditingSkillValue(userSkills[index]);
+    setShowEditSkillDropdown(true);
+  };
+
+  const handleSaveSkill = async (index) => {
+    if (!editingSkillValue.trim() || !skillsList.skills.includes(editingSkillValue.trim())) return;
+    const updatedSkills = [...userSkills];
+    updatedSkills[index] = editingSkillValue.trim();
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ skills: updatedSkills })
+        .eq('uid', userData.uid);
+      if (error) throw error;
+      setUserSkills(updatedSkills);
+      setEditingSkillIndex(null);
+      setEditingSkillValue('');
+      setShowEditSkillDropdown(false);
+    } catch (err) {
+      console.error('Error updating skill:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteSkill = async (index) => {
+    const updatedSkills = userSkills.filter((_, i) => i !== index);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ skills: updatedSkills })
+        .eq('uid', userData.uid);
+      if (error) throw error;
+      setUserSkills(updatedSkills);
+    } catch (err) {
+      console.error('Error deleting skill:', err);
+      setError(err.message);
+    }
+  };
+
   const handleSave = async () => {
-    // Validate college name
     if (editedData.college && !colleges.includes(editedData.college) && collegeSearch.length >= 3) {
       setCollegeError('Please select a college from the dropdown.');
       return;
@@ -258,13 +319,16 @@ const UserProfile = () => {
     setColleges([]);
     setCollegeSearch('');
     setCollegeError(null);
+    setEditingSkillIndex(null);
+    setEditingSkillValue('');
+    setShowSkillDropdown(false);
+    setShowEditSkillDropdown(false);
   };
 
-  const mockPersonalInfo = userData ? [
+  const personalInfo = userData ? [
     { label: "College", value: userData.college, editable: true, type: "college" },
     { label: "Role", value: userData.role, editable: true, type: "text" },
-    { label: "Volunteering Hours", value: userData.volunteeringHours?.toString() || "0", editable: true, type: "number" },
-    { label: "Projects Completed", value: userData.projectsCompleted?.toString() || "0", editable: false, type: "text" }
+    { label: "Volunteering Hours", value: userData.volunteeringHours?.toString() || "0", editable: true, type: "number" }
   ] : [];
 
   const socialLinks = userData ? [
@@ -273,25 +337,13 @@ const UserProfile = () => {
     { label: "Portfolio Website", icon: Globe, href: userData.portfolioUrl || "#", available: !!userData.portfolioUrl, name: "portfolioUrl" }
   ] : [];
 
-  const mockRecentActivity = [
-    { action: "Completed Machine Learning Workshop", time: "2 hours ago", type: "achievement" },
-    { action: "Submitted Project: E-commerce Website", time: "1 day ago", type: "project" },
-    { action: "Earned JavaScript Certification Badge", time: "3 days ago", type: "badge" },
-    { action: "Attended React.js Study Session", time: "1 week ago", type: "session" }
-  ];
-
-  const mockTechnicalSkills = userSkills.length > 0 ? 
+  const technicalSkills = userSkills.length > 0 ? 
     userSkills.slice(0, 5).map((skill, index) => ({
-      skill: skill,
+      skill,
       level: 90 - (index * 5),
       color: ["bg-yellow-500", "bg-blue-500", "bg-green-500", "bg-green-600", "bg-purple-500"][index] || "bg-gray-500"
     })) : 
     [{ skill: "No skills added", level: 0, color: "bg-gray-300" }];
-
-  const mockSoftSkills = [
-    "Leadership", "Communication", "Team Work", "Problem Solving",
-    "Critical Thinking", "Time Management", "Adaptability", "Creativity"
-  ];
 
   if (authChecking) {
     return (
@@ -445,8 +497,8 @@ const UserProfile = () => {
               )}
               
               {/* Contact Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                {/* Email - Non-editable */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                {/* Email */}
                 <div className="flex items-center space-x-2">
                   <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <span className="truncate">{userData.email}</span>
@@ -469,26 +521,6 @@ const UserProfile = () => {
                   <div className="flex items-center space-x-2">
                     <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <span>{userData.phoneNumber}</span>
-                  </div>
-                )}
-                
-                {/* Location */}
-                {isEditing ? (
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <input 
-                      type="text"
-                      name="location"
-                      value={editedData.location}
-                      onChange={handleInputChange}
-                      className="border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent flex-1"
-                      placeholder="Location"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <span>{userData.location}</span>
                   </div>
                 )}
               </div>
@@ -538,7 +570,7 @@ const UserProfile = () => {
               </div>
               <div className="p-4 sm:p-6">
                 <div className="space-y-4">
-                  {mockPersonalInfo.map((info, index) => (
+                  {personalInfo.map((info, index) => (
                     <div key={index} className="flex flex-col sm:flex-row sm:justify-between py-2">
                       <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">{info.label}</span>
                       {isEditing && info.editable ? (
@@ -671,11 +703,64 @@ const UserProfile = () => {
               <div className="p-4 sm:p-6">
                 {userSkills.length > 0 ? (
                   <div className="space-y-4">
-                    {mockTechnicalSkills.map((item, index) => (
+                    {technicalSkills.map((item, index) => (
                       <div key={index} className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-gray-700">{item.skill}</span>
-                          <span className="text-sm text-gray-500">{item.level}%</span>
+                          {editingSkillIndex === index ? (
+                            <div className="flex items-center space-x-2 w-full relative">
+                              <select
+                                value={editingSkillValue}
+                                onChange={(e) => setEditingSkillValue(e.target.value)}
+                                className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 flex-1 pr-8"
+                                onFocus={() => setShowEditSkillDropdown(true)}
+                              >
+                                <option value="">Select a skill</option>
+                                {skillsList.skills.map((skill, i) => (
+                                  <option key={i} value={skill}>{skill}</option>
+                                ))}
+                              </select>
+                              {showEditSkillDropdown && (
+                                <ChevronDown className="absolute right-10 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              )}
+                              <button
+                                onClick={() => handleSaveSkill(index)}
+                                className="p-1 hover:bg-green-100 rounded-full transition-colors"
+                                title="Save skill"
+                              >
+                                <Save className="w-5 h-5 text-green-500 hover:text-green-600" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingSkillIndex(null);
+                                  setShowEditSkillDropdown(false);
+                                }}
+                                className="p-1 hover:bg-red-100 rounded-full transition-colors"
+                                title="Cancel editing"
+                              >
+                                <XCircle className="w-5 h-5 text-red-500 hover:text-red-600" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-sm font-medium text-gray-700">{item.skill}</span>
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleEditSkill(index)}
+                                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                  title="Edit skill"
+                                >
+                                  <Edit className="w-4 h-4 text-gray-500 hover:text-blue-500" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSkill(index)}
+                                  className="p-1 hover:bg-red-100 rounded-full transition-colors"
+                                  title="Delete skill"
+                                >
+                                  <Trash2 className="w-4 h-4 text-red-500 hover:text-red-600" />
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div 
@@ -689,26 +774,31 @@ const UserProfile = () => {
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-gray-500 mb-4">No technical skills added yet</p>
-                    <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                      Add Skills
-                    </button>
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Soft Skills */}
-            <div className="bg-white rounded-lg shadow-sm border">
-              <div className="p-4 sm:p-6 border-b">
-                <h3 className="text-lg font-semibold text-gray-900">Soft Skills</h3>
-              </div>
-              <div className="p-4 sm:p-6">
-                <div className="grid grid-cols-2 gap-3">
-                  {mockSoftSkills.map((skill, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg p-3 text-center">
-                      <span className="text-sm font-medium text-gray-700">{skill}</span>
-                    </div>
-                  ))}
+                <div className="mt-6 flex items-center space-x-2 relative">
+                  <select
+                    value={newSkill}
+                    onChange={(e) => setNewSkill(e.target.value)}
+                    className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 flex-1 pr-8"
+                    onFocus={() => setShowSkillDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowSkillDropdown(false), 200)}
+                  >
+                    <option value="">Select a skill</option>
+                    {skillsList.skills.map((skill, i) => (
+                      <option key={i} value={skill}>{skill}</option>
+                    ))}
+                  </select>
+                  {showSkillDropdown && (
+                    <ChevronDown className="absolute right-10 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  )}
+                  <button
+                    onClick={handleAddSkill}
+                    className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center"
+                    title="Add skill"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
             </div>
