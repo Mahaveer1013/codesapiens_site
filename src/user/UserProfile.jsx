@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import skillsList from '../assets/skills.json'; // Assuming the JSON is in the assets folder
+import academicData from '../assets/academic.json'; // Load academic.json for majors and departments
 
 const UserProfile = () => {
   const [activeTab, setActiveTab] = useState('Overview');
@@ -336,8 +337,8 @@ const UserProfile = () => {
     { label: "Role", value: userData.role, editable: true, type: "text" },
     { label: "Volunteering Hours", value: userData.volunteeringHours?.toString() || "0", editable: true, type: "number" },
     { label: "Year", value: userData.year, editable: true, type: "text" },
-    { label: "Major", value: userData.major, editable: true, type: "text" },
-    { label: "Department", value: userData.department, editable: true, type: "text" }
+    { label: "Major", value: userData.major, editable: true, type: "dropdown", options: academicData.majors },
+    { label: "Department", value: userData.department, editable: true, type: "dropdown", options: academicData.departments }
   ] : [];
 
   const socialLinks = userData ? [
@@ -583,7 +584,7 @@ const UserProfile = () => {
                     <div key={index} className="flex flex-col sm:flex-row sm:justify-between py-2">
                       <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">{info.label}</span>
                       {isEditing && info.editable ? (
-                        <div className="sm:text-right sm:max-w-xs w-full">
+                        <div className="sm:text-right sm:max-w-xs w-full relative">
                           {info.type === "college" ? (
                             <div className="relative">
                               <input 
@@ -635,6 +636,21 @@ const UserProfile = () => {
                               placeholder="Hours"
                               min="0"
                             />
+                          ) : info.type === "dropdown" ? (
+                            <div className="relative">
+                              <select
+                                name={info.label.toLowerCase()}
+                                value={editedData[info.label.toLowerCase()]}
+                                onChange={handleInputChange}
+                                className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full pr-8 appearance-none"
+                              >
+                                <option value="Not specified">Select {info.label}</option>
+                                {info.options.map((option, i) => (
+                                  <option key={i} value={option}>{option}</option>
+                                ))}
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            </div>
                           ) : (
                             <input 
                               type="text"

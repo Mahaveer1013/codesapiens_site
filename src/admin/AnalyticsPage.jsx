@@ -22,6 +22,9 @@ import {
   Filter,
   RefreshCw,
   AlertCircle,
+  Calendar,
+  Building,
+  GraduationCap,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 
@@ -75,6 +78,9 @@ export default function AnalyticsPage() {
     studentGrowth: [],
     collegeDistribution: [],
     skillsPopularity: [],
+    yearDistribution: [],
+    departmentDistribution: [],
+    majorDistribution: [],
   });
 
   useEffect(() => {
@@ -183,6 +189,45 @@ export default function AnalyticsPage() {
         color: colors[index % colors.length],
       }));
 
+      // Calculate year distribution
+      const yearMap = {};
+      users?.forEach((user) => {
+        const year = user.year?.toString() || "Not Specified";
+        yearMap[year] = (yearMap[year] || 0) + 1;
+      });
+
+      const yearDistribution = Object.entries(yearMap).map(([name, value], index) => ({
+        name,
+        value,
+        color: colors[index % colors.length],
+      }));
+
+      // Calculate department distribution
+      const departmentMap = {};
+      users?.forEach((user) => {
+        const department = user.department || "Not Specified";
+        departmentMap[department] = (departmentMap[department] || 0) + 1;
+      });
+
+      const departmentDistribution = Object.entries(departmentMap).map(([name, value], index) => ({
+        name,
+        value,
+        color: colors[index % colors.length],
+      }));
+
+      // Calculate major distribution
+      const majorMap = {};
+      users?.forEach((user) => {
+        const major = user.major || "Not Specified";
+        majorMap[major] = (majorMap[major] || 0) + 1;
+      });
+
+      const majorDistribution = Object.entries(majorMap).map(([name, value], index) => ({
+        name,
+        value,
+        color: colors[index % colors.length],
+      }));
+
       // Calculate skills popularity
       const skillsMap = {};
       users?.forEach((user) => {
@@ -207,6 +252,9 @@ export default function AnalyticsPage() {
         },
         studentGrowth,
         collegeDistribution,
+        yearDistribution,
+        departmentDistribution,
+        majorDistribution,
         skillsPopularity,
       });
     } catch (err) {
@@ -357,7 +405,7 @@ export default function AnalyticsPage() {
               {overviewCards.map((card, index) => (
                 <div
                   key={index}
-                  className={`${card.bgColor} rounded-xl p-4 sm:p-6 bordering-gray-200 transition-shadow hover:shadow-md`}
+                  className={`${card.bgColor} rounded-xl p-4 sm:p-6 border border-gray-200 transition-shadow hover:shadow-md`}
                   role="region"
                   aria-label={`${card.title} overview`}
                 >
@@ -470,6 +518,123 @@ export default function AnalyticsPage() {
                 )}
               </div>
 
+              {/* Year Distribution */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">Year Distribution</h2>
+                  <Calendar className="w-5 h-5 text-orange-500" />
+                </div>
+                {analyticsData.yearDistribution.length > 0 ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={analyticsData.yearDistribution}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          dataKey="value"
+                          label={({ name, value }) => `${name}: ${value}`}
+                        >
+                          {analyticsData.yearDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#fff",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "8px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-gray-500">
+                    No year data available
+                  </div>
+                )}
+              </div>
+
+              {/* Department Distribution */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">Department Distribution</h2>
+                  <Building className="w-5 h-5 text-teal-500" />
+                </div>
+                {analyticsData.departmentDistribution.length > 0 ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={analyticsData.departmentDistribution}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          dataKey="value"
+                          label={({ name, value }) => `${name}: ${value}`}
+                        >
+                          {analyticsData.departmentDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#fff",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "8px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-gray-500">
+                    No department data available
+                  </div>
+                )}
+              </div>
+
+              {/* Major Distribution */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">Major Distribution</h2>
+                  <GraduationCap className="w-5 h-5 text-purple-500" />
+                </div>
+                {analyticsData.majorDistribution.length > 0 ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={analyticsData.majorDistribution}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          dataKey="value"
+                          label={({ name, value }) => `${name}: ${value}`}
+                        >
+                          {analyticsData.majorDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#fff",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "8px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-gray-500">
+                    No major data available
+                  </div>
+                )}
+              </div>
+
               {/* Skills Popularity */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -514,7 +679,7 @@ export default function AnalyticsPage() {
 
             {/* Summary Insights */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex-casual">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                 <BookOpen className="w-5 h-5 text-yellow-500 mr-2" />
                 Key Insights
               </h2>
@@ -546,6 +711,30 @@ export default function AnalyticsPage() {
                       : "No skills data available yet"}
                   </p>
                 </div>
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-orange-900 mb-2">Top Year</h3>
+                  <p className="text-orange-700 text-sm">
+                    {analyticsData.yearDistribution.length > 0
+                      ? `Year ${analyticsData.yearDistribution[0]?.name || "Not Specified"} has the most students`
+                      : "No year data available yet"}
+                  </p>
+                </div>
+                <div className="bg-teal-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-teal-900 mb-2">Top Department</h3>
+                  <p className="text-teal-700 text-sm">
+                    {analyticsData.departmentDistribution.length > 0
+                      ? `${analyticsData.departmentDistribution[0]?.name || "Not Specified"} is the most common department`
+                      : "No department data available yet"}
+                  </p>
+                </div>
+                <div className="bg-indigo-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-indigo-900 mb-2">Top Major</h3>
+                  <p className="text-indigo-700 text-sm">
+                    {analyticsData.majorDistribution.length > 0
+                      ? `${analyticsData.majorDistribution[0]?.name || "Not Specified"} is the most popular major`
+                      : "No major data available yet"}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -558,6 +747,7 @@ export default function AnalyticsPage() {
                   <ul className="text-sm text-yellow-700 space-y-1">
                     <li>• User data is fetched from Supabase users table</li>
                     <li>• Growth calculations are based on available data</li>
+                    <li>• Year, department, and major distributions included</li>
                   </ul>
                 </div>
               </div>
