@@ -1,15 +1,5 @@
-// Handle add student
-  const handleAddStudent = () => {
-    // In a real app, this would open a modal or navigate to add student page
-    alert('Add Student functionality would be implemented here');
-  };
-
-  // Handle send notice
-  const handleSendNotice = () => {
-    // In a real app, this would open a notice composition modal
-    alert('Send Notice functionality would be implemented here');
-  };import React, { useState, useEffect } from 'react';
-import { Users, UserCheck, Calendar, TrendingUp, Search, Bell, Plus, BarChart3, Settings, MoreHorizontal, Check, X, Menu, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Search, BarChart3, Loader2, X } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
@@ -91,20 +81,6 @@ const Dashboard = () => {
         }
 
         // Skip events fetching for now since table doesn't exist
-        // TODO: Create events table in Supabase and uncomment this section
-        /*
-        const { data: eventsData, error: eventsError } = await supabase
-          .from('events')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (eventsError) {
-          console.error('Error fetching events:', eventsError);
-          setEvents([]);
-        } else {
-          setEvents(eventsData || []);
-        }
-        */
         setEvents([]); // Set empty array for now
 
         // Transform students data
@@ -163,20 +139,13 @@ const Dashboard = () => {
     return `${Math.floor(diffInSeconds / 604800)}w ago`;
   };
 
-  // Handle student approval - removed functionality
-  const handleStudentApproval = async (studentId, approve) => {
-    // Functionality removed as requested
-  };
-
   // Handle add student
   const handleAddStudent = () => {
-    // In a real app, this would open a modal or navigate to add student page
     alert('Add Student functionality would be implemented here');
   };
 
   // Handle send notice
   const handleSendNotice = () => {
-    // In a real app, this would open a notice composition modal
     alert('Send Notice functionality would be implemented here');
   };
 
@@ -330,7 +299,7 @@ const Dashboard = () => {
                       {filteredStudents.length}
                     </span>
                   </div>
-                  <button className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors w-full sm:w-auto" onClick={()=> navigate('/user-list')}>
+                  <button className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors w-full sm:w-auto" onClick={() => navigate('/user-list')}>
                     + View All Students
                   </button>
                 </div>
@@ -406,26 +375,6 @@ const Dashboard = () => {
                                     )}
                                   </div>
                                 )}
-                              </div>
-                              <div className="flex items-center justify-between sm:justify-end mt-2 sm:mt-0 sm:ml-4">
-                                <div className="flex items-center space-x-2">
-                                  <div className={`w-2 h-2 rounded-full ${
-                                    student.status === 'active' ? 'bg-green-500' : 'bg-gray-400'
-                                  }`}></div>
-                                  <span className="text-xs text-gray-500 sm:hidden">{student.lastSeen}</span>
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium hidden sm:inline ${
-                                    student.status === 'active' 
-                                      ? 'bg-green-100 text-green-800' 
-                                      : 'bg-gray-100 text-gray-800'
-                                  }`}>
-                                    {student.adminApproved ? 'Active' : 'Inactive'}
-                                  </span>
-                                </div>
-                                <div className="flex space-x-1">
-                                  <button className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors">
-                                    <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4" />
-                                  </button>
-                                </div>
                               </div>
                             </div>
                           </div>

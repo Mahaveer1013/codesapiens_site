@@ -57,6 +57,9 @@ const AllUserList = () => {
           adminApproved: user.admin_approved || false,
           createdAt: user.created_at,
           updatedAt: user.updated_at,
+          major: user.major || 'Not specified',
+          department: user.department || 'Not specified',
+          year: user.year || 'Not specified',
           skills: Array.isArray(user.skills) ? user.skills : typeof user.skills === 'string' ? JSON.parse(user.skills) : []
         }));
 
@@ -390,6 +393,18 @@ const AllUserList = () => {
                       <div className="flex flex-col sm:flex-row sm:justify-between py-2">
                         <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Role</span>
                         <span className="text-sm text-gray-900">{selectedUser.role}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
+                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Major</span>
+                        <span className="text-sm text-gray-900">{selectedUser.major}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
+                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Department</span>
+                        <span className="text-sm text-gray-900">{selectedUser.department}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
+                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Year</span>
+                        <span className="text-sm text-gray-900">{selectedUser.year}</span>
                       </div>
                       <div className="flex flex-col sm:flex-row sm:justify-between py-2">
                         <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Volunteering Hours</span>
