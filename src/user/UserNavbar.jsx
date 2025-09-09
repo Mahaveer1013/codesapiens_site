@@ -17,6 +17,29 @@ export default function UnifiedNavbar() {
   const profileDropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
+  // Function to fetch all user emails
+  const fetchAllUserEmails = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('email');
+
+      if (error) {
+        console.error('Error fetching user emails:', error.message);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const emails = data.map(user => user.email);
+        console.log('User emails:', emails);
+      } else {
+        console.log('No user emails found in the database');
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching user emails:', err.message);
+    }
+  };
+
   // Fetch user data using Supabase
   useEffect(() => {
     const fetchUserData = async () => {
@@ -80,6 +103,9 @@ export default function UnifiedNavbar() {
         };
 
         setUserData(transformedUser);
+
+        // Fetch all user emails after fetching user data
+        await fetchAllUserEmails();
 
       } catch (err) {
         setError(err.message);
@@ -589,7 +615,7 @@ export default function UnifiedNavbar() {
           {renderLogo()}
 
           {/* Desktop Navigation - Centered */}
-         
+          {renderDesktopNavigation()}
 
           {/* Right Section */}
           <div className="flex items-center space-x-4 flex-shrink-0">
