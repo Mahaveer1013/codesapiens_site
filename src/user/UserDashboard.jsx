@@ -40,7 +40,11 @@ export default function UserDashboard() {
         setIsAuthenticated(true);
 
         // Fetch user profile from the users table
-        const { data, error: profileError } = await supabase.auth.getUser();
+        const { data, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('uid', user.id)
+          .single();
 
         console.log('Fetched profile:', data, profileError);
 
@@ -105,7 +109,7 @@ export default function UserDashboard() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Verifying authentication...</p>
+            <p className="text-gray-600">Loading...</p>
           </div>
         </div>
       )}

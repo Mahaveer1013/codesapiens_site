@@ -21,6 +21,7 @@ export default function UnifiedNavbar() {
   const fetchAllUserEmails = async () => {
     try {
       const { data, error } = await supabase.auth.getUser();
+      console.log('Current user:', data?.user || 'No user logged in');
 
       if (error) {
         console.error('Error fetching user emails:', error.message);

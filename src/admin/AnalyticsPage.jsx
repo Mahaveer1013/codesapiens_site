@@ -240,8 +240,7 @@ export default function AnalyticsPage() {
 
       const skillsPopularity = Object.entries(skillsMap)
         .map(([skill, count]) => ({ skill, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 6);
+        .sort((a, b) => b.count - a.count);
 
       setAnalyticsData({
         overview: {
@@ -298,6 +297,85 @@ export default function AnalyticsPage() {
     return `${growth >= 0 ? "+" : ""}${growth.toFixed(1)}%`;
   };
 
+  const totalStudents = analyticsData.overview.totalStudents;
+
+  const renderDistributionLegend = (data, title) => {
+    if (data.length === 0) return null;
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+    return (
+      <div className="mt-4">
+        <h3 className="text-sm font-medium text-gray-600 mb-2">{title}</h3>
+        <ul className="space-y-2 max-h-32 overflow-y-auto">
+          {data.map((item) => {
+            const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+            return (
+              <li key={item.name} className="flex justify-between items-center text-xs">
+                <span className="flex items-center">
+                  <span
+                    className="w-2 h-2 rounded-full mr-2 flex-shrink-0"
+                    style={{ backgroundColor: item.color }}
+                  ></span>
+                  {item.name}
+                </span>
+                <span className="font-medium">
+                  {item.value} ({percentage}%)
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  };
+
+  const renderSkillsLegend = (data, title) => {
+    if (data.length === 0) return null;
+    const totalMentions = data.reduce((sum, item) => sum + item.count, 0);
+    return (
+      <div className="mt-4">
+        <h3 className="text-sm font-medium text-gray-600 mb-2">{title}</h3>
+        <ul className="space-y-2 max-h-48 overflow-y-auto">
+          {data.map((item, index) => {
+            const percentage = totalMentions > 0 ? ((item.count / totalMentions) * 100).toFixed(1) : 0;
+            const color = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#F97316"][index % 6];
+            return (
+              <li key={item.skill} className="flex justify-between items-center text-xs">
+                <span className="flex items-center">
+                  <span
+                    className="w-2 h-2 rounded-full mr-2 flex-shrink-0"
+                    style={{ backgroundColor: color }}
+                  ></span>
+                  <span className="truncate flex-1">{item.skill}</span>
+                </span>
+                <span className="font-medium ml-2">
+                  {item.count} ({percentage}%)
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  };
+
+  const renderGrowthSummary = () => {
+    const latest = analyticsData.studentGrowth[analyticsData.studentGrowth.length - 1];
+    if (!latest) return null;
+    return (
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <h3 className="text-sm font-medium text-gray-600 mb-2">Latest Period Summary</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="text-gray-500">Total Students:</span> <span className="font-medium">{latest.students.toLocaleString()}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Active Students:</span> <span className="font-medium">{latest.active.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const overviewCards = [
     {
       title: "Total Students",
@@ -348,7 +426,7 @@ export default function AnalyticsPage() {
                     Insights and metrics for your student community
                   </p>
                 </div>
-                <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+                <div className="flex items-center space-x-3 mt-4 sm:mt-0 flex-wrap">
                   <div className="relative">
                     <Filter className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
                     <select
@@ -432,46 +510,49 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Charts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
               {/* Student Growth Chart */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:col-span-2 xl:col-span-3">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-gray-900">Student Growth</h2>
                   <UserCheck className="w-5 h-5 text-green-500" />
                 </div>
                 {analyticsData.studentGrowth.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={analyticsData.studentGrowth}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="period" />
-                        <YAxis />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "8px",
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="students"
-                          stroke="#3B82F6"
-                          fill="#93C5FD"
-                          fillOpacity={0.3}
-                          name="Total Students"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="active"
-                          stroke="#10B981"
-                          fill="#6EE7B7"
-                          fillOpacity={0.3}
-                          name="Active Students"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <>
+                    <div className="h-64 md:h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={analyticsData.studentGrowth}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="period" />
+                          <YAxis />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#fff",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "8px",
+                            }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="students"
+                            stroke="#3B82F6"
+                            fill="#93C5FD"
+                            fillOpacity={0.3}
+                            name="Total Students"
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="active"
+                            stroke="#10B981"
+                            fill="#6EE7B7"
+                            fillOpacity={0.3}
+                            name="Active Students"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {renderGrowthSummary()}
+                  </>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-gray-500">
                     No growth data available
@@ -486,31 +567,33 @@ export default function AnalyticsPage() {
                   <School className="w-5 h-5 text-blue-500" />
                 </div>
                 {analyticsData.collegeDistribution.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={analyticsData.collegeDistribution}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}`}
-                        >
-                          {analyticsData.collegeDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "8px",
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <>
+                    <div className="h-48 md:h-56 flex justify-center">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={analyticsData.collegeDistribution}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={60}
+                            dataKey="value"
+                          >
+                            {analyticsData.collegeDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#fff",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "8px",
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {renderDistributionLegend(analyticsData.collegeDistribution, "Colleges (Total: " + totalStudents.toLocaleString() + ")")}
+                  </>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-gray-500">
                     No college data available
@@ -525,31 +608,33 @@ export default function AnalyticsPage() {
                   <Calendar className="w-5 h-5 text-orange-500" />
                 </div>
                 {analyticsData.yearDistribution.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={analyticsData.yearDistribution}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}`}
-                        >
-                          {analyticsData.yearDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "8px",
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <>
+                    <div className="h-48 md:h-56 flex justify-center">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={analyticsData.yearDistribution}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={60}
+                            dataKey="value"
+                          >
+                            {analyticsData.yearDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#fff",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "8px",
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {renderDistributionLegend(analyticsData.yearDistribution, "Years (Total: " + totalStudents.toLocaleString() + ")")}
+                  </>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-gray-500">
                     No year data available
@@ -564,31 +649,33 @@ export default function AnalyticsPage() {
                   <Building className="w-5 h-5 text-teal-500" />
                 </div>
                 {analyticsData.departmentDistribution.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={analyticsData.departmentDistribution}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}`}
-                        >
-                          {analyticsData.departmentDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "8px",
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <>
+                    <div className="h-48 md:h-56 flex justify-center">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={analyticsData.departmentDistribution}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={60}
+                            dataKey="value"
+                          >
+                            {analyticsData.departmentDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#fff",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "8px",
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {renderDistributionLegend(analyticsData.departmentDistribution, "Departments (Total: " + totalStudents.toLocaleString() + ")")}
+                  </>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-gray-500">
                     No department data available
@@ -603,31 +690,33 @@ export default function AnalyticsPage() {
                   <GraduationCap className="w-5 h-5 text-purple-500" />
                 </div>
                 {analyticsData.majorDistribution.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={analyticsData.majorDistribution}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}`}
-                        >
-                          {analyticsData.majorDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "8px",
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <>
+                    <div className="h-48 md:h-56 flex justify-center">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={analyticsData.majorDistribution}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={60}
+                            dataKey="value"
+                          >
+                            {analyticsData.majorDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#fff",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "8px",
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {renderDistributionLegend(analyticsData.majorDistribution, "Majors (Total: " + totalStudents.toLocaleString() + ")")}
+                  </>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-gray-500">
                     No major data available
@@ -636,39 +725,42 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Skills Popularity */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:col-span-2 xl:col-span-3">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-gray-900">Popular Skills</h2>
                   <BookOpen className="w-5 h-5 text-purple-500" />
                 </div>
                 {analyticsData.skillsPopularity.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={analyticsData.skillsPopularity}
-                        margin={{ top: 5, right: 20, left: 10, bottom: 60 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="skill"
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                          interval={0}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <YAxis />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "8px",
-                          }}
-                        />
-                        <Bar dataKey="count" fill="#8B5CF6" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <>
+                    <div className="h-64 md:h-72 lg:h-96">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={analyticsData.skillsPopularity}
+                          margin={{ top: 5, right: 20, left: 10, bottom: 80 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="skill"
+                            angle={-45}
+                            textAnchor="end"
+                            height={90}
+                            interval={0}
+                            tick={{ fontSize: 10 }}
+                          />
+                          <YAxis />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#fff",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "8px",
+                            }}
+                          />
+                          <Bar dataKey="count" fill="#8B5CF6" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {renderSkillsLegend(analyticsData.skillsPopularity, "All Skills Mentions (Total: " + analyticsData.skillsPopularity.reduce((sum, item) => sum + item.count, 0) + ")")}
+                  </>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-gray-500">
                     No skills data available
