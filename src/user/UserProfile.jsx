@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  ArrowLeft, 
-  Edit, 
-  Mail, 
-  Phone, 
-  TrendingUp, 
-  Award, 
-  Calendar, 
+import {
+  ArrowLeft,
+  Edit,
+  Mail,
+  Phone,
+  TrendingUp,
+  Award,
+  Calendar,
   Hash,
   Github,
   Linkedin,
@@ -22,8 +22,8 @@ import {
   Trash2
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import skillsList from '../assets/skills.json'; // Assuming the JSON is in the assets folder
-import academicData from '../assets/academic.json'; // Load academic.json for majors and departments
+import skillsList from '../assets/skills.json';
+import academicData from '../assets/academic.json';
 
 const UserProfile = () => {
   const [activeTab, setActiveTab] = useState('Overview');
@@ -78,7 +78,12 @@ const UserProfile = () => {
 
         setIsAuthenticated(true);
 
-        const { data, error: profileError } = await supabase.auth.getUser(); 
+        // Fix: Fetch profile from 'users' table, not auth.getUser() again
+        const { data, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('uid', user.id)
+          .single();
 
         console.log('Fetched profile:', data, profileError);
 
@@ -184,13 +189,13 @@ const UserProfile = () => {
           },
           body: JSON.stringify({})
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         let collegeNames = [];
         if (Array.isArray(data)) {
           collegeNames = data.map(item => item[2].trim());
@@ -385,12 +390,12 @@ const UserProfile = () => {
     { label: "Portfolio Website", icon: Globe, href: userData.portfolioUrl || "#", available: !!userData.portfolioUrl, name: "portfolioUrl" }
   ] : [];
 
-  const technicalSkills = userSkills.length > 0 ? 
+  const technicalSkills = userSkills.length > 0 ?
     userSkills.slice(0, 5).map((skill, index) => ({
       skill,
       level: 90 - (index * 5),
       color: ["bg-yellow-500", "bg-blue-500", "bg-green-500", "bg-green-600", "bg-purple-500"][index] || "bg-gray-500"
-    })) : 
+    })) :
     [{ skill: "No skills added", level: 0, color: "bg-gray-300" }];
 
   if (authChecking) {
@@ -411,7 +416,7 @@ const UserProfile = () => {
           <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
           <p className="text-gray-600 mb-4">Please log in to view this profile.</p>
-          <button 
+          <button
             onClick={() => window.location.href = '/login'}
             className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
           >
@@ -443,7 +448,7 @@ const UserProfile = () => {
             <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Profile</h2>
             <p className="text-gray-600 mb-4">{error}</p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
             >
@@ -466,8 +471,8 @@ const UserProfile = () => {
             {/* Avatar */}
             <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
               {userData.avatar ? (
-                <img 
-                  src={userData.avatar} 
+                <img
+                  src={userData.avatar}
                   alt={userData.displayName}
                   className="w-full h-full rounded-full object-cover"
                 />
@@ -477,60 +482,64 @@ const UserProfile = () => {
                 </span>
               )}
             </div>
-            
+
             {/* User Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-3 mb-2">
-                {isEditing ? (
-                  <input 
-                    type="text"
-                    name="displayName"
-                    value={editedData.displayName}
-                    onChange={handleInputChange}
-                    className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 border-b-2 border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
-                    placeholder="Enter display name"
-                  />
-                ) : (
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-                    {userData.displayName}
-                  </h1>
-                )}
-                {userData.emailVerified && (
-                  <span className="text-green-500 text-sm bg-green-50 px-2 py-1 rounded-full">
-                    ✓ Verified
-                  </span>
-                )}
-                {!isEditing ? (
-                  <button 
-                    onClick={handleEditStart}
-                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                    title="Edit profile"
-                  >
-                    <Edit className="w-5 h-5 text-gray-500 hover:text-blue-500" />
-                  </button>
-                ) : (
-                  <div className="flex space-x-2">
-                    <button 
-                      onClick={handleSave}
-                      className="p-1 hover:bg-green-100 rounded-full transition-colors"
-                      title="Save changes"
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-2">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="displayName"
+                      value={editedData.displayName}
+                      onChange={handleInputChange}
+                      className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 border-b-2 border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent flex-1 min-w-0"
+                      placeholder="Enter display name"
+                    />
+                  ) : (
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+                      {userData.displayName}
+                    </h1>
+                  )}
+                  {userData.emailVerified && (
+                    <span className="text-green-500 text-sm bg-green-50 px-2 py-1 rounded-full flex-shrink-0">
+                      ✓ Verified
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  {!isEditing ? (
+                    <button
+                      onClick={handleEditStart}
+                      className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                      title="Edit profile"
                     >
-                      <Save className="w-5 h-5 text-green-500 hover:text-green-600" />
+                      <Edit className="w-5 h-5 text-gray-500 hover:text-blue-500" />
                     </button>
-                    <button 
-                      onClick={handleCancel}
-                      className="p-1 hover:bg-red-100 rounded-full transition-colors"
-                      title="Cancel editing"
-                    >
-                      <XCircle className="w-5 h-5 text-red-500 hover:text-red-600" />
-                    </button>
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={handleSave}
+                        className="p-1 hover:bg-green-100 rounded-full transition-colors"
+                        title="Save changes"
+                      >
+                        <Save className="w-5 h-5 text-green-500 hover:text-green-600" />
+                      </button>
+                      <button
+                        onClick={handleCancel}
+                        className="p-1 hover:bg-red-100 rounded-full transition-colors"
+                        title="Cancel editing"
+                      >
+                        <XCircle className="w-5 h-5 text-red-500 hover:text-red-600" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              
+
               {/* Bio */}
               {isEditing ? (
-                <textarea 
+                <textarea
                   name="bio"
                   value={editedData.bio}
                   onChange={handleInputChange}
@@ -543,20 +552,17 @@ const UserProfile = () => {
                   {userData.bio}
                 </p>
               )}
-              
+
               {/* Contact Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                {/* Email */}
                 <div className="flex items-center space-x-2">
                   <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <span className="truncate">{userData.email}</span>
                 </div>
-                
-                {/* Phone */}
                 {isEditing ? (
                   <div className="flex items-center space-x-2">
                     <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <input 
+                    <input
                       type="tel"
                       name="phoneNumber"
                       value={editedData.phoneNumber}
@@ -575,7 +581,7 @@ const UserProfile = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Tabs */}
         <div className="px-3 sm:px-4 lg:px-6">
           <div className="hidden sm:flex space-x-8">
@@ -625,7 +631,7 @@ const UserProfile = () => {
                         <div className="sm:text-right sm:max-w-xs w-full relative">
                           {info.type === "college" ? (
                             <div className="relative" ref={collegeInputRef}>
-                              <input 
+                              <input
                                 ref={(el) => { if (el) collegeInputRef.current = el; }}
                                 type="text"
                                 value={collegeSearch}
@@ -667,7 +673,7 @@ const UserProfile = () => {
                               )}
                             </div>
                           ) : info.type === "number" ? (
-                            <input 
+                            <input
                               type="number"
                               name="volunteeringHours"
                               value={editedData.volunteeringHours}
@@ -692,7 +698,7 @@ const UserProfile = () => {
                               <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                             </div>
                           ) : (
-                            <input 
+                            <input
                               type="text"
                               name={info.label.toLowerCase()}
                               value={editedData[info.label.toLowerCase()]}
@@ -729,7 +735,7 @@ const UserProfile = () => {
                           <span className="text-sm font-medium text-gray-700">{link.label}</span>
                         </div>
                         {isEditing ? (
-                          <input 
+                          <input
                             type="url"
                             name={link.name}
                             value={editedData[link.name]}
@@ -738,7 +744,7 @@ const UserProfile = () => {
                             placeholder="https://..."
                           />
                         ) : link.available ? (
-                          <a 
+                          <a
                             href={link.href}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -828,7 +834,7 @@ const UserProfile = () => {
                           )}
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
+                          <div
                             className={`h-2 rounded-full ${item.color} transition-all duration-300`}
                             style={{ width: `${item.level}%` }}
                           ></div>
@@ -916,7 +922,7 @@ const UserProfile = () => {
             const icons = [TrendingUp, Award, Calendar, Menu];
             const IconComponent = icons[index];
             return (
-              <button 
+              <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`flex flex-col items-center space-y-1 py-2 px-3 rounded-lg transition-colors ${
