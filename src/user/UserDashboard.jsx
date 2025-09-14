@@ -3,6 +3,7 @@ import { Calendar, Trophy, Users, TrendingUp, Settings, X } from "lucide-react";
 
 // Import your actual Supabase client
 import { supabase } from "../lib/supabaseClient";
+import { useNavigate } from "react-router-dom";
 
 export default function UserDashboard() {
   const [userData, setUserData] = useState(null);
@@ -10,6 +11,7 @@ export default function UserDashboard() {
   const [error, setError] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -234,7 +236,7 @@ export default function UserDashboard() {
                       No skills added yet. Add your skills to help others find
                       you!
                     </p>
-                    <button className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                    <button className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200" onClick={()=> navigate('/profile')}>
                       Add Skills
                     </button>
                   </div>
@@ -349,7 +351,7 @@ export default function UserDashboard() {
                     <p className="text-gray-500 mb-2">
                       No profile links added yet
                     </p>
-                    <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                    <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200" onClick={()=> navigate('/profile')}>
                       Add Profile Links
                     </button>
                   </div>
