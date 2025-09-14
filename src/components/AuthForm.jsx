@@ -134,7 +134,7 @@ export default function CodeSapiensPlatform() {
           },
         });
         if (error) throw error;
-        navigate('/dashboard');
+        navigate('/');
         setMessage('✅ Signed in!');
       }
     } catch (err) {
