@@ -48,6 +48,7 @@ const UserProfile = () => {
   const [lastSelectedCollege, setLastSelectedCollege] = useState('');
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
   const [showEditSkillDropdown, setShowEditSkillDropdown] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const collegeInputRef = useRef(null);
   const collegeDropdownRef = useRef(null);
 
@@ -78,7 +79,6 @@ const UserProfile = () => {
 
         setIsAuthenticated(true);
 
-        // Fix: Fetch profile from 'users' table, not auth.getUser() again
         const { data, error: profileError } = await supabase
           .from('users')
           .select('*')
@@ -106,13 +106,12 @@ const UserProfile = () => {
             githubUrl: data.github_url || '',
             linkedinUrl: data.linkedin_url || '',
             portfolioUrl: data.portfolio_url || '',
-            volunteeringHours: data.volunteering_hours || 0,
             emailVerified: data.email_verified || user.email_confirmed_at !== null,
             phoneVerified: data.phone_verified || false,
             adminApproved: data.admin_approved || false,
             createdAt: data.created_at,
             updatedAt: data.updated_at,
-            year: data.year || 'Not specified',
+            year: data.year ? parseInt(data.year, 10) : null, // Handle integer year
             major: data.major || 'Not specified',
             department: data.department || 'Not specified'
           };
@@ -227,11 +226,13 @@ const UserProfile = () => {
     setCollegeSearch(editedData.college || '');
     setLastSelectedCollege(editedData.college || '');
     setShowCollegeDropdown(false);
+    setSaveError(null);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedData((prev) => ({ ...prev, [name]: value }));
+    setSaveError(null);
   };
 
   const handleCollegeChange = (e) => {
@@ -239,6 +240,7 @@ const UserProfile = () => {
     setCollegeSearch(value);
     setEditedData((prev) => ({ ...prev, college: value }));
     setCollegeError(null);
+    setSaveError(null);
   };
 
   const handleCollegeSelect = (e, collegeName) => {
@@ -251,6 +253,7 @@ const UserProfile = () => {
     setColleges([]);
     setShowCollegeDropdown(false);
     setCollegeError(null);
+    setSaveError(null);
     if (collegeInputRef.current) {
       collegeInputRef.current.blur();
     }
@@ -316,36 +319,45 @@ const UserProfile = () => {
   };
 
   const handleSave = async () => {
-    const finalCollege = editedData.college?.trim() || '';
-    if (finalCollege.length >= 3 && finalCollege !== lastSelectedCollege) {
-      setCollegeError('Please select a college from the dropdown.');
+    setSaveError(null);
+    const finalCollege = editedData.college?.trim() || 'Not specified';
+
+    if (finalCollege.length >= 3 && finalCollege !== lastSelectedCollege && !colleges.includes(finalCollege)) {
+      setCollegeError('Please select a valid college from the dropdown.');
+      setSaveError('Invalid college selection.');
       return;
     }
 
     try {
       const updateData = {
-        display_name: editedData.displayName,
-        phone_number: editedData.phoneNumber,
-        bio: editedData.bio,
+        display_name: editedData.displayName?.trim() || 'User',
+        phone_number: editedData.phoneNumber?.trim() || '',
+        bio: editedData.bio?.trim() || 'No bio available',
         college: finalCollege,
-        role: editedData.role,
-        github_url: editedData.githubUrl,
-        linkedin_url: editedData.linkedinUrl,
-        portfolio_url: editedData.portfolioUrl,
-        volunteering_hours: parseInt(editedData.volunteeringHours, 10) || 0,
-        year: editedData.year,
-        major: editedData.major,
-        department: editedData.department
+        role: editedData.role?.trim() || 'Student',
+        github_url: editedData.githubUrl?.trim() || '',
+        linkedin_url: editedData.linkedinUrl?.trim() || '',
+        portfolio_url: editedData.portfolioUrl?.trim() || '',
+        year: editedData.year && editedData.year !== 'Not specified' ? parseInt(editedData.year, 10) : null,
+        major: editedData.major?.trim() || 'Not specified',
+        department: editedData.department?.trim() || 'Not specified'
       };
+
+      console.log('Updating user data:', updateData);
+
       const { error } = await supabase
         .from('users')
         .update(updateData)
         .eq('uid', editedData.uid);
-      if (error) throw error;
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw new Error(`Failed to save profile: ${error.message}`);
+      }
 
       const updatedUserData = {
         ...editedData,
-        college: finalCollege
+        ...updateData
       };
       setUserData(updatedUserData);
       setEditedData(updatedUserData);
@@ -356,8 +368,8 @@ const UserProfile = () => {
       setCollegeError(null);
       setLastSelectedCollege(finalCollege);
     } catch (err) {
-      console.error('Update error:', err);
-      setError(err.message);
+      console.error('Save error:', err);
+      setSaveError(err.message || 'Failed to save profile. Please try again.');
     }
   };
 
@@ -368,6 +380,7 @@ const UserProfile = () => {
     setCollegeSearch('');
     setShowCollegeDropdown(false);
     setCollegeError(null);
+    setSaveError(null);
     setLastSelectedCollege('');
     setEditingSkillIndex(null);
     setEditingSkillValue('');
@@ -378,8 +391,7 @@ const UserProfile = () => {
   const personalInfo = userData ? [
     { label: "College", value: userData.college, editable: true, type: "college" },
     { label: "Role", value: userData.role, editable: true, type: "text" },
-    { label: "Volunteering Hours", value: userData.volunteeringHours?.toString() || "0", editable: true, type: "number" },
-    { label: "Year", value: userData.year, editable: true, type: "text" },
+    { label: "Year", value: userData.year || 'Not specified', editable: true, type: "number" },
     { label: "Major", value: userData.major, editable: true, type: "dropdown", options: academicData.majors },
     { label: "Department", value: userData.department, editable: true, type: "dropdown", options: academicData.departments }
   ] : [];
@@ -491,7 +503,7 @@ const UserProfile = () => {
                     <input
                       type="text"
                       name="displayName"
-                      value={editedData.displayName}
+                      value={editedData.displayName || ''}
                       onChange={handleInputChange}
                       className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 border-b-2 border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent flex-1 min-w-0"
                       placeholder="Enter display name"
@@ -541,7 +553,7 @@ const UserProfile = () => {
               {isEditing ? (
                 <textarea
                   name="bio"
-                  value={editedData.bio}
+                  value={editedData.bio || ''}
                   onChange={handleInputChange}
                   className="text-sm sm:text-base text-gray-600 mb-4 leading-relaxed w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   rows="3"
@@ -565,7 +577,7 @@ const UserProfile = () => {
                     <input
                       type="tel"
                       name="phoneNumber"
-                      value={editedData.phoneNumber}
+                      value={editedData.phoneNumber || ''}
                       onChange={handleInputChange}
                       className="border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent flex-1"
                       placeholder="Phone number"
@@ -578,6 +590,11 @@ const UserProfile = () => {
                   </div>
                 )}
               </div>
+
+              {/* Save Error Display */}
+              {saveError && (
+                <p className="text-sm text-red-500 mt-2">{saveError}</p>
+              )}
             </div>
           </div>
         </div>
@@ -675,18 +692,18 @@ const UserProfile = () => {
                           ) : info.type === "number" ? (
                             <input
                               type="number"
-                              name="volunteeringHours"
-                              value={editedData.volunteeringHours}
+                              name={info.label.toLowerCase()}
+                              value={editedData[info.label.toLowerCase()] || ''}
                               onChange={handleInputChange}
                               className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full"
-                              placeholder="Hours"
+                              placeholder={info.label}
                               min="0"
                             />
                           ) : info.type === "dropdown" ? (
                             <div className="relative">
                               <select
                                 name={info.label.toLowerCase()}
-                                value={editedData[info.label.toLowerCase()]}
+                                value={editedData[info.label.toLowerCase()] || 'Not specified'}
                                 onChange={handleInputChange}
                                 className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full pr-8 appearance-none"
                               >
@@ -701,7 +718,7 @@ const UserProfile = () => {
                             <input
                               type="text"
                               name={info.label.toLowerCase()}
-                              value={editedData[info.label.toLowerCase()]}
+                              value={editedData[info.label.toLowerCase()] || ''}
                               onChange={handleInputChange}
                               className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full"
                               placeholder={info.label}
@@ -709,7 +726,9 @@ const UserProfile = () => {
                           )}
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-900 sm:text-right sm:max-w-xs">{info.value}</span>
+                        <span className="text-sm text-gray-900 sm:text-right sm:max-w-xs">
+                          {info.label === "Year" && !info.value ? 'Not specified' : info.value}
+                        </span>
                       )}
                     </div>
                   ))}
@@ -738,7 +757,7 @@ const UserProfile = () => {
                           <input
                             type="url"
                             name={link.name}
-                            value={editedData[link.name]}
+                            value={editedData[link.name] || ''}
                             onChange={handleInputChange}
                             className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 max-w-xs"
                             placeholder="https://..."
