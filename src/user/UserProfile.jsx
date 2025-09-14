@@ -102,7 +102,6 @@ const UserProfile = () => {
             avatar: data.avatar || '',
             bio: data.bio || 'No bio available',
             college: data.college || 'Not specified',
-            role: data.role || 'Student',
             githubUrl: data.github_url || '',
             linkedinUrl: data.linkedin_url || '',
             portfolioUrl: data.portfolio_url || '',
@@ -111,7 +110,7 @@ const UserProfile = () => {
             adminApproved: data.admin_approved || false,
             createdAt: data.created_at,
             updatedAt: data.updated_at,
-            year: data.year ? parseInt(data.year, 10) : null, // Handle integer year
+            year: data.year ? parseInt(data.year, 10) : null,
             major: data.major || 'Not specified',
             department: data.department || 'Not specified'
           };
@@ -334,7 +333,6 @@ const UserProfile = () => {
         phone_number: editedData.phoneNumber?.trim() || '',
         bio: editedData.bio?.trim() || 'No bio available',
         college: finalCollege,
-        role: editedData.role?.trim() || 'Student',
         github_url: editedData.githubUrl?.trim() || '',
         linkedin_url: editedData.linkedinUrl?.trim() || '',
         portfolio_url: editedData.portfolioUrl?.trim() || '',
@@ -390,7 +388,6 @@ const UserProfile = () => {
 
   const personalInfo = userData ? [
     { label: "College", value: userData.college, editable: true, type: "college" },
-    { label: "Role", value: userData.role, editable: true, type: "text" },
     { label: "Year", value: userData.year || 'Not specified', editable: true, type: "number" },
     { label: "Major", value: userData.major, editable: true, type: "dropdown", options: academicData.majors },
     { label: "Department", value: userData.department, editable: true, type: "dropdown", options: academicData.departments }
@@ -697,7 +694,8 @@ const UserProfile = () => {
                               onChange={handleInputChange}
                               className="text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full"
                               placeholder={info.label}
-                              min="0"
+                              min="1900"
+                              max="2100"
                             />
                           ) : info.type === "dropdown" ? (
                             <div className="relative">
