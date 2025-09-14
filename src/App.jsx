@@ -58,7 +58,7 @@ function Root() {
           <Routes>
             <Route path="/admin" element={<Dashboard />} />
             <Route path="/profile" element={<UserProfile />} />
-            <Route path="/dashboard" element={<UserDashboard />} />
+            <Route path="/" element={<UserDashboard />} />
             <Route path="/analytics" element={<AnalyticsPage/>} />
             <Route path="/user-list" element={<AllUserList/>} />
            
