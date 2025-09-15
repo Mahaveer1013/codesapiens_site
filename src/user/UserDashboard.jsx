@@ -12,6 +12,19 @@ export default function UserDashboard() {
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  useEffect(() => {
+    const handleAuthEvent = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const urlParams = new URLSearchParams(location.search);
+      const type = urlParams.get('type');
+
+      if (type === 'recovery' && session?.access_token) {
+        setMode('newPassword');
+        setFormData({ ...formData, email: session.user.email });
+      }
+    };
+    handleAuthEvent();
+  }, [location]);
 
   useEffect(() => {
     const fetchUserData = async () => {
