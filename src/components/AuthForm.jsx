@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, Globe, Github, Building, Eye, EyeOff, User, Phone, School, Mail, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
+// import HCaptcha from '@hcaptcha/react-hcaptcha'; // Commented out: HCaptcha import for CAPTCHA verification
 
 export default function CodeSapiensPlatform() {
   const [mode, setMode] = useState('signIn'); // 'signIn' | 'signUp' | 'forgotPassword'
@@ -17,9 +17,9 @@ export default function CodeSapiensPlatform() {
     password: '',
   });
   const [profile, setProfile] = useState(null);
-  const [token, setToken] = useState(null);
+  // const [token, setToken] = useState(null); // Commented out: State for storing CAPTCHA token
   const navigate = useNavigate();
-  const captchaRef = useRef(null);
+  // const captchaRef = useRef(null); // Commented out: Reference for HCaptcha component
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -53,26 +53,26 @@ export default function CodeSapiensPlatform() {
     setShowPassword(!showPassword);
   };
 
-  const handleVerify = (token) => {
-    setToken(token);
-  };
+  // const handleVerify = (token) => {
+  //   setToken(token); // Commented out: Function to handle CAPTCHA token verification
+  // };
 
-  const verifyCaptcha = async (token) => {
-    try {
-      const res = await fetch('https://colleges-name-api.vercel.app/verify-hcaptcha', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      const data = await res.json();
-      if (data.success) return true;
-      throw new Error(data.message || 'Captcha verification failed');
-    } catch (err) {
-      console.error('hCaptcha verification error:', err);
-      throw err;
-    }
-  };
+  // const verifyCaptcha = async (token) => {
+  //   try {
+  //     const res = await fetch('https://colleges-name-api.vercel.app/verify-hcaptcha', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ token }),
+  //     });
+  //     if (!res.ok) throw new Error(`Server error: ${res.status}`);
+  //     const data = await res.json();
+  //     if (data.success) return true;
+  //     throw new Error(data.message || 'Captcha verification failed');
+  //   } catch (err) {
+  //     console.error('hCaptcha verification error:', err);
+  //     throw err;
+  //   }
+  // }; // Commented out: Function to verify CAPTCHA token via external API
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,12 +93,12 @@ export default function CodeSapiensPlatform() {
           navigate('/?type=signIn');
         }, 2000);
       } else {
-        if (!token) {
-          setMessage('❌ Please complete the CAPTCHA verification.');
-          setLoading(false);
-          return;
-        }
-        await verifyCaptcha(token);
+        // if (!token) {
+        //   setMessage('❌ Please complete the CAPTCHA verification.');
+        //   setLoading(false);
+        //   return;
+        // } // Commented out: Check for CAPTCHA token before proceeding with sign-in or sign-up
+        // await verifyCaptcha(token); // Commented out: CAPTCHA verification call
         if (mode === 'signUp') {
           const { error } = await supabase.auth.signUp({
             email: formData.email,
@@ -109,7 +109,7 @@ export default function CodeSapiensPlatform() {
                 phone: formData.phone,
                 college: formData.college,
               },
-              captchaToken: token,
+              // captchaToken: token, // Commented out: CAPTCHA token for sign-up
             },
           });
           if (error) throw error;
@@ -118,7 +118,7 @@ export default function CodeSapiensPlatform() {
           const { error } = await supabase.auth.signInWithPassword({
             email: formData.email,
             password: formData.password,
-            options: { captchaToken: token },
+            // options: { captchaToken: token }, // Commented out: CAPTCHA token for sign-in
           });
           if (error) throw error;
           navigate('/');
@@ -127,10 +127,10 @@ export default function CodeSapiensPlatform() {
       }
     } catch (err) {
       setMessage(`❌ ${err.message}`);
-      if (captchaRef.current) {
-        captchaRef.current.resetCaptcha();
-      }
-      setToken(null);
+      // if (captchaRef.current) {
+      //   captchaRef.current.resetCaptcha();
+      // } // Commented out: Reset CAPTCHA on error
+      // setToken(null); // Commented out: Clear CAPTCHA token on error
     } finally {
       setLoading(false);
     }
@@ -139,10 +139,10 @@ export default function CodeSapiensPlatform() {
   const toggleMode = (newMode) => {
     setMode(newMode);
     setMessage(null);
-    setToken(null);
-    if (captchaRef.current) {
-      captchaRef.current.resetCaptcha();
-    }
+    // setToken(null); // Commented out: Clear CAPTCHA token when switching modes
+    // if (captchaRef.current) {
+    //   captchaRef.current.resetCaptcha();
+    // } // Commented out: Reset CAPTCHA when switching modes
     if (newMode === 'forgotPassword') {
       setFormData({ ...formData, password: '', fullName: '', phone: '', college: '' });
     }
@@ -405,16 +405,16 @@ export default function CodeSapiensPlatform() {
                     </button>
                   </div>
                 </div>
-                <div>
+                {/* <div>
                   <HCaptcha
                     sitekey="a2888bb4-ecf2-4f6a-8e7a-14586d084e96"
                     onVerify={handleVerify}
                     ref={captchaRef}
                   />
-                </div>
+                </div> */} {/* Commented out: HCaptcha component for user verification */}
                 <button
                   type="submit"
-                  disabled={loading || !token}
+                  disabled={loading /* || !token */} /* Commented out: Disable button if CAPTCHA token is missing */
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 sm:py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none text-sm sm:text-base"
                 >
                   {loading
