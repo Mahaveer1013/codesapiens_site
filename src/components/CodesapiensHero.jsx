@@ -8,42 +8,34 @@ const CodeSapiensHero = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const navigate = useNavigate();
-  // Updated past events data based on latest information as of September 15, 2025
+  // Updated past events data from bento.me and web sources
   const pastEvents = [
     { 
       id: 1, 
-      title: "September Meetup 2025", 
-      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1756808600/WhatsApp_Image_2025-08-31_at_07.50.01_b61d2154_jymwvs.jpg", 
-      date: "September 13, 2025", 
-      description: "Tech meetup at Contentstack, Velachery, with talks, networking, and workshops. Limited seats filled quickly.",
-      participants: 80
-    },
-    { 
-      id: 2, 
       title: "August Meetup 2025", 
       image: "https://creatorspace.imgix.net/users/cme79i2lk00qls401ar5qxqnc/tYvYry0ll1qJY9Cr-sZlcWmpyKLCEVr3R-WhatsApp%252520Image%2525202025-08-10%252520at%25252015.15.02_25567a3d.jpg?w=750&h=750", 
       date: "August 2025", 
-      description: "A 3-hour mini hackathon with mentors, developers, and certificates for participants at Mako IT Lab.",
+      description: "A 3-hour mini hackathon with mentors, developers, and certificates for participants.",
       participants: 75
     },
     { 
-      id: 3, 
+      id: 2,
       title: "July Meetup 2025", 
       image: "https://creatorspace.imgix.net/users/cme79i2lk00qls401ar5qxqnc/dC8c5AeuyLulrDlu-WhatsApp%2520Image%25202025-08-18%2520at%252017.57.10_1135c6f6.jpg?w=750&h=750", 
       date: "July 2025", 
-      description: "Online session introducing security concepts via Google hacking and CTFs, including Git-in-Kadhai contest.",
+      description: "Online session introducing security concepts via Google hacking and CTFs.",
       participants: 44
     },
     { 
-      id: 4, 
-      title: "Summer of Code 2024", 
+      id: 3,
+      title: "Summer of code 2024",
       image: "https://creatorspace.imgix.net/users/cme79i2lk00qls401ar5qxqnc/Elth5VQLAvoEm02T-1UTOfxIl6lQsvPuA-Image_Editor%252520(5).png?w=750&h=750", 
       date: "Summer 2024", 
       description: "Session on building AI accelerators using VLSI and RTL coding.",
       participants: 50
     },
     { 
-      id: 5, 
+      id: 4,
       title: "Mentorship Programme 2024", 
       image: "https://creatorspace.imgix.net/users/cme79i2lk00qls401ar5qxqnc/sHoKIUM22yN6cHBX-nO7EHUY6fAHtfxrH-Image_Editor%252520(2).png?w=750&h=750", 
       date: "2024", 
@@ -52,16 +44,16 @@ const CodeSapiensHero = () => {
     }
   ];
 
-  // No upcoming events found as of September 15, 2025; section updated to reflect this
+  // Updated upcoming events with volunteer requirements from sources
   const upcomingEvents = [
     {
       id: 1,
-      title: "Next Meetup Coming Soon",
+      title: "September Meetup 2025",
       image: "https://res.cloudinary.com/dqudvximt/image/upload/v1756808600/WhatsApp_Image_2025-08-31_at_07.50.01_b61d2154_jymwvs.jpg",
-      date: "October 2025 (TBD)",
-      time: "TBD",
-      location: "Chennai, Tamil Nadu",
-      description: "Stay tuned for our next exciting meetup! Follow us on social media for updates on tech talks, workshops, and networking opportunities.",
+      date: "August 2025",
+      time: "10:00 AM - 2:00 PM",
+      location: "ContentStack,  Velachery, Chennai, Tamil Nadu",
+      description: "Reserve your spot now at https://bento.me/codesapiens to join us for an exciting meetup filled with tech talks, networking, and hands-on workshops.",
       volunteersNeeded: [
         { role: "Event Coordination", count: 5, skills: "Organization, Communication" },
         { role: "Technical Support", count: 8, skills: "AV Equipment, Troubleshooting" },
@@ -70,7 +62,7 @@ const CodeSapiensHero = () => {
     }
   ];
 
-  // Volunteers with photos, names, and separate LinkedIn links (kept as per original, no updates found)
+  // Volunteers with photos, names, and separate LinkedIn links
   const volunteers = [
     {
       photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/2ABMHfqOsrpoL3OV-WhatsApp202025-08-312010.33.52_a8a27bbd_vzcgzq.jpg",
@@ -119,9 +111,9 @@ const CodeSapiensHero = () => {
     }
   ];
 
-  // Updated stats based on latest data (1,200+ members, ~7 events hosted)
+  // Updated stats based on real data
   const stats = [
-    { icon: Users, number: "1,200+", label: "Active Members" },
+    { icon: Users, number: "1500+", label: "Active Members" },
     { icon: Calendar, number: "7+", label: "Events Hosted" }
   ];
 

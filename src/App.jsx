@@ -44,6 +44,7 @@ function Root() {
         <Routes>
           <Route path="/" element={<CodeSapiensHero />} />
           <Route path="/auth" element={<AuthForm />} />
+            <Route path="/reset-password" element={<ResetPassword/>} />
         </Routes>
       </Router>
     </div>
@@ -62,7 +63,6 @@ function Root() {
             <Route path="/" element={<UserDashboard />} />
             <Route path="/analytics" element={<AnalyticsPage/>} />
             <Route path="/user-list" element={<AllUserList/>} />
-            <Route path="/reset-password" element={<ResetPassword/>} />
            
             <Route path="*" element={<NotFoundPage/>} />
          
