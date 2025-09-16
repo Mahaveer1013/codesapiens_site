@@ -32,7 +32,7 @@ export default function ResetPassword() {
 
       setMessage("✅ Password reset link has been sent to your email!");
       setTimeout(() => {
-        navigate("/?type=signIn");
+        navigate("/");
       }, 2000);
     } catch (err) {
       setMessage(`❌ ${err.message}`);
@@ -78,7 +78,7 @@ export default function ResetPassword() {
               Back to{" "}
               <button
                 type="button"
-                onClick={() => navigate("/?type=signIn")}
+                onClick={() => navigate("/")}
                 disabled={loading}
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
