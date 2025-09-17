@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Github, Instagram, Linkedin, Twitter, Calendar, Users, Code, Award, Mail, Phone, MapPin, Clock, UserPlus, ArrowRight, Youtube } from 'lucide-react';
-
 import { useNavigate } from 'react-router-dom';
 
 const CodeSapiensHero = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [sectionsInView, setSectionsInView] = useState({});
   const navigate = useNavigate();
+
   // Updated past events data from bento.me and web sources
   const pastEvents = [
     { 
@@ -117,6 +117,30 @@ const CodeSapiensHero = () => {
     { icon: Calendar, number: "7+", label: "Events Hosted" }
   ];
 
+  // Custom hook for intersection observer
+  const useInView = (id) => {
+    const ref = useRef(null);
+    useEffect(() => {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setSectionsInView(prev => ({ ...prev, [id]: true }));
+            observer.unobserve(entry.target);
+          }
+        },
+        { threshold: 0.1 }
+      );
+
+      if (ref.current) {
+        observer.observe(ref.current);
+      }
+
+      return () => observer.disconnect();
+    }, [id]);
+
+    return { ref, inView: sectionsInView[id] || false };
+  };
+
   useEffect(() => {
     setIsVisible(true);
     const interval = setInterval(() => {
@@ -129,58 +153,104 @@ const CodeSapiensHero = () => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const sectionVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0, transition: { duration: 1, ease: 'easeOut' } }
-  };
-
-  const staggerVariants = {
-    visible: { transition: { staggerChildren: 0.2 } }
-  };
-
-  const childVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-stone-100 text-zinc-900 overflow-x-hidden">
-      {/* Header Navigation with animation */}
-      <motion.header 
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
-        className="fixed top-0 w-full z-50 bg-zinc-50/90 backdrop-blur-md border-b border-zinc-200/50"
+      {/* Global Styles for Animations */}
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(50px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes slideDown {
+          from {
+            transform: translateY(-100px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(10px); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        .animate-fadeInUp {
+          animation: fadeInUp 1s ease-out forwards;
+        }
+        .animate-slideDown {
+          animation: slideDown 0.8s ease-out forwards;
+        }
+        .animate-bounce {
+          animation: bounce 1.5s infinite ease-in-out;
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.8s ease-out forwards;
+        }
+        .animate-scaleIn {
+          animation: scaleIn 0.5s ease-out forwards;
+        }
+        .stagger-child:nth-child(1) { animation-delay: 0.1s; }
+        .stagger-child:nth-child(2) { animation-delay: 0.2s; }
+        .stagger-child:nth-child(3) { animation-delay: 0.3s; }
+        .stagger-child:nth-child(4) { animation-delay: 0.4s; }
+        .stagger-child:nth-child(5) { animation-delay: 0.5s; }
+        .stagger-child:nth-child(6) { animation-delay: 0.6s; }
+        .stagger-child:nth-child(7) { animation-delay: 0.7s; }
+        .stagger-child:nth-child(8) { animation-delay: 0.8s; }
+        .stagger-child:nth-child(9) { animation-delay: 0.9s; }
+        .image-fade-enter { opacity: 0; transition: opacity 0.8s ease-in-out; }
+        .image-fade-enter-active { opacity: 1; }
+        .image-fade-exit { opacity: 1; transition: opacity 0.8s ease-in-out; }
+        .image-fade-exit-active { opacity: 0; }
+      `}</style>
+
+      {/* Header Navigation with CSS animation */}
+      <header
+        className={`fixed top-0 w-full z-50 bg-zinc-50/90 backdrop-blur-md border-b border-zinc-200/50 transition-all duration-300 ${isVisible ? 'animate-slideDown' : ''}`}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 flex items-center justify-center ">
-               <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1756797708/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz.jpg" alt="Logo" className="w-10 h-10 " />
+              <div className="w-10 h-10 flex items-center justify-center">
+               <img
+                 src="https://res.cloudinary.com/dqudvximt/image/upload/v1756797708/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz.jpg"
+                 alt="Logo"
+                 className="w-10 h-10 rounded-full object-cover transition-transform duration-300 hover:scale-105"
+                 loading="lazy"
+               />
               </div>
               <span className="text-xl font-light tracking-wider">CodeSapiens</span>
             </div>
-            
           </nav>
         </div>
-      </motion.header>
+      </header>
 
-      {/* Hero Section - Enhanced with motion */}
-      <motion.section 
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        className="relative min-h-screen flex items-center justify-center pt-20"
-      >
-        {/* Background Pattern with subtle animation */}
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center justify-center pt-20">
+        {/* Background Pattern */}
         <div className="absolute inset-0">
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-stone-100"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 2 }}
-          ></motion.div>
+          <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-stone-100 transition-opacity duration-2000 opacity-100"></div>
           <div className="absolute inset-0" style={{
             backgroundImage: `radial-gradient(circle at 1px 1px, rgba(0,0,0,0.03) 1px, transparent 0)`,
             backgroundSize: '40px 40px'
@@ -188,12 +258,7 @@ const CodeSapiensHero = () => {
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <motion.div 
-            className="text-center max-w-6xl mx-auto"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1.5, ease: 'easeOut' }}
-          >
+          <div className={`text-center max-w-6xl mx-auto transition-all duration-1500 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
             {/* Main Headline */}
             <div className="mb-16">
               <div className="mb-8">
@@ -218,37 +283,22 @@ const CodeSapiensHero = () => {
               </button>
             </div>
 
-            {/* Scroll Indicator with bounce animation */}
-            <motion.div 
-              className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            >
+            {/* Scroll Indicator with CSS bounce */}
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
               <div className="flex flex-col items-center">
                 <span className="text-xs font-light tracking-widest uppercase mb-2 text-zinc-400">Scroll</span>
                 <ChevronDown className="w-5 h-5 text-zinc-400" />
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* Journey Section - Enhanced animation */}
-      <motion.section 
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        className="py-32 bg-white"
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Journey Section */}
+      <section className="py-32 bg-white" ref={useInView('journey').ref}>
+        <div className={`container mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-1000 ${useInView('journey').inView ? 'opacity-100' : 'opacity-0'}`}>
           <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center max-w-6xl mx-auto">
-            <motion.div 
-              className="space-y-8"
-              initial={{ x: -50, opacity: 0 }}
-              whileInView={{ x: 0, opacity: 1 }}
-              transition={{ duration: 1 }}
-            >
+            <div className={`space-y-8 transition-all duration-1000 delay-200 ${useInView('journey').inView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'}`}>
               <div>
                 <span className="text-sm font-light tracking-widest uppercase text-zinc-400 mb-4 block">A Journey</span>
                 <h2 className="text-4xl lg:text-5xl xl:text-6xl font-extralight text-zinc-900 mb-8 leading-tight">
@@ -258,39 +308,23 @@ const CodeSapiensHero = () => {
               <p className="text-lg font-light text-zinc-600 leading-relaxed mb-8">
                 Founded by Thiyaga B., CodeSapiens is a vibrant student community in Tamil Nadu with over 1,200 members, organizing technical meetups and webinars led by a 10-member student team.
               </p>
-              
-            </motion.div>
-            <motion.div 
-              className="relative"
-              initial={{ x: 50, opacity: 0 }}
-              whileInView={{ x: 0, opacity: 1 }}
-              transition={{ duration: 1 }}
-            >
+            </div>
+            <div className={`relative transition-all duration-1000 ${useInView('journey').inView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'}`}>
               <img
                 src="https://res.cloudinary.com/dqudvximt/image/upload/v1756797708/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz.jpg"
                 alt="Coding workspace"
-                className="w-full h-auto rounded-lg shadow-xl"
+                className="w-full h-auto rounded-lg shadow-xl transition-transform duration-700 hover:scale-105"
+                loading="lazy"
               />
-            </motion.div>
+            </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* Stats Section - Staggered animation */}
-      <motion.section 
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        className="py-24 bg-zinc-900 text-zinc-50"
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div 
-            className="text-center mb-16"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
-          >
+      {/* Stats Section */}
+      <section className="py-24 bg-zinc-900 text-zinc-50" ref={useInView('stats').ref}>
+        <div className={`container mx-auto px-4 sm:px-6 lg:px-8 ${useInView('stats').inView ? 'animate-fadeInUp' : ''}`}>
+          <div className="text-center mb-16 transition-all duration-800">
             <span className="text-sm font-light tracking-widest uppercase text-zinc-400 mb-8 block">CodeSapiens</span>
             <h2 className="text-4xl lg:text-5xl font-extralight tracking-wide mb-8">
               Impressions <span className="italic">Of Heritage</span>
@@ -298,68 +332,54 @@ const CodeSapiensHero = () => {
             <div className="text-lg font-light text-zinc-300 mb-12">
               Timeless <span className="italic">Masterpieces</span>
             </div>
-            
-          </motion.div>
+          </div>
 
-          <motion.div 
-            className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-16 max-w-4xl mx-auto"
-            variants={staggerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
+          <div className={`grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-16 max-w-4xl mx-auto ${useInView('stats').inView ? 'opacity-100' : 'opacity-0'}`}>
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               return (
-                <motion.div 
+                <div
                   key={index}
-                  variants={childVariants}
-                  className="text-center"
+                  className={`text-center transition-all duration-700 stagger-child ${useInView('stats').inView ? 'animate-scaleIn opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <Icon className="w-8 h-8 text-zinc-400 mx-auto mb-4" />
+                  <Icon className="w-8 h-8 text-zinc-400 mx-auto mb-4 transition-colors duration-300 hover:text-zinc-300" />
                   <div className="text-4xl font-extralight text-zinc-50 mb-2">{stat.number}</div>
                   <div className="text-zinc-400 text-sm font-light tracking-widest uppercase">{stat.label}</div>
-                </motion.div>
+                </div>
               );
             })}
-          </motion.div>
+          </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* Our Collection Section - Animated gallery */}
-      <motion.section 
+      {/* Our Collection Section */}
+      <section
         id="collection"
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
         className="py-32 bg-white"
+        ref={useInView('collection').ref}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
+        <div className={`container mx-auto px-4 sm:px-6 lg:px-8 ${useInView('collection').inView ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="text-center mb-20 transition-all duration-1000">
             <span className="text-sm font-light tracking-widest uppercase text-zinc-400 mb-8 block">Our Collection</span>
             <h2 className="text-4xl lg:text-5xl xl:text-6xl font-extralight text-zinc-900 mb-12 leading-tight">
               Reflection <span className="italic font-light">Of Art</span>
             </h2>
           </div>
 
-          {/* Featured Project with fade transition */}
+          {/* Featured Project with CSS transition */}
           <div className="max-w-5xl mx-auto mb-24">
             <div className="relative overflow-hidden rounded-lg shadow-2xl">
-              <AnimatePresence mode="wait">
-                <motion.img
-                  key={currentImageIndex}
-                  src={pastEvents[currentImageIndex].image}
-                  alt={pastEvents[currentImageIndex].title}
-                  className="w-full h-96 lg:h-[500px] object-cover"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.8 }}
-                />
-              </AnimatePresence>
+              <img
+                key={currentImageIndex}
+                src={pastEvents[currentImageIndex].image}
+                alt={pastEvents[currentImageIndex].title}
+                className={`w-full h-96 lg:h-[500px] object-cover transition-opacity duration-800 ${currentImageIndex === 0 ? 'opacity-100' : 'opacity-0'}`}
+                style={{ opacity: 1 }}
+                loading="lazy"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-              <div className="absolute bottom-8 left-8 text-white">
+              <div className="absolute bottom-8 left-8 text-white transition-all duration-500">
                 <h3 className="text-2xl lg:text-3xl font-light mb-2">{pastEvents[currentImageIndex].title}</h3>
                 <p className="text-zinc-200 font-light">{pastEvents[currentImageIndex].date}</p>
               </div>
@@ -367,63 +387,49 @@ const CodeSapiensHero = () => {
           </div>
 
           {/* Grid Gallery with hover effects and stagger */}
-         <motion.div 
-  className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 lg:gap-4"
-  variants={staggerVariants}
-  initial="hidden"
-  whileInView="visible"
-  viewport={{ once: true }}
->
-  {pastEvents.map((event, index) => (
-    <motion.div
-      key={index}
-      variants={childVariants}
-      className="group cursor-pointer transform transition-all duration-700 hover:scale-105"
-      onClick={() => setCurrentImageIndex(index)}
-    >
-      <div className="relative overflow-hidden bg-zinc-100 rounded-md shadow-md">
-        <img
-          src={event.image}
-          alt={event.title}
-          className="w-full aspect-square object-cover group-hover:scale-110 transition-transform duration-700"
-        />
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      </div>
-    </motion.div>
-  ))}
-</motion.div>
+          <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 lg:gap-4 ${useInView('collection').inView ? 'opacity-100' : 'opacity-0 transition-opacity duration-700'}`}>
+            {pastEvents.map((event, index) => (
+              <div
+                key={index}
+                className={`group cursor-pointer transform transition-all duration-700 hover:scale-105 stagger-child ${useInView('collection').inView ? 'animate-fadeIn opacity-100' : 'opacity-0'}`}
+                onClick={() => setCurrentImageIndex(index)}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="relative overflow-hidden bg-zinc-100 rounded-md shadow-md">
+                  <img
+                    src={event.image}
+                    alt={event.title}
+                    className="w-full aspect-square object-cover group-hover:scale-110 transition-transform duration-700"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* Upcoming Events Section - Animated cards */}
-      <motion.section 
+      {/* Upcoming Events Section */}
+      <section
         id="upcoming"
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
         className="py-32 bg-zinc-50"
+        ref={useInView('upcoming').ref}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
+        <div className={`container mx-auto px-4 sm:px-6 lg:px-8 ${useInView('upcoming').inView ? 'opacity-100' : 'opacity-0 transition-opacity duration-700'}`}>
+          <div className="text-center mb-20 transition-all duration-1000">
             <span className="text-sm font-light tracking-widest uppercase text-zinc-400 mb-8 block">Upcoming</span>
             <h2 className="text-4xl lg:text-5xl xl:text-6xl font-extralight text-zinc-900 mb-12 leading-tight">
               Future <span className="italic font-light">Exhibitions</span>
             </h2>
           </div>
 
-          <motion.div 
-            className="space-y-16 max-w-5xl mx-auto"
-            variants={staggerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
+          <div className={`space-y-16 max-w-5xl mx-auto ${useInView('upcoming').inView ? 'opacity-100' : 'opacity-0'}`}>
             {upcomingEvents.map((event, index) => (
-              <motion.div
+              <div
                 key={event.id}
-                variants={childVariants}
-                className="group bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-700 hover:shadow-2xl"
+                className={`group bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-700 hover:shadow-2xl stagger-child ${useInView('upcoming').inView ? 'animate-fadeInUp opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                style={{ animationDelay: `${index * 0.2}s` }}
               >
                 <div className="grid lg:grid-cols-5 gap-8 lg:gap-12 p-6">
                   {/* Event Image */}
@@ -433,13 +439,14 @@ const CodeSapiensHero = () => {
                         src={event.image}
                         alt={event.title}
                         className="w-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        loading="lazy"
                       />
                     </div>
                   </div>
                   
                   {/* Event Details */}
                   <div className="lg:col-span-2 flex flex-col justify-center">
-                    <h3 className="text-2xl lg:text-3xl font-light text-zinc-900 mb-4">
+                    <h3 className="text-2xl lg:text-3xl font-light text-zinc-900 mb-4 transition-colors duration-300 group-hover:text-zinc-700">
                       {event.title}
                     </h3>
                     <p className="text-zinc-600 font-light leading-relaxed mb-6">
@@ -461,26 +468,20 @@ const CodeSapiensHero = () => {
                       </div>
                     </div>
                   </div>
-                  
-                 
-                
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* Founder Section */}
-      <motion.section 
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
+      <section
         className="py-32 bg-zinc-50"
+        ref={useInView('founder').ref}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
+        <div className={`container mx-auto px-4 sm:px-6 lg:px-8 ${useInView('founder').inView ? 'opacity-100' : 'opacity-0 transition-opacity duration-700'}`}>
+          <div className="text-center mb-20 transition-all duration-1000">
             <span className="text-sm font-light tracking-widest uppercase text-zinc-400 mb-8 block">Leadership</span>
             <h2 className="text-4xl lg:text-5xl xl:text-6xl font-extralight text-zinc-900 mb-12 leading-tight">
               Our <span className="italic font-light">Founder</span>
@@ -488,17 +489,17 @@ const CodeSapiensHero = () => {
           </div>
 
           <div className="flex justify-center">
-            <motion.div
-              variants={childVariants}
-              className="transform transition-all duration-700 hover:scale-105 cursor-pointer flex flex-col items-center text-center"
+            <div
+              className={`transform transition-all duration-700 hover:scale-105 cursor-pointer flex flex-col items-center text-center ${useInView('founder').inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
               onClick={() => window.open('https://www.linkedin.com/in/thiyagab/', '_blank')}
             >
               <div className="relative group mb-4 w-full max-w-[200px] md:max-w-[300px]">
-                <div className="aspect-square overflow-hidden rounded-full shadow-xl">
+                <div className="aspect-square overflow-hidden rounded-full shadow-xl transition-transform duration-500 group-hover:scale-105">
                   <img
                     src="https://res.cloudinary.com/dqudvximt/image/upload/v1757828688/1679197646322_n1svjq.jpg"
                     alt="Thiyaga B"
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 </div>
                 <Linkedin 
@@ -515,47 +516,39 @@ const CodeSapiensHero = () => {
               >
                 View LinkedIn
               </a>
-            </motion.div>
+            </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* Our Members Section - Grid animation */}
-      <motion.section 
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
+      {/* Our Members Section */}
+      <section
         className="py-32 bg-white"
+        ref={useInView('members').ref}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
+        <div className={`container mx-auto px-4 sm:px-6 lg:px-8 ${useInView('members').inView ? 'opacity-100' : 'opacity-0 transition-opacity duration-700'}`}>
+          <div className="text-center mb-20 transition-all duration-1000">
             <span className="text-sm font-light tracking-widest uppercase text-zinc-400 mb-8 block">Community</span>
             <h2 className="text-4xl lg:text-5xl xl:text-6xl font-extralight text-zinc-900 mb-12 leading-tight">
               Our <span className="italic font-light">Curators</span>
             </h2>
           </div>
 
-          <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 max-w-6xl mx-auto"
-            variants={staggerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
+          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 max-w-6xl mx-auto ${useInView('members').inView ? 'opacity-100' : 'opacity-0'}`}>
             {volunteers.map((volunteer, index) => (
-              <motion.div
+              <div
                 key={index}
-                variants={childVariants}
-                className="transform transition-all duration-700 hover:scale-105 cursor-pointer flex flex-col items-center text-center"
+                className={`transform transition-all duration-700 hover:scale-105 cursor-pointer flex flex-col items-center text-center stagger-child ${useInView('members').inView ? 'animate-scaleIn opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                 onClick={() => window.open(volunteer.link, '_blank')}
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="relative group mb-2 w-full max-w-[120px] sm:max-w-[150px]">
-                  <div className="aspect-square overflow-hidden rounded-full shadow-md w-full">
+                  <div className="aspect-square overflow-hidden rounded-full shadow-md w-full transition-transform duration-500 group-hover:scale-105">
                     <img
                       src={volunteer.photo}
                       alt={volunteer.name}
                       className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   </div>
                   <Linkedin 
@@ -574,68 +567,64 @@ const CodeSapiensHero = () => {
                 >
                   View LinkedIn
                 </a>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </motion.section>
-
-      {/* Contact Section - Fade in */}
-      <motion.section 
-        id="contact"
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        className="py-32 bg-zinc-900 text-zinc-50"
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-16">
-              <span className="text-sm font-light tracking-widest uppercase text-zinc-400 mb-8 block">CodeSapiens</span>
-              <h2 className="text-4xl lg:text-5xl font-extralight tracking-wide mb-8">
-                Building  <span className="italic">Community</span> since
-              </h2>
-              <div className="text-6xl lg:text-7xl font-extralight text-zinc-400 mb-12">©2017</div>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-12">
-              {/* Social Media - Updated real links */}
-              <div className="space-y-6 mx-auto">
-                <h3 className="text-xl font-light tracking-wide mb-6">Follow</h3>
-                <div className="space-y-4">
-                  {[
-                    { icon: Instagram, href: "https://www.instagram.com/codesapiens.in/", label: "Instagram" },
-                    { icon: Linkedin, href: "https://www.linkedin.com/company/codesapiens-community/posts/", label: "LinkedIn" },
-                    { icon: Twitter, href: "https://x.com/codesapiens_in", label: "Twitter" },
-                    { icon: Youtube, href: "https://youtube.com/@codesapiens-in?si=90EaPMYHcSZIHtMi", label: "Youtube" },
-                    { icon: Github, href: "https://github.com/Codesapiens-in", label: "Github" }
-                  ].map((social, index) => {
-                    const Icon = social.icon;
-                    return (
-                      <a
-                        key={index}
-                        href={social.href}
-                        className="flex items-center space-x-3 text-sm font-light text-zinc-300 hover:text-zinc-50 transition-colors duration-300"
-                      >
-                        <Icon className="w-4 h-4" />
-                        <span>{social.label}</span>
-                      </a>
-                    );
-                  })}
-                </div>
               </div>
-            </div>
-
-            {/* Footer */}
-            <div className="text-center pt-16 mt-16 border-t border-zinc-800">
-              <p className="text-xs font-light text-zinc-500 tracking-wider">
-                © 2025 CodeSapiens. All rights reserved.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
-      </motion.section>
+      </section>
+
+      {/* Contact Section */}
+      <section
+        id="contact"
+        className="py-32 bg-zinc-900 text-zinc-50"
+        ref={useInView('contact').ref}
+      >
+        <div className={`container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto ${useInView('contact').inView ? 'opacity-100' : 'opacity-0 transition-opacity duration-700'}`}>
+          <div className="text-center mb-16 transition-all duration-1000">
+            <span className="text-sm font-light tracking-widest uppercase text-zinc-400 mb-8 block">CodeSapiens</span>
+            <h2 className="text-4xl lg:text-5xl font-extralight tracking-wide mb-8">
+              Building  <span className="italic">Community</span> since
+            </h2>
+            <div className="text-6xl lg:text-7xl font-extralight text-zinc-400 mb-12">©2017</div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-12">
+            {/* Social Media */}
+            <div className="space-y-6 mx-auto transition-all duration-700">
+              <h3 className="text-xl font-light tracking-wide mb-6">Follow</h3>
+              <div className="space-y-4">
+                {[
+                  { icon: Instagram, href: "https://www.instagram.com/codesapiens.in/", label: "Instagram" },
+                  { icon: Linkedin, href: "https://www.linkedin.com/company/codesapiens-community/posts/", label: "LinkedIn" },
+                  { icon: Twitter, href: "https://x.com/codesapiens_in", label: "Twitter" },
+                  { icon: Youtube, href: "https://youtube.com/@codesapiens-in?si=90EaPMYHcSZIHtMi", label: "Youtube" },
+                  { icon: Github, href: "https://github.com/Codesapiens-in", label: "Github" }
+                ].map((social, index) => {
+                  const Icon = social.icon;
+                  return (
+                    <a
+                      key={index}
+                      href={social.href}
+                      className="flex items-center space-x-3 text-sm font-light text-zinc-300 hover:text-zinc-50 transition-colors duration-300 stagger-child"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <Icon className="w-4 h-4 transition-transform duration-300 hover:scale-110" />
+                      <span>{social.label}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center pt-16 mt-16 border-t border-zinc-800 transition-all duration-700">
+            <p className="text-xs font-light text-zinc-500 tracking-wider">
+              © 2025 CodeSapiens. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
