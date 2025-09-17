@@ -388,7 +388,7 @@ const UserProfile = () => {
 
   const personalInfo = userData ? [
     { label: "College", value: userData.college, editable: true, type: "college" },
-    { label: "Year", value: userData.year || 'Not specified', editable: true, type: "number" },
+    { label: "Graduating Year", value: userData.year || 'Not specified', editable: true, type: "number" },
     { label: "Major", value: userData.major, editable: true, type: "dropdown", options: academicData.majors },
     { label: "Department", value: userData.department, editable: true, type: "dropdown", options: academicData.departments }
   ] : [];
