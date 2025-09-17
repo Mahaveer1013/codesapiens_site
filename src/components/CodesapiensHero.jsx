@@ -41,26 +41,19 @@ const CodeSapiensHero = () => {
       date: "2024", 
       description: "Student-run program for contributing to open-source projects.",
       participants: 100
+    },
+    {
+      id: 5,
+      title: "September Meetup 2025",
+      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1756808600/WhatsApp_Image_2025-08-31_at_07.50.01_b61d2154_jymwvs.jpg",
+      date: "September 2025",
+      description: "Exciting meetup filled with tech talks, networking, and hands-on workshops at ContentStack, Velachery, Chennai.",
+      participants: 80
     }
   ];
 
-  // Updated upcoming events with volunteer requirements from sources
-  const upcomingEvents = [
-    {
-      id: 1,
-      title: "September Meetup 2025",
-      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1756808600/WhatsApp_Image_2025-08-31_at_07.50.01_b61d2154_jymwvs.jpg",
-      date: "August 2025",
-      time: "10:00 AM - 2:00 PM",
-      location: "ContentStack,  Velachery, Chennai, Tamil Nadu",
-      description: "Reserve your spot now at https://bento.me/codesapiens to join us for an exciting meetup filled with tech talks, networking, and hands-on workshops.",
-      volunteersNeeded: [
-        { role: "Event Coordination", count: 5, skills: "Organization, Communication" },
-        { role: "Technical Support", count: 8, skills: "AV Equipment, Troubleshooting" },
-        { role: "Registration Desk", count: 6, skills: "Customer Service, Attention to Detail" }
-      ]
-    }
-  ];
+  // No upcoming events, empty array
+  const upcomingEvents = [];
 
   // Volunteers with photos, names, and separate LinkedIn links
   const volunteers = [
@@ -424,54 +417,61 @@ const CodeSapiensHero = () => {
             </h2>
           </div>
 
-          <div className={`space-y-16 max-w-5xl mx-auto ${useInView('upcoming').inView ? 'opacity-100' : 'opacity-0'}`}>
-            {upcomingEvents.map((event, index) => (
-              <div
-                key={event.id}
-                className={`group bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-700 hover:shadow-2xl stagger-child ${useInView('upcoming').inView ? 'animate-fadeInUp opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-                style={{ animationDelay: `${index * 0.2}s` }}
-              >
-                <div className="grid lg:grid-cols-5 gap-8 lg:gap-12 p-6">
-                  {/* Event Image */}
-                  <div className="lg:col-span-2">
-                    <div className="relative overflow-hidden rounded-md">
-                      <img
-                        src={event.image}
-                        alt={event.title}
-                        className="w-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        loading="lazy"
-                      />
+          {upcomingEvents.length > 0 ? (
+            <div className={`space-y-16 max-w-5xl mx-auto ${useInView('upcoming').inView ? 'opacity-100' : 'opacity-0'}`}>
+              {upcomingEvents.map((event, index) => (
+                <div
+                  key={event.id}
+                  className={`group bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-700 hover:shadow-2xl stagger-child ${useInView('upcoming').inView ? 'animate-fadeInUp opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                  style={{ animationDelay: `${index * 0.2}s` }}
+                >
+                  <div className="grid lg:grid-cols-5 gap-8 lg:gap-12 p-6">
+                    {/* Event Image */}
+                    <div className="lg:col-span-2">
+                      <div className="relative overflow-hidden rounded-md">
+                        <img
+                          src={event.image}
+                          alt={event.title}
+                          className="w-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          loading="lazy"
+                        />
+                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Event Details */}
-                  <div className="lg:col-span-2 flex flex-col justify-center">
-                    <h3 className="text-2xl lg:text-3xl font-light text-zinc-900 mb-4 transition-colors duration-300 group-hover:text-zinc-700">
-                      {event.title}
-                    </h3>
-                    <p className="text-zinc-600 font-light leading-relaxed mb-6">
-                      {event.description}
-                    </p>
                     
-                    <div className="space-y-2 text-sm font-light text-zinc-500 mb-6">
-                      <div className="flex items-center space-x-3">
-                        <Calendar className="w-4 h-4" />
-                        <span>{event.date}</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Clock className="w-4 h-4" />
-                        <span>{event.time}</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <MapPin className="w-4 h-4" />
-                        <span>{event.location}</span>
+                    {/* Event Details */}
+                    <div className="lg:col-span-2 flex flex-col justify-center">
+                      <h3 className="text-2xl lg:text-3xl font-light text-zinc-900 mb-4 transition-colors duration-300 group-hover:text-zinc-700">
+                        {event.title}
+                      </h3>
+                      <p className="text-zinc-600 font-light leading-relaxed mb-6">
+                        {event.description}
+                      </p>
+                      
+                      <div className="space-y-2 text-sm font-light text-zinc-500 mb-6">
+                        <div className="flex items-center space-x-3">
+                          <Calendar className="w-4 h-4" />
+                          <span>{event.date}</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Clock className="w-4 h-4" />
+                          <span>{event.time}</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <MapPin className="w-4 h-4" />
+                          <span>{event.location}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className={`text-center max-w-3xl mx-auto py-16 ${useInView('upcoming').inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <h3 className="text-3xl font-light text-zinc-900 mb-4">More Events Coming Soon</h3>
+              <p className="text-lg font-light text-zinc-600">Stay tuned for our next exciting meetups, workshops, and tech events. Follow us on social media for updates!</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -585,7 +585,7 @@ const CodeSapiensHero = () => {
             <h2 className="text-4xl lg:text-5xl font-extralight tracking-wide mb-8">
               Building  <span className="italic">Community</span> since
             </h2>
-            <div className="text-6xl lg:text-7xl font-extralight text-zinc-400 mb-12">©2017</div>
+            <div className="text-6xl lg:text-7xl font-extralight text-zinc-400 mb-12">©2023</div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-12">
