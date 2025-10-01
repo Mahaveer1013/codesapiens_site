@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch} from 'lucide-react';
+import { Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch, BookPlus } from 'lucide-react';
 
 // Import your actual Supabase client
 import { supabase } from '../lib/supabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { href, useNavigate } from 'react-router-dom';
 
 export default function UnifiedNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -14,7 +14,7 @@ export default function UnifiedNavbar() {
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
-  
+
   // Refs for click outside detection
   const profileDropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
@@ -111,7 +111,7 @@ export default function UnifiedNavbar() {
       } catch (err) {
         setError(err.message);
         console.error('Error fetching user data:', err);
-        
+
         // Fallback user data for demonstration
         setUserData({
           uid: 'fallback',
@@ -178,7 +178,7 @@ export default function UnifiedNavbar() {
     // Close all dropdowns when navigating
     setIsMobileMenuOpen(false);
     setIsProfileDropdownOpen(false);
-    
+
     // Handle navigation
     if (href && href !== '#') {
       window.location.href = href;
@@ -189,16 +189,16 @@ export default function UnifiedNavbar() {
     try {
       // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         console.error('Error signing out:', error);
       }
-      
+
       // Clear any local state and redirect
       setUserData(null);
       setIsMobileMenuOpen(false);
       setIsProfileDropdownOpen(false);
-      
+
       // Redirect to login or home page
       navigate('/');
     } catch (err) {
@@ -220,16 +220,16 @@ export default function UnifiedNavbar() {
 
     if (userData?.avatar) {
       return (
-        <img 
-          src={userData.avatar} 
+        <img
+          src={userData.avatar}
           alt={userData.displayName}
           className={`${size} rounded-full object-cover`}
         />
       );
     }
 
-    const gradientClass = isAdmin 
-      ? 'bg-gradient-to-br from-red-500 to-orange-600' 
+    const gradientClass = isAdmin
+      ? 'bg-gradient-to-br from-red-500 to-orange-600'
       : 'bg-gradient-to-br from-blue-500 to-purple-600';
 
     return (
@@ -309,16 +309,16 @@ export default function UnifiedNavbar() {
       return (
         <div className="hidden md:flex items-center justify-center flex-1 max-w-md mx-auto">
           <div className="flex items-center space-x-8">
-            
-            <button 
+
+            <button
               onClick={() => navigate('/user-list')}
               className={`text-gray-700 ${hoverColor} px-3 py-2 rounded-md font-medium transition-colors flex items-center space-x-2`}
             >
               <Users className="w-4 h-4" />
               <span>Users</span>
             </button>
-           
-            <button 
+
+            <button
               onClick={() => navigate('/analytics')}
               className={`text-gray-700 ${hoverColor} px-3 py-2 rounded-md font-medium transition-colors`}
             >
@@ -329,7 +329,7 @@ export default function UnifiedNavbar() {
       );
     }
 
-    
+
   };
 
   const renderProfileDropdown = () => {
@@ -353,8 +353,8 @@ export default function UnifiedNavbar() {
         <div className="py-2">
           {isAdmin ? (
             <>
-             
-              <button 
+
+              <button
                 onClick={() => navigate('/analytics')}
                 className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
@@ -364,14 +364,22 @@ export default function UnifiedNavbar() {
             </>
           ) : (
             <>
-              <button 
+              <button
                 onClick={() => navigate('/profile')}
                 className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 <User className="w-4 h-4 mr-2" />
                 Profile
               </button>
-              
+              <button
+                onClick={() => window.open("https://www.linkshub.dev/", "_blank")}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <BookPlus className="w-4 h-4 mr-2" />
+                Resources
+              </button>
+
+
             </>
           )}
           {/* <button 
@@ -381,7 +389,7 @@ export default function UnifiedNavbar() {
             Help & Support
           </button> */}
           <div className="border-t border-gray-100 mt-2 pt-2">
-            <button 
+            <button
               onClick={handleSignOut}
               className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
             >
@@ -402,16 +410,16 @@ export default function UnifiedNavbar() {
       <div ref={mobileMenuRef} className="md:hidden border-t border-gray-200 py-4 space-y-2 bg-white">
         {isAdmin ? (
           <>
-           
-            <button 
+
+            <button
               onClick={() => navigate('/user-list')}
               className={`w-full text-left block px-4 py-2 text-gray-700 hover:bg-gray-100 ${hoverColor} rounded-md font-medium transition-colors flex items-center space-x-2`}
             >
               <Users className="w-4 h-4" />
               <span>Users</span>
             </button>
-           
-            <button 
+
+            <button
               onClick={() => handleNavClick('/analytics')}
               className={`w-full text-left block px-4 py-2 text-gray-700 hover:bg-gray-100 ${hoverColor} rounded-md font-medium transition-colors`}
             >
@@ -420,11 +428,11 @@ export default function UnifiedNavbar() {
           </>
         ) : (
           <>
-           
-          
+
+
           </>
         )}
-        
+
         {/* Mobile User Info */}
         <div className="border-t border-gray-200 pt-4 mt-4">
           <div className="px-4 py-2">
@@ -478,7 +486,7 @@ export default function UnifiedNavbar() {
               >
                 Help & Support
               </button> */}
-              <button 
+              <button
                 onClick={handleSignOut}
                 className="w-full text-left block text-sm text-red-600 hover:text-red-700 py-1"
               >
@@ -546,7 +554,7 @@ export default function UnifiedNavbar() {
 
             {/* User Profile Section */}
             <div className="relative" ref={profileDropdownRef}>
-              <button 
+              <button
                 onClick={toggleProfileDropdown}
                 className="flex items-center space-x-3 p-1 rounded-lg hover:bg-gray-100 transition-colors"
                 disabled={loading}
@@ -556,9 +564,8 @@ export default function UnifiedNavbar() {
                   <div className="text-left">
                     {renderUserInfo()}
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-gray-500 ml-1 transition-transform ${
-                    isProfileDropdownOpen ? 'rotate-180' : ''
-                  }`} />
+                  <ChevronDown className={`w-4 h-4 text-gray-500 ml-1 transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''
+                    }`} />
                 </div>
               </button>
 
@@ -575,7 +582,7 @@ export default function UnifiedNavbar() {
             </button> */}
 
             {/* Mobile Menu Button */}
-            <button 
+            <button
               onClick={toggleMobileMenu}
               className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >

@@ -23,6 +23,7 @@ import CodeSapiensHero from './components/CodesapiensHero';
 import AllUserList from './admin/AllUserList';
 import ResetPassword from './components/ResetPassword';
 import ResetPasswordConfirm from './components/ResetPasswordConfirm'
+import Roadmap from './user/RoadMap';
 
 
 function Root() {
@@ -68,6 +69,7 @@ function Root() {
             <Route path="/user-list" element={<AllUserList/>} />
             <Route path="/forgot-password" element={<ResetPassword/>} />
             <Route path="/reset-password" element={<ResetPasswordConfirm/>} />
+            <Route path="/roadmap" element={<Roadmap/>} />
 
            
             <Route path="*" element={<NotFoundPage/>} />
