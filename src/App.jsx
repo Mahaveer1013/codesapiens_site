@@ -27,6 +27,7 @@ import UserEvents from './user/UserEvents';
 import UserResource from './user/UserResource';
 import UserResumeBuilder from './user/UserResumeBuilder';
 import UserMentorshipForm from './user/UserMentorshipForm';
+import AdminMentorshipSubmission from './admin/AdminMentorshipSubmission';
 
 
 
@@ -77,6 +78,7 @@ function Root() {
             <Route path="/resource" element={<UserResource/>} />
             <Route path="/resume" element={<UserResumeBuilder/>} />
             <Route path="/mentorship" element={<UserMentorshipForm/>} />
+            <Route path="/mentorship-form" element={<AdminMentorshipSubmission/>} />
          
           
 

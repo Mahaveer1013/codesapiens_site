@@ -5,7 +5,6 @@ import { Loader2, X } from "lucide-react";
 const UserMentorshipForm = () => {
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
     remember: false,
     reasonForMentorship: "",
     skillsToDevelop: "",
@@ -19,10 +18,11 @@ const UserMentorshipForm = () => {
   const [success, setSuccess] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasExistingData, setHasExistingData] = useState(false);
 
-  // Check authentication status and set email
+  // Check authentication status and fetch existing mentorship data
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuthAndFetchData = async () => {
       try {
         setAuthChecking(true);
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -37,17 +37,45 @@ const UserMentorshipForm = () => {
           setError("Please log in to submit the mentorship form.");
           return;
         }
+
         setIsAuthenticated(true);
         setFormData((prev) => ({ ...prev, email: user.email || "" }));
+
+        // Fetch existing mentorship request data
+        const { data, error: fetchError } = await supabase
+          .from("users")
+          .select("mentorship_request")
+          .eq("uid", user.id)
+          .single();
+
+        if (fetchError) {
+          console.error("[Frontend] : Error fetching mentorship data:", fetchError);
+          setError("Failed to fetch existing data. Please try again.");
+          return;
+        }
+
+        if (data && data.mentorship_request) {
+          setHasExistingData(true);
+        } else {
+          setHasExistingData(false);
+        }
       } catch (err) {
-        console.error("[Frontend] : Error checking auth:", err);
-        setError("Failed to verify authentication. Please try again.");
+        console.error("[Frontend] : Error checking auth or fetching data:", err);
+        setError("Failed to verify authentication or fetch data. Please try again.");
       } finally {
         setAuthChecking(false);
       }
     };
-    checkAuth();
+    checkAuthAndFetchData();
   }, []);
+
+  // Clear success message after 3 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -116,9 +144,9 @@ const UserMentorshipForm = () => {
 
       console.log("[Frontend] : Mentorship request saved:", data);
       setSuccess("Mentorship request submitted successfully!");
+      setHasExistingData(true); // Update state to show message and hide form
       setFormData({
         email: user.email || "",
-        password: "",
         remember: false,
         reasonForMentorship: "",
         skillsToDevelop: "",
@@ -130,6 +158,49 @@ const UserMentorshipForm = () => {
     } catch (err) {
       console.error("[Frontend] : Submission error:", err);
       setError(err.message || "Failed to submit form. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle deletion of mentorship request data
+  const handleDelete = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error("User not authenticated. Please log in.");
+      }
+
+      console.log("[Frontend] : Deleting mentorship request for user:", user.id);
+
+      const { data, error } = await supabase
+        .from("users")
+        .update({ mentorship_request: null, updated_at: new Date().toISOString() })
+        .eq("uid", user.id)
+        .select("*")
+        .single();
+
+      if (error) {
+        console.error("[Frontend] : Error deleting mentorship request:", error);
+        throw new Error(
+          error.code === "42501"
+            ? "Permission denied. Check RLS policies for the 'users' table."
+            : error.code === "42P01"
+            ? "Table 'users' does not exist or 'mentorship_request' column is missing."
+            : error.message || "Failed to delete mentorship request."
+        );
+      }
+
+      console.log("[Frontend] : Mentorship request deleted:", data);
+      setSuccess("Mentorship request deleted successfully!");
+      setHasExistingData(false); // Show form again after deletion
+    } catch (err) {
+      console.error("[Frontend] : Deletion error:", err);
+      setError(err.message || "Failed to delete data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -164,6 +235,40 @@ const UserMentorshipForm = () => {
     );
   }
 
+  if (hasExistingData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-lg p-4 bg-white rounded-xl shadow-md relative">
+          {/* Loading Bar */}
+          {loading && (
+            <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 animate-pulse" />
+          )}
+          {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+          {success && <p className="text-sm text-green-500 mb-4">{success}</p>}
+          <p className="text-sm text-blue-500 mb-4">
+            You have already submitted a mentorship request.
+          </p>
+          <button
+            onClick={handleDelete}
+            disabled={loading}
+            className={`px-6 py-2 rounded-md text-white transition ${
+              loading ? "bg-red-400 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"
+            }`}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Deleting...
+              </div>
+            ) : (
+              "Delete All Data"
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-white">
       {/* Left Side - Image */}
@@ -179,8 +284,13 @@ const UserMentorshipForm = () => {
       <div className="md:w-1/2 w-full flex justify-center items-center bg-gray-50 p-4 md:p-8 overflow-y-auto">
         <form
           onSubmit={handleSubmit}
-          className="flex w-full max-w-lg flex-col gap-4 bg-white p-4 rounded-xl shadow-md"
+          className="flex w-full max-w-lg flex-col gap-4 bg-white p-4 rounded-xl shadow-md relative"
         >
+          {/* Loading Bar */}
+          {loading && (
+            <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 animate-pulse" />
+          )}
+
           <h2 className="text-2xl font-bold text-center mb-2 text-gray-900">
             Join Our Mentorship
           </h2>
@@ -203,22 +313,6 @@ const UserMentorshipForm = () => {
               required
               disabled
               className="border border-gray-300 rounded-md px-3 py-2 bg-gray-100 cursor-not-allowed"
-            />
-          </div>
-
-          {/* Password Field */}
-          <div className="flex flex-col">
-            <label htmlFor="password" className="mb-1 text-sm font-medium text-gray-700">
-              Your Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 

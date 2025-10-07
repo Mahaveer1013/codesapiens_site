@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch, BookPlus , CalendarSearch ,FileCheck2, Computer } from 'lucide-react';
+import { Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch, BookPlus , CalendarSearch ,FileCheck2, Computer, BrainCircuit  } from 'lucide-react';
 
 // Import your actual Supabase client
 import { supabase } from '../lib/supabaseClient';
@@ -360,6 +360,13 @@ export default function UnifiedNavbar() {
               >
                 <TextSearch className="w-4 h-4 mr-2" />
                 View Analytics
+              </button>
+              <button
+                onClick={() => navigate('/mentorship-form')}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <BrainCircuit className="w-4 h-4 mr-2" />
+                Mentorship Form Submission
               </button>
             </>
           ) : (
