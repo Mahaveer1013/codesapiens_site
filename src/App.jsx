@@ -56,6 +56,7 @@ function Root() {
 
             <Route path="/forgot-password" element={<ResetPassword/>} />
             <Route path="/reset-password" element={<ResetPasswordConfirm/>} />
+             <Route path="*" element={<NotFoundPage/>} />
         </Routes>
       </Router>
     </div>

@@ -5,7 +5,6 @@ import { Loader2, X } from "lucide-react";
 const UserMentorshipForm = () => {
   const [formData, setFormData] = useState({
     email: "",
-    remember: false,
     reasonForMentorship: "",
     skillsToDevelop: "",
     domain: "",
@@ -79,10 +78,10 @@ const UserMentorshipForm = () => {
 
   // Handle input changes
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
     setError(null);
     setSuccess(null);
@@ -147,7 +146,6 @@ const UserMentorshipForm = () => {
       setHasExistingData(true); // Update state to show message and hide form
       setFormData({
         email: user.email || "",
-        remember: false,
         reasonForMentorship: "",
         skillsToDevelop: "",
         domain: "",
@@ -270,9 +268,9 @@ const UserMentorshipForm = () => {
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-white">
-      {/* Left Side - Image */}
-      <div className="md:w-1/2 w-full h-[50vh] md:h-screen max-h-screen">
+    <div className="flex min-h-screen">
+      {/* Left Side - Fixed Image */}
+      <div className="fixed top-0 left-0 w-full md:w-1/2 h-screen">
         <img
           src="https://res.cloudinary.com/dqudvximt/image/upload/v1759813806/sea-7456253_1280_vbb9f8.jpg"
           alt="Mentorship"
@@ -280,11 +278,11 @@ const UserMentorshipForm = () => {
         />
       </div>
 
-      {/* Right Side - Form */}
-      <div className="md:w-1/2 w-full flex justify-center items-center bg-gray-50 p-4 md:p-8 overflow-y-auto">
+      {/* Right Side - Scrollable Form */}
+      <div className="w-full md:ml-[50%] md:w-1/2 flex justify-center items-start bg-gray-50 overflow-y-auto min-h-screen">
         <form
           onSubmit={handleSubmit}
-          className="flex w-full max-w-lg flex-col gap-4 bg-white p-4 rounded-xl shadow-md relative"
+          className="flex w-full max-w-lg flex-col gap-4 bg-white p-4 md:p-8 rounded-xl shadow-md relative my-4 md:my-8"
         >
           {/* Loading Bar */}
           {loading && (
@@ -314,21 +312,6 @@ const UserMentorshipForm = () => {
               disabled
               className="border border-gray-300 rounded-md px-3 py-2 bg-gray-100 cursor-not-allowed"
             />
-          </div>
-
-          {/* Remember Me */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="remember"
-              name="remember"
-              checked={formData.remember}
-              onChange={handleInputChange}
-              className="w-4 h-4 text-blue-600"
-            />
-            <label htmlFor="remember" className="text-gray-900 text-sm">
-              Remember me
-            </label>
           </div>
 
           {/* Reason for Mentorship */}

@@ -153,9 +153,9 @@ const CodeSapiensHero = () => {
       link: "https://www.linkedin.com/in/subhaharini-p-938568254"
     },
     {
-      photo: "https://via.placeholder.com/150?text=YOU",
-      name: "YOU",
-      link: "/auth" // Link to join/register
+      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1759925520/1732031130575_b834gr.jpg",
+      name: "Jayasurya R",
+      link: "https://www.linkedin.com/in/jayasurya-r-b37997279/" // Link to join/register
     }
   ];
 

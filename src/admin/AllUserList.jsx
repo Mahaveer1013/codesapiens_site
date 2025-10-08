@@ -9,7 +9,9 @@ import {
   Globe, 
   Trophy, 
   Calendar,
-  Search
+  Search,
+  Eye, // Add Eye icon for view resume
+  Download // Add Download icon for download resume
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -60,7 +62,8 @@ const AllUserList = () => {
           major: user.major || 'Not specified',
           department: user.department || 'Not specified',
           year: user.year || 'Not specified',
-          skills: Array.isArray(user.skills) ? user.skills : typeof user.skills === 'string' ? JSON.parse(user.skills) : []
+          skills: Array.isArray(user.skills) ? user.skills : typeof user.skills === 'string' ? JSON.parse(user.skills) : [],
+          resumeUrl: user.resume_url || null // Add resume_url to user data
         }));
 
         setUsers(transformedUsers);
@@ -93,7 +96,6 @@ const AllUserList = () => {
 
   const handleCloseDetails = () => {
     setIsDetailsOpen(false);
-    // Add small delay before clearing selectedUser to allow animation to complete
     setTimeout(() => setSelectedUser(null), 300);
   };
 
@@ -444,6 +446,47 @@ const AllUserList = () => {
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+
+                  {/* Resume Section */}
+                  <div className="bg-white rounded-lg shadow-sm border">
+                    <div className="p-3 sm:p-4 border-b">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                        <Download className="w-5 h-5" />
+                        <span>Resume</span>
+                      </h3>
+                    </div>
+                    <div className="p-3 sm:p-4">
+                      {selectedUser.resumeUrl ? (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-700">Resume:</span>
+                          <div className="flex items-center space-x-2">
+                            <a
+                              href={selectedUser.resumeUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
+                            >
+                              <Eye className="w-4 h-4" />
+                              <span>View Resume</span>
+                            </a>
+                            <a
+                              href={selectedUser.resumeUrl}
+                              download
+                              className="flex items-center space-x-1 text-green-600 hover:text-green-800 text-sm font-medium hover:underline"
+                            >
+                              <Download className="w-4 h-4" />
+                              <span>Download</span>
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 sm:py-8">
+                          <Download className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                          <p className="text-gray-500 text-sm">No resume uploaded</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
