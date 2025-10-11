@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Github, Instagram, Linkedin, Twitter, Calendar, Users, Code, Award, Mail, Phone, MapPin, Clock, UserPlus, ArrowRight, Youtube, Users2 } from 'lucide-react'; // Added Users2 for Discord if needed, but using standard
+import { ChevronDown, Github, Instagram, Linkedin, Twitter, Calendar, Users, Code, Award, Mail, Phone, MapPin, Clock, UserPlus, ArrowRight, Youtube, Users2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const CodeSapiensHero = () => {
@@ -53,13 +53,13 @@ const CodeSapiensHero = () => {
     {
       id: 6,
       title: "June Meetup 2024",
-      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1759736573/width_800_pcvbvj.jpg",
-      date: "September 2025",
+      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1759741580/1753106111524_wqepam.jpg",
+      date: "June 2024",
       description: "Exciting meetup filled with tech talks, networking, and hands-on workshops at ContentStack, Velachery, Chennai.",
       participants: 80
     },
     {
-      id: 6,
+      id: 7,
       title: "Github Contest",
       image: "https://res.cloudinary.com/dqudvximt/image/upload/v1759741580/1753106111524_wqepam.jpg",
       date: "July 2025",
@@ -105,7 +105,7 @@ const CodeSapiensHero = () => {
     }
   ];
 
-  // Volunteers with original links from previous code (no additions for unlinked members; added YOU card)
+  // Volunteers with original links from previous code
   const volunteers = [
     {
       photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/2ABMHfqOsrpoL3OV-WhatsApp202025-08-312010.33.52_a8a27bbd_vzcgzq.jpg",
@@ -155,7 +155,7 @@ const CodeSapiensHero = () => {
     {
       photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1759925520/1732031130575_b834gr.jpg",
       name: "Jayasurya R",
-      link: "https://www.linkedin.com/in/jayasurya-r-b37997279/" // Link to join/register
+      link: "https://www.linkedin.com/in/jayasurya-r-b37997279/"
     }
   ];
 
@@ -281,12 +281,12 @@ const CodeSapiensHero = () => {
           <nav className="flex justify-between items-center py-4 sm:py-6">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center">
-               <img
-                 src="https://res.cloudinary.com/dqudvximt/image/upload/v1756797708/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz.jpg"
-                 alt="Logo"
-                 className="w-full h-full rounded-full object-cover transition-transform duration-300 hover:scale-105"
-                 loading="lazy"
-               />
+                <img
+                  src="https://res.cloudinary.com/dqudvximt/image/upload/v1756797708/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz.jpg"
+                  alt="Logo"
+                  className="w-full h-full rounded-full object-cover transition-transform duration-300 hover:scale-105"
+                  loading="lazy"
+                />
               </div>
               <span className="text-lg sm:text-xl font-light tracking-wider">CodeSapiens</span>
             </div>
@@ -337,14 +337,6 @@ const CodeSapiensHero = () => {
                   <span>View Upcoming Events</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                 </button>
-              </div>
-            </div>
-
-            {/* Scroll Indicator with CSS bounce */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-              <div className="flex flex-col items-center">
-                <span className="text-xs font-light tracking-widest uppercase mb-2 text-zinc-400">Scroll</span>
-                <ChevronDown className="w-5 h-5 text-zinc-400" />
               </div>
             </div>
           </div>
@@ -632,7 +624,7 @@ const CodeSapiensHero = () => {
           <div className="text-center mb-12 sm:mb-16 transition-all duration-1000">
             <span className="text-xs sm:text-sm font-light tracking-widest uppercase text-zinc-400 mb-4 sm:mb-8 block">CodeSapiens</span>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl lg:text-5xl font-extralight tracking-wide mb-4 sm:mb-6 lg:mb-8">
-              Building  <span className="italic">Community</span> since
+              Building <span className="italic">Community</span> since
             </h2>
             <div className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extralight text-zinc-400 mb-6 sm:mb-8 lg:mb-12">©2023</div>
           </div>
@@ -645,7 +637,7 @@ const CodeSapiensHero = () => {
                 { icon: Linkedin, href: "https://www.linkedin.com/company/codesapiens-community/posts/", label: "LinkedIn" },
                 { icon: Github, href: "https://github.com/Codesapiens-in", label: "Github" },
                 { icon: Youtube, href: "https://youtube.com/@codesapiens-in?si=90EaPMYHcSZIHtMi", label: "Youtube" },
-                { icon: Users2, href: "https://discord.gg/codesapiens", label: "Discord" } // Assuming Discord link; replace if needed
+                { icon: Users2, href: "https://discord.gg/codesapiens", label: "Discord" }
               ].map((social, index) => {
                 const Icon = social.icon;
                 return (
