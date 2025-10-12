@@ -298,7 +298,7 @@ const UserProfile = () => {
       formData.append("resume", file);
       formData.append("userId", userData.uid);
 
-      const response = await fetch("http://localhost:3000/upload-resume", {
+      const response = await fetch("https://colleges-name-api.vercel.app/upload-resume", {
         method: "POST",
         body: formData,
       });
