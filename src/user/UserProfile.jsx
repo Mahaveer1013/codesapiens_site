@@ -28,6 +28,15 @@ import { supabase } from "../lib/supabaseClient";
 import skillsList from "../assets/skills.json";
 import academicData from "../assets/academic.json";
 
+// Simple debounce function
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
+
 const UserProfile = () => {
   const [activeTab, setActiveTab] = useState("Overview");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -181,6 +190,50 @@ const UserProfile = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Check username availability with debounce
+  useEffect(() => {
+    if (!isEditing || !editedData?.username) {
+      setUsernameError(null);
+      return;
+    }
+
+    const username = editedData.username.trim();
+    const usernameRegex = /^[a-z0-9_]{3,20}$/;
+
+    if (!username) {
+      setUsernameError("Username is required.");
+      return;
+    }
+
+    if (!usernameRegex.test(username)) {
+      setUsernameError("Username must be 3-20 characters, alphanumeric or underscores, lowercase.");
+      return;
+    }
+
+    const checkUsername = debounce(async () => {
+      try {
+        console.log("[Frontend] : Checking username availability:", username);
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("username")
+          .eq("username", username)
+          .neq("uid", userData.uid) // Exclude current user
+          .single();
+
+        if (existingUser) {
+          setUsernameError("Username already taken.");
+        } else {
+          setUsernameError(null);
+        }
+      } catch (err) {
+        console.error("[Frontend] : Error checking username:", err.message);
+        setUsernameError("Error checking username availability.");
+      }
+    }, 500);
+
+    checkUsername();
+  }, [editedData?.username, isEditing, userData?.uid]);
 
   // Fetch colleges from API
   useEffect(() => {
@@ -388,7 +441,7 @@ const UserProfile = () => {
     setEditedData((prev) => ({ ...prev, [name]: value }));
     setSaveError(null);
     if (name === "username") {
-      setUsernameError(null);
+      setUsernameError(null); // Reset error while typing
     }
   };
 
@@ -481,12 +534,6 @@ const UserProfile = () => {
     const finalCollege = editedData.college?.trim() || "Not specified";
     const username = editedData.username?.trim();
 
-    if (finalCollege.length >= 3 && finalCollege !== lastSelectedCollege && !colleges.includes(finalCollege)) {
-      setCollegeError("Please select a valid college from the dropdown.");
-      setSaveError("Invalid college selection.");
-      return;
-    }
-
     if (!username) {
       setUsernameError("Username is required.");
       setSaveError("Username is required.");
@@ -500,22 +547,34 @@ const UserProfile = () => {
       return;
     }
 
+    // Check username availability
     try {
-      // Check if username is taken
-      if (username !== userData.username) {
-        const { data: existingUser } = await supabase
-          .from("users")
-          .select("username")
-          .eq("username", username)
-          .single();
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("username")
+        .eq("username", username)
+        .neq("uid", userData.uid) // Exclude current user
+        .single();
 
-        if (existingUser) {
-          setUsernameError("Username already taken.");
-          setSaveError("Username already taken.");
-          return;
-        }
+      if (existingUser) {
+        setUsernameError("Username already taken.");
+        setSaveError("Username already taken.");
+        return;
       }
+    } catch (err) {
+      console.error("[Frontend] : Error checking username in save:", err.message);
+      setUsernameError("Error checking username availability.");
+      setSaveError("Error checking username availability.");
+      return;
+    }
 
+    if (finalCollege.length >= 3 && finalCollege !== lastSelectedCollege && !colleges.includes(finalCollege)) {
+      setCollegeError("Please select a valid college from the dropdown.");
+      setSaveError("Invalid college selection.");
+      return;
+    }
+
+    try {
       const updateData = {
         display_name: editedData.displayName?.trim() || "User",
         phone_number: editedData.phoneNumber?.trim() || "",
@@ -729,8 +788,11 @@ const UserProfile = () => {
                     <div className="flex space-x-2">
                       <button
                         onClick={handleSave}
-                        className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-sm font-medium"
+                        className={`flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg transition-colors duration-200 text-sm font-medium ${
+                          usernameError ? "opacity-50 cursor-not-allowed" : "hover:bg-green-600"
+                        }`}
                         title="Save changes"
+                        disabled={!!usernameError}
                       >
                         <Save className="w-5 h-5" />
                         <span>Save</span>
@@ -800,7 +862,6 @@ const UserProfile = () => {
                 </div>
               )}
               {saveError && <p className="text-sm text-red-500 mt-2">{saveError}</p>}
-              {usernameError && <p className="text-sm text-red-500 mt-2">{usernameError}</p>}
             </div>
           </div>
         </div>
@@ -925,16 +986,21 @@ const UserProfile = () => {
                               <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                             </div>
                           ) : (
-                            <input
-                              type="text"
-                              name={info.label.toLowerCase().replace(" ", "")}
-                              value={editedData[info.label.toLowerCase().replace(" ", "")] || ""}
-                              onChange={handleInputChange}
-                              className={`text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full ${
-                                info.label === "Username" && usernameError ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
-                              }`}
-                              placeholder={info.label}
-                            />
+                            <div className="relative">
+                              <input
+                                type="text"
+                                name={info.label.toLowerCase().replace(" ", "")}
+                                value={editedData[info.label.toLowerCase().replace(" ", "")] || ""}
+                                onChange={handleInputChange}
+                                className={`text-sm text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full ${
+                                  info.label === "Username" && usernameError ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                                }`}
+                                placeholder={info.label}
+                              />
+                              {info.label === "Username" && usernameError && (
+                                <p className="text-sm text-red-500 mt-1 absolute -bottom-6 left-0">{usernameError}</p>
+                              )}
+                            </div>
                           )}
                         </div>
                       ) : (

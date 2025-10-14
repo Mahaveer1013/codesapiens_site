@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch, BookPlus, CalendarSearch, FileCheck2, Computer, BrainCircuit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +16,7 @@ export default function UnifiedNavbar() {
   // Refs for click outside detection
   const profileDropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
+  const profileButtonRef = useRef(null);
 
   // Function to fetch all user emails
   const fetchAllUserEmails = async () => {
@@ -134,7 +134,9 @@ export default function UnifiedNavbar() {
   // Handle clicks outside dropdowns
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+      if (profileDropdownRef.current && 
+          !profileDropdownRef.current.contains(event.target) &&
+          !profileButtonRef.current?.contains(event.target)) {
         setIsProfileDropdownOpen(false);
       }
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
@@ -162,6 +164,75 @@ export default function UnifiedNavbar() {
       document.removeEventListener('keydown', handleEscapeKey);
     };
   }, []);
+
+  // Adjust dropdown position on mobile
+  useEffect(() => {
+    if (isProfileDropdownOpen && profileDropdownRef.current && profileButtonRef.current) {
+      const adjustDropdownPosition = () => {
+        const dropdown = profileDropdownRef.current;
+        const button = profileButtonRef.current;
+        const buttonRect = button.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        
+        // Reset styles
+        dropdown.style.position = 'fixed';
+        dropdown.style.zIndex = '9999';
+        
+        // Calculate available space
+        const spaceBelow = viewportHeight - buttonRect.bottom;
+        const spaceAbove = buttonRect.top;
+        const dropdownHeight = dropdown.offsetHeight;
+        
+        // Position vertically
+        if (spaceBelow >= dropdownHeight || spaceBelow > spaceAbove) {
+          // Show below
+          dropdown.style.top = `${buttonRect.bottom + 8}px`;
+          dropdown.style.bottom = 'auto';
+        } else {
+          // Show above
+          dropdown.style.bottom = `${viewportHeight - buttonRect.top + 8}px`;
+          dropdown.style.top = 'auto';
+        }
+        
+        // Position horizontally
+        const dropdownWidth = Math.min(320, viewportWidth - 32); // Max width with padding
+        dropdown.style.width = `${dropdownWidth}px`;
+        
+        // Align to right edge of button but ensure it stays within viewport
+        const rightPosition = viewportWidth - buttonRect.right;
+        const maxRight = viewportWidth - dropdownWidth - 16; // 16px padding from edge
+        
+        if (buttonRect.right - dropdownWidth < 16) {
+          // Would go off left edge, align to left edge with padding
+          dropdown.style.left = '16px';
+          dropdown.style.right = 'auto';
+        } else {
+          // Align to right edge of button
+          dropdown.style.right = `${Math.max(16, rightPosition)}px`;
+          dropdown.style.left = 'auto';
+        }
+        
+        // Ensure dropdown doesn't exceed viewport height
+        const maxHeight = Math.min(
+          spaceBelow >= dropdownHeight ? spaceBelow - 16 : spaceAbove - 16,
+          viewportHeight * 0.8
+        );
+        dropdown.style.maxHeight = `${maxHeight}px`;
+        dropdown.style.overflowY = 'auto';
+      };
+      
+      // Adjust position immediately and on scroll/resize
+      adjustDropdownPosition();
+      window.addEventListener('scroll', adjustDropdownPosition, true);
+      window.addEventListener('resize', adjustDropdownPosition);
+      
+      return () => {
+        window.removeEventListener('scroll', adjustDropdownPosition, true);
+        window.removeEventListener('resize', adjustDropdownPosition);
+      };
+    }
+  }, [isProfileDropdownOpen]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -339,14 +410,22 @@ export default function UnifiedNavbar() {
     if (!isProfileDropdownOpen || loading) return null;
 
     return (
-      <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+      <div 
+        ref={profileDropdownRef}
+        className="bg-white rounded-xl shadow-2xl border border-gray-200 py-2"
+        style={{
+          position: 'fixed',
+          zIndex: 9999,
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
         <div className="px-4 py-3 border-b border-gray-100">
           <div className="flex items-center space-x-3">
             {renderUserAvatar('w-12 h-12', 'text-lg')}
-            <div>
+            <div className="min-w-0 flex-1">
               {renderUserInfo()}
               {!isAdmin && userData?.college && (
-                <div className="text-xs text-gray-400 mt-1">
+                <div className="text-xs text-gray-400 mt-1 truncate">
                   {userData.college}
                 </div>
               )}
@@ -361,20 +440,20 @@ export default function UnifiedNavbar() {
                   setIsProfileDropdownOpen(false);
                   navigate('/analytics');
                 }}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
               >
-                <TextSearch className="w-4 h-4 mr-2" />
-                View Analytics
+                <TextSearch className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>View Analytics</span>
               </button>
               <button
                 onClick={() => {
                   setIsProfileDropdownOpen(false);
                   navigate('/mentorship-form');
                 }}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
               >
-                <BrainCircuit className="w-4 h-4 mr-2" />
-                Mentorship Form Submission
+                <BrainCircuit className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Mentorship Form Submission</span>
               </button>
             </>
           ) : (
@@ -384,50 +463,50 @@ export default function UnifiedNavbar() {
                   setIsProfileDropdownOpen(false);
                   navigate('/profile');
                 }}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
               >
-                <User className="w-4 h-4 mr-2" />
-                Profile
+                <User className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Profile</span>
               </button>
               <button
                 onClick={() => {
                   setIsProfileDropdownOpen(false);
                   navigate('/resource');
                 }}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
               >
-                <BookPlus className="w-4 h-4 mr-2" />
-                Resources
+                <BookPlus className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Resources</span>
               </button>
               <button
                 onClick={() => {
                   setIsProfileDropdownOpen(false);
                   navigate('/resume');
                 }}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
               >
-                <FileCheck2 className="w-4 h-4 mr-2" />
-                Resume Builder(Beta)
+                <FileCheck2 className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Resume Builder(Beta)</span>
               </button>
               <button
                 onClick={() => {
                   setIsProfileDropdownOpen(false);
                   navigate('/mentorship');
                 }}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
               >
-                <Computer className="w-4 h-4 mr-2" />
-                Mentorship
+                <Computer className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Mentorship</span>
               </button>
               <button
                 onClick={() => {
                   setIsProfileDropdownOpen(false);
                   window.open("https://luma.com/codesapiens?k=c&period=past", "_blank");
                 }}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
               >
-                <CalendarSearch className="w-4 h-4 mr-2" />
-                Events
+                <CalendarSearch className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Events</span>
               </button>
             </>
           )}
@@ -437,7 +516,7 @@ export default function UnifiedNavbar() {
                 setIsProfileDropdownOpen(false);
                 handleSignOut();
               }}
-              className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors"
             >
               Sign Out
             </button>
@@ -537,65 +616,77 @@ export default function UnifiedNavbar() {
   const notificationCount = isAdmin ? 3 : 1;
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 w-full">
-      <div className="w-full px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo Section */}
-          {renderLogo()}
+    <>
+      <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 w-full">
+        <div className="w-full px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo Section */}
+            {renderLogo()}
 
-          {/* Desktop Navigation - Centered */}
-          {renderDesktopNavigation()}
+            {/* Desktop Navigation - Centered */}
+            {renderDesktopNavigation()}
 
-          {/* Right Section */}
-          <div className="flex items-center space-x-4 flex-shrink-0">
-            {/* Notification Bell */}
-            <div className="relative">
-            </div>
+            {/* Right Section */}
+            <div className="flex items-center space-x-4 flex-shrink-0">
+              {/* Notification Bell */}
+              <div className="relative">
+              </div>
 
-            {/* User Profile Section */}
-            <div className="relative" ref={profileDropdownRef}>
+              {/* User Profile Section */}
+              <div className="relative">
+                <button
+                  ref={profileButtonRef}
+                  onClick={toggleProfileDropdown}
+                  className="flex items-center space-x-3 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  disabled={loading}
+                >
+                  {renderUserAvatar()}
+                  <div className="hidden lg:flex items-center space-x-1">
+                    {renderUserInfo()}
+                    <ChevronDown className={`w-4 h-4 text-gray-500 ml-1 transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+              </div>
+
+              {/* Mobile Menu Button */}
               <button
-                onClick={toggleProfileDropdown}
-                className="flex items-center space-x-3 p-1 rounded-lg hover:bg-gray-100 transition-colors"
-                disabled={loading}
+                onClick={toggleMobileMenu}
+                className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                {renderUserAvatar()}
-                <div className="hidden lg:flex items-center space-x-1">
-                  {renderUserInfo()}
-                  <ChevronDown className={`w-4 h-4 text-gray-500 ml-1 transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
-                </div>
+                {isMobileMenuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
               </button>
-
-              {/* Profile Dropdown */}
-              {renderProfileDropdown()}
             </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={toggleMobileMenu}
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              {isMobileMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
-            </button>
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {renderMobileMenu()}
         </div>
 
-        {/* Mobile Navigation Menu */}
-        {renderMobileMenu()}
-      </div>
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border-b border-red-200 px-6 py-2">
+            <p className="text-red-700 text-sm">
+              Failed to load user data: {error}
+            </p>
+          </div>
+        )}
+      </nav>
 
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border-b border-red-200 px-6 py-2">
-          <p className="text-red-700 text-sm">
-            Failed to load user data: {error}
-          </p>
-        </div>
+      {/* Profile Dropdown - Rendered as a portal */}
+      {renderProfileDropdown()}
+
+      {/* Backdrop for desktop screens - only show on desktop when dropdown is open */}
+      {isProfileDropdownOpen && window.innerWidth >= 768 && (
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => setIsProfileDropdownOpen(false)}
+          style={{ pointerEvents: 'auto' }}
+        />
       )}
-    </nav>
+    </>
   );
 }
