@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient"; // Adjust path to your Supabase client
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Eye } from "lucide-react";
+import { Link } from "react-router-dom"; // Import Link for navigation
 
 const UserMentorshipForm = () => {
   const [formData, setFormData] = useState({
@@ -282,6 +283,13 @@ const UserMentorshipForm = () => {
           <p className="text-sm text-blue-500 mb-4">
             Please wait {formatCountdown(countdown)} before submitting another request.
           </p>
+          <Link
+            to="/mentorship-list"
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-sm font-medium"
+          >
+            <Eye className="w-5 h-5" />
+            <span>View Submissions</span>
+          </Link>
         </div>
       </div>
     );
@@ -309,9 +317,18 @@ const UserMentorshipForm = () => {
             <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 animate-pulse" />
           )}
 
-          <h2 className="text-2xl font-bold text-center mb-2 text-gray-900">
-            Join Our Mentorship
-          </h2>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Join Our Mentorship
+            </h2>
+            <Link
+              to="/mentorship-list"
+              className="inline-flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-sm font-medium"
+            >
+              <Eye className="w-5 h-5" />
+              <span>View Submissions</span>
+            </Link>
+          </div>
 
           {error && <p className="text-sm text-red-500 text-center">{error}</p>}
           {success && <p className="text-sm text-green-500 text-center">{success}</p>}
