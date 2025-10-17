@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Trophy, Users, TrendingUp, Settings, X, ExternalLink } from "lucide-react";
-
-// Import your actual Supabase client
 import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 
@@ -11,23 +9,29 @@ export default function UserDashboard() {
   const [error, setError] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [mode, setMode] = useState('dashboard'); // Added for handling password recovery mode
-  const [formData, setFormData] = useState({ email: '' }); // Added for form data
+  const [mode, setMode] = useState("dashboard");
+  const [formData, setFormData] = useState({ email: "" });
   const navigate = useNavigate();
+
+  // Utility function to validate and normalize URLs
+  const validateUrl = (url) => {
+    if (!url) return "#";
+    return url.startsWith("http") ? url : `https://${url}`;
+  };
 
   useEffect(() => {
     const handleAuthEvent = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      const urlParams = new URLSearchParams(window.location.search); // Fixed: use window.location
-      const type = urlParams.get('type');
+      const urlParams = new URLSearchParams(window.location.search);
+      const type = urlParams.get("type");
 
-      if (type === 'recovery' && session?.access_token) {
-        setMode('newPassword');
+      if (type === "recovery" && session?.access_token) {
+        setMode("newPassword");
         setFormData({ ...formData, email: session.user.email });
       }
     };
     handleAuthEvent();
-  }, []); // Removed location dependency since it's not imported; use window.location instead
+  }, []);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -36,14 +40,13 @@ export default function UserDashboard() {
         setLoading(true);
         setError(null);
 
-        // Get the current authenticated user
         const {
           data: { user },
           error: authError,
         } = await supabase.auth.getUser();
 
         if (authError) {
-          console.error('Auth error:', authError);
+          console.error("Auth error:", authError);
           setIsAuthenticated(false);
           setAuthChecking(false);
           return;
@@ -57,29 +60,26 @@ export default function UserDashboard() {
 
         setIsAuthenticated(true);
 
-        // Fetch user profile from the users table
         const { data, error: profileError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('uid', user.id)
+          .from("users")
+          .select("*")
+          .eq("uid", user.id)
           .single();
 
-        console.log('Fetched profile:', data, profileError);
+        console.log("Fetched profile:", data, profileError);
 
         if (profileError) {
-          console.error('Error fetching profile:', profileError);
+          console.error("Error fetching profile:", profileError);
           setError(profileError.message);
           return;
         }
 
         if (data) {
-          // Handle role-based redirect
           if (data.role === "admin") {
             window.location.href = "/admin";
             return;
           }
 
-          // Transform the data from snake_case to camelCase
           const transformedData = {
             uid: data.uid,
             displayName: data.display_name || "",
@@ -120,18 +120,23 @@ export default function UserDashboard() {
     fetchUserData();
   }, []);
 
-  // Handle external link navigation
+  // Handle external link navigation for events
   const handleEventsClick = () => {
-    window.open('https://luma.com/codesapiens?k=c&period=past', '_blank', 'noopener,noreferrer');
+    window.open("https://luma.com/codesapiens?k=c&period=past", "_blank", "noopener,noreferrer");
   };
 
-  // Render password recovery form if in that mode (added for completeness, though not requested)
-  if (mode === 'newPassword') {
+  // Render password recovery form
+  if (mode === "newPassword") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Set New Password</h2>
-          <form onSubmit={(e) => { e.preventDefault(); /* Handle password update */ }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              /* Handle password update */
+            }}
+          >
             <input
               type="email"
               value={formData.email}
@@ -170,11 +175,11 @@ export default function UserDashboard() {
     const role = userData.role ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1) : "Member";
     const hasSkills = userData.skills && userData.skills.length > 0;
     const hasBadges = userData.badgesEarned > 0;
-    
+
     if (hasBadges && hasSkills) {
-      return `Welcome back, ${name}! As a ${role} with ${userData.badgesEarned} badge${userData.badgesEarned > 1 ? 's' : ''} and skills like ${userData.skills[0]}, you're making waves in our community!`;
+      return `Welcome back, ${name}! As a ${role} with ${userData.badgesEarned} badge${userData.badgesEarned > 1 ? "s" : ""} and skills like ${userData.skills[0]}, you're making waves in our community!`;
     } else if (hasBadges) {
-      return `Welcome back, ${name}! Your ${userData.badgesEarned} badge${userData.badgesEarned > 1 ? 's' : ''} as a ${role} show your dedication—keep shining!`;
+      return `Welcome back, ${name}! Your ${userData.badgesEarned} badge${userData.badgesEarned > 1 ? "s" : ""} as a ${role} show your dedication—keep shining!`;
     } else if (hasSkills) {
       return `Welcome back, ${name}! Your skills like ${userData.skills[0]} make you a standout ${role} in our community!`;
     } else {
@@ -184,7 +189,6 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Auth Checking State - Prevents login page flash */}
       {authChecking && (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
@@ -194,17 +198,12 @@ export default function UserDashboard() {
         </div>
       )}
 
-      {/* Unauthenticated State */}
       {!authChecking && !isAuthenticated && (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Authentication Required
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Please log in to access your dashboard.
-            </p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+            <p className="text-gray-600 mb-4">Please log in to access your dashboard.</p>
             <button
               onClick={() => (window.location.href = "/login")}
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
@@ -215,10 +214,8 @@ export default function UserDashboard() {
         </div>
       )}
 
-      {/* Main Content - Only show when authenticated */}
       {!authChecking && isAuthenticated && (
         <main className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
-          {/* Loading State */}
           {loading && (
             <div className="flex items-center justify-center min-h-[400px]">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -226,7 +223,6 @@ export default function UserDashboard() {
             </div>
           )}
 
-          {/* Error State */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <div className="flex items-center">
@@ -242,27 +238,18 @@ export default function UserDashboard() {
             </div>
           )}
 
-          {/* Main Content - Only show when data is loaded */}
           {!loading && !error && userData && (
             <>
-              {/* Welcome Section */}
               <div className="mb-8">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   {getPersonalizedWelcomeMessage()}
                 </h1>
-                <p className="text-gray-600">
-                  Here's what's happening in your student community today.
-                </p>
-                {userData.bio && (
-                  <p className="text-gray-500 text-sm mt-1">{userData.bio}</p>
-                )}
+                <p className="text-gray-600">Here's what's happening in your student community today.</p>
+                {userData.bio && <p className="text-gray-500 text-sm mt-1">{userData.bio}</p>}
                 <div className="flex items-center mt-2 space-x-4 text-sm text-gray-500">
                   <span>{userData.college || "No college set"}</span>
                   <span>•</span>
-                  <span>
-                    {userData.role?.charAt(0).toUpperCase() +
-                      userData.role?.slice(1)}
-                  </span>
+                  <span>{userData.role?.charAt(0).toUpperCase() + userData.role?.slice(1)}</span>
                   {userData.emailVerified && (
                     <>
                       <span>•</span>
@@ -272,20 +259,15 @@ export default function UserDashboard() {
                   {!userData.emailVerified && (
                     <>
                       <span>•</span>
-                      <span className="text-yellow-600">
-                        ⚠ Email Not Verified
-                      </span>
+                      <span className="text-yellow-600">⚠ Email Not Verified</span>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Skills Section */}
               {userData.skills && userData.skills.length > 0 ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                    Your Skills
-                  </h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Skills</h2>
                   <div className="flex flex-wrap gap-2">
                     {userData.skills.map((skill, index) => (
                       <span
@@ -299,42 +281,33 @@ export default function UserDashboard() {
                 </div>
               ) : (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                    Your Skills
-                  </h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Skills</h2>
                   <div className="text-center py-8">
                     <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                       <Settings className="w-8 h-8 text-gray-400" />
                     </div>
-                    <p className="text-gray-500">
-                      No skills added yet. Add your skills to help others find
-                      you!
-                    </p>
-                    <button className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200" onClick={() => navigate('/profile')}>
+                    <p className="text-gray-500">No skills added yet. Add your skills to help others find you!</p>
+                    <button
+                      className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+                      onClick={() => navigate("/profile")}
+                    >
                       Add Skills
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Content Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Upcoming Events */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                   <div className="flex items-center space-x-3 mb-6">
                     <Calendar className="w-6 h-6 text-blue-500" />
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Upcoming Events
-                    </h2>
+                    <h2 className="text-xl font-semibold text-gray-900">Upcoming Events</h2>
                   </div>
-
                   <div className="text-center py-12">
                     <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                       <Calendar className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                      Events
-                    </h3>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Events</h3>
                     <p className="text-gray-500 mb-4">
                       We're working on an exciting events system where you can discover and join amazing learning opportunities.
                     </p>
@@ -352,22 +325,16 @@ export default function UserDashboard() {
                   </div>
                 </div>
 
-                {/* Recent Badges */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                   <div className="flex items-center space-x-3 mb-6">
                     <Trophy className="w-6 h-6 text-purple-500" />
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Badges & Achievements
-                    </h2>
+                    <h2 className="text-xl font-semibold text-gray-900">Badges & Achievements</h2>
                   </div>
-
                   <div className="text-center py-12">
                     <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                       <Trophy className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                      Badges Coming Soon!
-                    </h3>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Badges Coming Soon!</h3>
                     <p className="text-gray-500 mb-4">
                       We're creating an exciting badge system to recognize your achievements and progress.
                     </p>
@@ -376,66 +343,60 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              {/* Profile Links */}
-              {userData.githubUrl ||
-              userData.linkedinUrl ||
-              userData.portfolioUrl ? (
+              {userData.githubUrl || userData.linkedinUrl || userData.portfolioUrl ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                    Your Links
-                  </h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Links</h2>
                   <div className="flex flex-wrap gap-3">
                     {userData.githubUrl && (
                       <a
-                        href={userData.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={validateUrl(userData.githubUrl)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.open(validateUrl(userData.githubUrl), "_blank", "noopener,noreferrer");
+                        }}
                         className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200"
                       >
-                        <span className="text-sm font-medium text-gray-700">
-                          GitHub
-                        </span>
+                        <span className="text-sm font-medium text-gray-700">GitHub</span>
                       </a>
                     )}
                     {userData.linkedinUrl && (
                       <a
-                        href={userData.linkedinUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={validateUrl(userData.linkedinUrl)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.open(validateUrl(userData.linkedinUrl), "_blank", "noopener,noreferrer");
+                        }}
                         className="flex items-center px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors duration-200"
                       >
-                        <span className="text-sm font-medium text-blue-700">
-                          LinkedIn
-                        </span>
+                        <span className="text-sm font-medium text-blue-700">LinkedIn</span>
                       </a>
                     )}
                     {userData.portfolioUrl && (
                       <a
-                        href={userData.portfolioUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={validateUrl(userData.portfolioUrl)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.open(validateUrl(userData.portfolioUrl), "_blank", "noopener,noreferrer");
+                        }}
                         className="flex items-center px-4 py-2 bg-purple-100 hover:bg-purple-200 rounded-lg transition-colors duration-200"
                       >
-                        <span className="text-sm font-medium text-purple-700">
-                          Portfolio
-                        </span>
+                        <span className="text-sm font-medium text-purple-700">Portfolio</span>
                       </a>
                     )}
                   </div>
                 </div>
               ) : (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                    Your Links
-                  </h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Links</h2>
                   <div className="text-center py-8">
                     <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                       <Settings className="w-8 h-8 text-gray-400" />
                     </div>
-                    <p className="text-gray-500 mb-2">
-                     Add Profile Links
-                    </p>
-                    <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200" onClick={() => navigate('/profile')}>
+                    <p className="text-gray-500 mb-2">Add Profile Links</p>
+                    <button
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+                      onClick={() => navigate("/profile")}
+                    >
                       Add Profile Links
                     </button>
                   </div>
