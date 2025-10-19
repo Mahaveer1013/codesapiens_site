@@ -4,7 +4,6 @@ import { debounce } from 'lodash';
 
 const UserCodingPlatform = () => {
   const [code, setCode] = useState({
-    typescript: '// Write your TypeScript code here\nconsole.log("Hello, World!");',
     python: '# Write your Python code here\ndef hello():\n    print("Hello, World!")\n\nhello()',
     go: '// Write your Go code here\npackage main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}',
     c: '// Write your C code here\n#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
@@ -13,7 +12,8 @@ const UserCodingPlatform = () => {
     rust: '// Write your Rust code here\nfn main() {\n    println!("Hello, World!");\n}',
   });
   const [output, setOutput] = useState('');
-  const [language, setLanguage] = useState('typescript');
+  const [executionTime, setExecutionTime] = useState('');
+  const [language, setLanguage] = useState('python');
   const [theme, setTheme] = useState('vs-dark');
   const [editorWidth, setEditorWidth] = useState(50);
   const containerRef = useRef(null);
@@ -25,13 +25,13 @@ const UserCodingPlatform = () => {
 
   const runCode = async () => {
     setOutput('Running...');
+    setExecutionTime('');
     const sandboxMap = {
-      typescript: 'typescript',
       python: 'python',
       go: 'go',
       c: 'gcc',
       cpp: 'cpp',
-      java: 'java', // Fixed from 'java' to 'java11'
+      java: 'java',
       rust: 'rust',
     };
     const sandbox = sandboxMap[language];
@@ -57,14 +57,16 @@ const UserCodingPlatform = () => {
 
       const data = await response.json();
       if (data.stdout) {
-        setOutput(`${data.stdout}Execution time: ${data.duration}ms`);
+        setOutput(data.stdout);
       } else if (data.stderr) {
-        setOutput(`Error: ${data.stderr}\nExecution time: ${data.duration}ms`);
+        setOutput(`Error: ${data.stderr}`);
       } else {
-        setOutput(`No output or error received.\nExecution time: ${data.duration}ms`);
+        setOutput('No output or error received.');
       }
+      setExecutionTime(`Execution time: ${data.duration}ms`);
     } catch (error) {
       setOutput(`${language.charAt(0).toUpperCase() + language.slice(1)} Error: ${error.message}`);
+      setExecutionTime('');
     }
   };
 
@@ -104,7 +106,6 @@ const UserCodingPlatform = () => {
           onChange={(e) => setLanguage(e.target.value)}
           className={`px-4 py-2 rounded-lg ${theme === 'vs-dark' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800 border border-gray-800'}`}
         >
-          <option value="typescript">TypeScript</option>
           <option value="python">Python</option>
           <option value="go">Go</option>
           <option value="c">C</option>
@@ -147,11 +148,16 @@ const UserCodingPlatform = () => {
           className={`w-2 cursor-col-resize ${theme === 'vs-dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-300 hover:bg-gray-400'}`}
           onMouseDown={handleMouseDown}
         />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col gap-4">
           <pre
             className={`flex-1 p-4 rounded-lg overflow-auto ${theme === 'vs-dark' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800 border border-gray-800'}`}
           >
             {output || 'Output will appear here...'}
+          </pre>
+          <pre
+            className={`p-4 rounded-lg ${theme === 'vs-dark' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800 border border-gray-800'}`}
+          >
+            {executionTime || 'Execution time will appear here...'}
           </pre>
         </div>
       </div>
