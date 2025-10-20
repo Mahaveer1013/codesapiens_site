@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch, BookPlus, CalendarSearch, FileCheck2, Computer, BrainCircuit } from 'lucide-react';
+import { Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch, BookPlus, CalendarSearch, FileCheck2, Computer, BrainCircuit ,Code} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 
@@ -497,6 +497,16 @@ export default function UnifiedNavbar() {
               >
                 <Computer className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span>Mentorship</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsProfileDropdownOpen(false);
+                  navigate('/code');
+                }}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              >
+                <Code className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Playground (Beta)</span>
               </button>
               <button
                 onClick={() => {
