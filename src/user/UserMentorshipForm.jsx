@@ -300,7 +300,7 @@ const UserMentorshipForm = () => {
       {/* Left Side - Fixed Image */}
       <div className="fixed top-0 left-0 w-full md:w-1/2 h-screen">
         <img
-          src="https://res.cloudinary.com/dqudvximt/image/upload/v1759813806/sea-7456253_1280_vbb9f8.jpg"
+          src="https://res.cloudinary.com/druvxcll9/image/upload/v1761122516/sea-7456253_1280_vbb9f8_qmwugf.jpg"
           alt="Mentorship"
           className="w-full h-full object-cover"
         />

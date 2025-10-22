@@ -13,7 +13,7 @@ const CodeSapiensHero = () => {
     { 
       id: 1, 
       title: "August Meetup 2025", 
-      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1759741375/users_cme79i2lk00qls401ar5qxqnc_tYvYry0ll1qJY9Cr-sZlcWmpyKLCEVr3R-WhatsApp25202025-08-10252015.15.02_25567a3d_c0frk5.jpg", 
+      image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/users_cme79i2lk00qls401ar5qxqnc_tYvYry0ll1qJY9Cr-sZlcWmpyKLCEVr3R-WhatsApp25202025-08-10252015.15.02_25567a3d_c0frk5_dpl25k.jpg", 
       date: "August 2025", 
       description: "A 3-hour mini hackathon with mentors, developers, and certificates for participants.",
       participants: 75
@@ -21,7 +21,7 @@ const CodeSapiensHero = () => {
     { 
       id: 2,
       title: "July Meetup 2024", 
-      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1759740764/width_800_pmtms3.webp", 
+      image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122532/width_800_pmtms3_cqtzrn.webp", 
       date: "July 2025", 
       description: "Online session introducing security concepts via Google hacking and CTFs.",
       participants: 44
@@ -29,7 +29,7 @@ const CodeSapiensHero = () => {
     { 
       id: 3,
       title: "Summer of code 2024",
-      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1759741257/codesapiens_3_md0nvd.png", 
+      image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122534/codesapiens_3_md0nvd_ceyry4.png", 
       date: "Summer 2024", 
       description: "Session on building AI accelerators using VLSI and RTL coding.",
       participants: 50
@@ -37,7 +37,7 @@ const CodeSapiensHero = () => {
     { 
       id: 4,
       title: "Mentorship Programme 2024", 
-      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1759741182/codesapiens_2_mqadi2.png", 
+      image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122917/codesapiens_2_mqadi2_h1bbbi.png", 
       date: "2024", 
       description: "Student-run program for contributing to open-source projects.",
       participants: 100
@@ -45,23 +45,15 @@ const CodeSapiensHero = () => {
     {
       id: 5,
       title: "September Meetup 2025",
-      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1759740834/users_cme79i2lk00qls401ar5qxqnc_OadwAYSr5ySuegEn-IMG-20250914-WA0012_gvyeye.jpg",
+      image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122957/users_cme79i2lk00qls401ar5qxqnc_OadwAYSr5ySuegEn-IMG-20250914-WA0012_gvyeye_n1s3az.jpg",
       date: "September 2025",
       description: "Exciting meetup filled with tech talks, networking, and hands-on workshops at ContentStack, Velachery, Chennai.",
       participants: 80
     },
     {
       id: 6,
-      title: "June Meetup 2024",
-      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1759741580/1753106111524_wqepam.jpg",
-      date: "June 2024",
-      description: "Exciting meetup filled with tech talks, networking, and hands-on workshops at ContentStack, Velachery, Chennai.",
-      participants: 80
-    },
-    {
-      id: 7,
       title: "Github Contest",
-      image: "https://res.cloudinary.com/dqudvximt/image/upload/v1759741580/1753106111524_wqepam.jpg",
+      image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122991/1753106111524_wqepam_wam1st.jpg",
       date: "July 2025",
       description: "Exciting meetup filled with tech talks, networking, and hands-on workshops at ContentStack, Velachery, Chennai.",
       participants: 100
@@ -108,52 +100,52 @@ const CodeSapiensHero = () => {
   // Volunteers with original links from previous code
   const volunteers = [
     {
-      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/2ABMHfqOsrpoL3OV-WhatsApp202025-08-312010.33.52_a8a27bbd_vzcgzq.jpg",
+      photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122516/2ABMHfqOsrpoL3OV-WhatsApp202025-08-312010.33.52_a8a27bbd_vzcgzq_1_bm8zch.jpg",
       name: "Keerthana M G",
       link: "https://in.linkedin.com/in/keerthana-m-g-12ba59256"
     },
     {
-      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/iAckgTxMcALuPbEx-IMG-20250112-WA0012_ym2grt.jpg",
+      photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/iAckgTxMcALuPbEx-IMG-20250112-WA0012_1_fwyhoa_oxegdx.jpg",
       name: "Mahaveer A",
       link: "https://www.linkedin.com/in/mahaveer1013"
     },
     {
-      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/4SrLYdwh0tpuLlkt-team_2.a2a0c6917be79e15dc29_wjosq7.jpg",
+      photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/4SrLYdwh0tpuLlkt-team_2.a2a0c6917be79e15dc29_wjosq7_ftgm6j.jpg",
       name: "Justin Benito",
       link: "https://www.linkedin.com/in/justinbenito"
     },
     {
-      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/nLDGxnsr6bZkCx0A-team_3.d2fd9099126beb0b86a1_vxhpxo.jpg",
+      photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/nLDGxnsr6bZkCx0A-team_3.d2fd9099126beb0b86a1_vxhpxo_z3eods.jpg",
       name: "Koushik ram",
       link: "https://www.linkedin.com/in/koushik-ram-118495239"
     },
     {
-      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/Tlgueu6loMYMKJMs-team_1.150894ea4376f6423091_vrf0fr.jpg",
+      photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/Tlgueu6loMYMKJMs-team_1.150894ea4376f6423091_vrf0fr_weljyi.jpg",
       name: "Athiram R S",
       link: "https://www.linkedin.com/in/athi-ram-rs"
     },
     {
-      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/5NmVUZRZI8sRCrZA-1735300455766_h8dhm2.jpg",
+      photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122516/5NmVUZRZI8sRCrZA-1735300455766_h8dhm2_dnully.jpg",
       name: "Pranav Vikraman",
       link: "https://www.linkedin.com/in/pranav-vikraman-322020242"
     },
     {
-      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/JWz1OvtKurqSRsC7-WhatsApp202025-08-312011.22.52_bff7c8bd_mrok7q.jpg",
+      photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/JWz1OvtKurqSRsC7-WhatsApp202025-08-312011.22.52_bff7c8bd_mrok7q_b6meyd.jpg",
       name: "Vignesh R",
       link: "https://www.linkedin.com/in/vignesh-r-7727582b7"
     },
     {
-      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756997855/3S8YnOu77Rt2wDJD-WhatsApp202025-08-312010.32.42_9b5cee10_puasao.jpg",
+      photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122532/3S8YnOu77Rt2wDJD-WhatsApp202025-08-312010.32.42_9b5cee10_puasao_zekkfa.jpg",
       name: "Anand S",
       link: "https://codesapiens-management-website.vercel.app"
     },
     {
-      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1756998060/q5tsA3KUOwgSOpIa-team_5.efc764325a5ffbaf1b6e_1_sidv9r.jpg",
+      photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/q5tsA3KUOwgSOpIa-team_5.efc764325a5ffbaf1b6e_1_sidv9r_fhxmqv.jpg",
       name: "Subhaharini P",
       link: "https://www.linkedin.com/in/subhaharini-p-938568254"
     },
     {
-      photo: "https://res.cloudinary.com/dqudvximt/image/upload/v1759925520/1732031130575_b834gr.jpg",
+      photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/1732031130575_b834gr_1_slc9fw.jpg",
       name: "Jayasurya R",
       link: "https://www.linkedin.com/in/jayasurya-r-b37997279/"
     }
@@ -282,7 +274,7 @@ const CodeSapiensHero = () => {
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center">
                 <img
-                  src="https://res.cloudinary.com/dqudvximt/image/upload/v1756797708/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz.jpg"
+                  src="https://res.cloudinary.com/druvxcll9/image/upload/v1761122530/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz_3_r4kp2u.jpg"
                   alt="Logo"
                   className="w-full h-full rounded-full object-cover transition-transform duration-300 hover:scale-105"
                   loading="lazy"
@@ -360,7 +352,7 @@ const CodeSapiensHero = () => {
             </div>
             <div className={`relative transition-all duration-1000 order-first lg:order-last ${useInView('vision').inView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'}`}>
               <img
-                src="https://res.cloudinary.com/dqudvximt/image/upload/v1756797708/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz.jpg"
+                src="https://res.cloudinary.com/druvxcll9/image/upload/v1761122530/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz_3_r4kp2u.jpg"
                 alt="Coding workspace"
                 className="w-full h-auto rounded-lg shadow-xl transition-transform duration-700 hover:scale-105"
                 loading="lazy"
@@ -537,7 +529,7 @@ const CodeSapiensHero = () => {
               <div className="relative group mb-3 sm:mb-4 w-full max-w-[150px] sm:max-w-[200px] md:max-w-[300px]">
                 <div className="aspect-square overflow-hidden rounded-full shadow-xl transition-transform duration-500 group-hover:scale-105">
                   <img
-                    src="https://res.cloudinary.com/dqudvximt/image/upload/v1757828688/1679197646322_n1svjq.jpg"
+                    src="https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/1679197646322_n1svjq_s5w42a.jpg"
                     alt="Thiyaga B"
                     className="w-full h-full object-cover"
                     loading="lazy"

@@ -5,7 +5,7 @@ const NotFoundPage = () => {
     <div className="flex min-h-screen bg-white">
       <div className="hidden lg:block lg:w-1/2 relative">
         <img
-          src="https://res.cloudinary.com/dqudvximt/image/upload/v1760177012/13397747_5216992_1_gkxxwt.jpg"
+          src="https://res.cloudinary.com/druvxcll9/image/upload/v1761122518/13397747_5216992_1_gkxxwt_1_ydhh9l.jpg"
           alt="Scenic mountain landscape"
           className="h-full w-full object-cover"
         />
