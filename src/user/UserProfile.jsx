@@ -240,13 +240,13 @@ const UserProfile = () => {
           .single();
 
         if (existingUser) {
-          setUsernameError("Username already taken.");
+          setUsernameError("This username is already taken. Please choose another.");
         } else {
           setUsernameError(null);
         }
       } catch (err) {
         console.error("[Frontend] : Error checking username:", err.message);
-        setUsernameError("Error checking username availability.");
+        setUsernameError("Error checking username availability. Please try again.");
       }
     }, 500);
 
@@ -300,6 +300,9 @@ const UserProfile = () => {
           collegeNames = [];
         }
 
+        // Clean college names by removing trailing IDs (e.g., "(ID:123)", "(Id", "(ID:)")
+        collegeNames = collegeNames.map((name) => name.replace(/\s*\(ID?:[^)]*\)$/, "").trim());
+
         setColleges(collegeNames);
       } catch (err) {
         console.error("[Frontend] : Error fetching colleges:", err.message);
@@ -341,13 +344,13 @@ const UserProfile = () => {
     setResumeError(null);
     if (!file) return;
 
-    if (!["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(file.type)) {
-      setResumeError("Please select a PDF or DOCX file.");
+    if (!["application/pdf"].includes(file.type)) {
+      setResumeError("Please select a PDF file.");
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setResumeError("File size must be under 2MB.");
+    if (file.size > 1 * 1024 * 1024) {
+      setResumeError("File size must be under 1MB.");
       return;
     }
 
@@ -588,13 +591,13 @@ const UserProfile = () => {
         .single();
 
       if (existingUser) {
-        setUsernameError("Username already taken.");
-        setSaveError("Username already taken.");
+        setUsernameError("This username is already taken. Please choose another.");
+        setSaveError("This username is already taken. Please choose another.");
         return;
       }
     } catch (err) {
       console.error("[Frontend] : Error checking username in save:", err.message);
-      setUsernameError("Error checking username availability.");
+      setUsernameError("Error checking username availability. Please try again.");
       setSaveError("Error checking username availability.");
       return;
     }
@@ -650,7 +653,7 @@ const UserProfile = () => {
       console.error("[Frontend] : Save error:", err.message);
       setSaveError(err.message || "Failed to save profile. Please try again.");
       if (err.message.includes("duplicate key value violates unique constraint")) {
-        setUsernameError("Username already taken.");
+        setUsernameError("This username is already taken. Please choose another.");
       }
     }
   };
@@ -1033,7 +1036,7 @@ const UserProfile = () => {
                                   </div>
                                 ) : null
                               )}
-                              {collegeError && <p className="text-sm text-red-500 mt-1">{collegeError}</p>}
+                              {collegeError && <p className="text-sm text-red-500 mt-2 bg-red-50 px-3 py-1 rounded">{collegeError}</p>}
                             </div>
                           ) : info.type === "dropdown" ? (
                             <div className="relative">
@@ -1065,7 +1068,7 @@ const UserProfile = () => {
                                 placeholder={info.label}
                               />
                               {info.label === "Username" && usernameError && (
-                                <p className="text-sm text-red-500 mt-1 absolute -bottom-6 left-0">{usernameError}</p>
+                                <p className="text-sm text-red-500 mt-2 bg-red-50 px-3 py-1 rounded w-full">{usernameError}</p>
                               )}
                             </div>
                           )}
@@ -1172,7 +1175,7 @@ const UserProfile = () => {
                       <input
                         type="file"
                         id="resume-upload"
-                        accept=".pdf,.docx"
+                        accept=".pdf"
                         onChange={(e) => handleFileSelect(e.target.files[0])}
                         className="hidden"
                       />
@@ -1182,10 +1185,10 @@ const UserProfile = () => {
                       >
                         <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                         <p className="text-sm font-medium text-gray-700">Click to select new resume (will replace current)</p>
-                        <p className="text-xs text-gray-500 mt-1">PDF or DOCX, max 2MB</p>
+                        <p className="text-xs text-gray-500 mt-1">PDF only, max 1MB</p>
                       </label>
                     </div>
-                    {resumeError && <p className="text-sm text-red-500 mt-2">{resumeError}</p>}
+                    {resumeError && <p className="text-sm text-red-500 mt-2 bg-red-50 px-3 py-1 rounded">{resumeError}</p>}
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -1213,17 +1216,17 @@ const UserProfile = () => {
                           <input
                             type="file"
                             id="resume-drop"
-                            accept=".pdf,.docx"
+                            accept=".pdf"
                             onChange={(e) => handleFileSelect(e.target.files[0])}
                             className="hidden"
                           />
                           <label htmlFor="resume-drop" className="cursor-pointer block">
                             <p className="text-sm font-medium text-gray-700">Drag & drop your resume here, or click to select</p>
-                            <p className="text-xs text-gray-500 mt-1">PDF or DOCX, max 2MB</p>
+                            <p className="text-xs text-gray-500 mt-1">PDF only, max 1MB</p>
                           </label>
                         </>
                       )}
-                      {resumeError && <p className="text-sm text-red-500 mt-2 absolute -bottom-6 left-0 right-0">{resumeError}</p>}
+                      {resumeError && <p className="text-sm text-red-500 mt-2 bg-red-50 px-3 py-1 rounded">{resumeError}</p>}
                     </div>
                   </div>
                 )}
