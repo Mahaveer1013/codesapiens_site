@@ -3,8 +3,11 @@ import { Calendar, Globe, Github, Building, Eye, EyeOff, Mail, Lock } from 'luci
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
+// API Configuration - Change this to your backend URL
+const API_BASE_URL = 'http://localhost:3000';
+
 export default function CodeSapiensPlatform() {
-  const [mode, setMode] = useState('signIn'); // 'signIn' | 'signUp' | 'forgotPassword'
+  const [mode, setMode] = useState('signIn');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -15,13 +18,19 @@ export default function CodeSapiensPlatform() {
   const [profile, setProfile] = useState(null);
   const [turnstileToken, setTurnstileToken] = useState(null);
   const turnstileRef = useRef(null);
+  const widgetIdRef = useRef(null);
+  const scriptLoadedRef = useRef(false);
   const navigate = useNavigate();
 
   // Load Cloudflare Turnstile script only once
   useEffect(() => {
+    if (scriptLoadedRef.current) {
+      return;
+    }
+
     const scriptId = 'turnstile-script';
     if (document.getElementById(scriptId)) {
-      console.log('[CodeSapiens] Turnstile script already loaded');
+      scriptLoadedRef.current = true;
       return;
     }
 
@@ -30,76 +39,92 @@ export default function CodeSapiensPlatform() {
     script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
     script.async = true;
     script.defer = true;
-    script.onload = () => console.log('[CodeSapiens] Turnstile script loaded successfully');
+    script.onload = () => {
+      console.log('[CodeSapiens] Turnstile script loaded successfully');
+      scriptLoadedRef.current = true;
+    };
     script.onerror = () => {
       console.error('[CodeSapiens] Failed to load Turnstile script');
       setMessage('❌ Failed to load CAPTCHA script');
     };
     document.body.appendChild(script);
-
-    return () => {
-      const existingScript = document.getElementById(scriptId);
-      if (existingScript && document.body.contains(existingScript)) {
-        document.body.removeChild(existingScript);
-      }
-    };
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
 
   // Render Turnstile widget
   useEffect(() => {
+    // Clean up existing widget first
+    if (widgetIdRef.current !== null && window.turnstile) {
+      try {
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      } catch (e) {
+        console.warn('[CodeSapiens] Error removing Turnstile widget:', e);
+      }
+    }
+
+    // Wait for Turnstile to be ready
     if (!window.turnstile || !turnstileRef.current) {
-      console.warn('[CodeSapiens] Turnstile not ready or container missing');
-      return;
-    }
-
-    // Use hardcoded sitekey with fallback to environment variable
-    const sitekey = process.env.REACT_APP_TURNSTILE_SITE_KEY || '0x4AAAAAAB8LVUdoo8-C9TDo';
-    console.log('[CodeSapiens] Turnstile sitekey:', sitekey, 'Type:', typeof sitekey);
-
-    // Strict validation
-    if (!sitekey || typeof sitekey !== 'string' || sitekey.trim() === '') {
-      console.error('[CodeSapiens] Invalid sitekey:', { sitekey, type: typeof sitekey });
-      setMessage('❌ Invalid CAPTCHA sitekey. Contact support.');
-      return;
-    }
-
-    try {
-      const widgetId = window.turnstile.render(turnstileRef.current, {
-        sitekey: sitekey.trim(),
-        callback: (token) => {
-          console.log('[CodeSapiens] Turnstile token received:', token);
-          setTurnstileToken(token);
-          setMessage(null);
-        },
-        'error-callback': (errorCode) => {
-          console.error('[CodeSapiens] Turnstile error:', errorCode);
-          setMessage(`❌ CAPTCHA error: ${errorCode}`);
-          setTurnstileToken(null);
-        },
-        'expired-callback': () => {
-          console.log('[CodeSapiens] Turnstile token expired');
-          setMessage('❌ CAPTCHA expired, please try again.');
-          setTurnstileToken(null);
-          if (window.turnstile && turnstileRef.current) {
-            window.turnstile.reset(turnstileRef.current);
-          }
-        },
-      });
-
-      return () => {
-        if (window.turnstile && widgetId) {
-          try {
-            window.turnstile.remove(widgetId);
-          } catch (e) {
-            console.warn('[CodeSapiens] Error removing Turnstile widget:', e);
-          }
+      const checkInterval = setInterval(() => {
+        if (window.turnstile && turnstileRef.current) {
+          clearInterval(checkInterval);
+          renderTurnstile();
         }
-      };
-    } catch (error) {
-      console.error('[CodeSapiens] Failed to render Turnstile:', error);
-      setMessage(`❌ Failed to initialize CAPTCHA: ${error.message}`);
+      }, 100);
+
+      return () => clearInterval(checkInterval);
+    } else {
+      renderTurnstile();
     }
-  }, [mode]); // Re-render widget on mode change
+
+    function renderTurnstile() {
+      if (!turnstileRef.current || !window.turnstile) return;
+
+      // Use your Turnstile sitekey
+      const sitekey = '0x4AAAAAAB8LVUdoo8-C9TDo';
+
+      if (!sitekey || typeof sitekey !== 'string' || sitekey.trim() === '') {
+        console.error('[CodeSapiens] Invalid sitekey');
+        setMessage('❌ Invalid CAPTCHA sitekey. Contact support.');
+        return;
+      }
+
+      try {
+        widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
+          sitekey: sitekey.trim(),
+          callback: (token) => {
+            console.log('[CodeSapiens] Turnstile token received');
+            setTurnstileToken(token);
+            setMessage(null);
+          },
+          'error-callback': (errorCode) => {
+            console.error('[CodeSapiens] Turnstile error:', errorCode);
+            setMessage(`❌ CAPTCHA error: ${errorCode}`);
+            setTurnstileToken(null);
+          },
+          'expired-callback': () => {
+            console.log('[CodeSapiens] Turnstile token expired');
+            setMessage('❌ CAPTCHA expired, please try again.');
+            setTurnstileToken(null);
+          },
+        });
+      } catch (error) {
+        console.error('[CodeSapiens] Failed to render Turnstile:', error);
+        setMessage(`❌ Failed to initialize CAPTCHA: ${error.message}`);
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      if (widgetIdRef.current !== null && window.turnstile) {
+        try {
+          window.turnstile.remove(widgetIdRef.current);
+          widgetIdRef.current = null;
+        } catch (e) {
+          console.warn('[CodeSapiens] Cleanup error:', e);
+        }
+      }
+    };
+  }, [mode]);
 
   // Fetch user profile
   useEffect(() => {
@@ -139,7 +164,6 @@ export default function CodeSapiensPlatform() {
     setLoading(true);
     setMessage(null);
 
-    // Verify Turnstile token
     if (!turnstileToken) {
       setMessage('❌ Please complete the CAPTCHA.');
       setLoading(false);
@@ -147,15 +171,31 @@ export default function CodeSapiensPlatform() {
     }
 
     try {
-      // Verify Turnstile token with backend
-      const verifyResponse = await fetch('https://colleges-name-api.vercel.app/verify-turnstile', {
+      // Verify Turnstile token with YOUR backend
+      console.log('[CodeSapiens] Verifying token with backend:', `${API_BASE_URL}/verify-turnstile`);
+      
+      const verifyResponse = await fetch(`${API_BASE_URL}/verify-turnstile`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ token: turnstileToken }),
       });
 
+      console.log('[CodeSapiens] Response status:', verifyResponse.status);
+      console.log('[CodeSapiens] Response headers:', verifyResponse.headers.get('content-type'));
+
+      // Check if response is JSON
+      const contentType = verifyResponse.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await verifyResponse.text();
+        console.error('[CodeSapiens] Non-JSON response:', textResponse.substring(0, 200));
+        throw new Error('Server returned non-JSON response. Is the backend running on http://localhost:3000?');
+      }
+
       const verifyResult = await verifyResponse.json();
       console.log('[CodeSapiens] Turnstile verification result:', verifyResult);
+
       if (!verifyResult.success) {
         throw new Error(verifyResult.error || 'CAPTCHA verification failed');
       }
@@ -163,9 +203,9 @@ export default function CodeSapiensPlatform() {
       // Proceed with authentication
       if (mode === 'forgotPassword') {
         const redirectTo =
-          process.env.NODE_ENV === 'production'
-            ? 'https://codesapiens-management-website.vercel.app/reset-password'
-            : `${window.location.origin}/reset-password`;
+          window.location.hostname === 'localhost'
+            ? `${window.location.origin}/reset-password`
+            : 'https://codesapiens-management-website.vercel.app/reset-password';
 
         const { error } = await supabase.auth.resetPasswordForEmail(formData.email, { redirectTo });
         if (error) throw error;
@@ -175,9 +215,6 @@ export default function CodeSapiensPlatform() {
           setMode('signIn');
           setFormData({ email: '', password: '' });
           setTurnstileToken(null);
-          if (window.turnstile && turnstileRef.current) {
-            window.turnstile.reset(turnstileRef.current);
-          }
         }, 2000);
       } else if (mode === 'signUp') {
         const { error } = await supabase.auth.signUp({
@@ -188,9 +225,6 @@ export default function CodeSapiensPlatform() {
         setMessage('✅ Check your inbox for a confirmation email.');
         setFormData({ email: '', password: '' });
         setTurnstileToken(null);
-        if (window.turnstile && turnstileRef.current) {
-          window.turnstile.reset(turnstileRef.current);
-        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: formData.email,
@@ -200,13 +234,19 @@ export default function CodeSapiensPlatform() {
         navigate('/');
         setMessage('✅ Signed in!');
         setTurnstileToken(null);
-        if (window.turnstile && turnstileRef.current) {
-          window.turnstile.reset(turnstileRef.current);
-        }
       }
     } catch (err) {
       console.error('[CodeSapiens] Submission error:', err);
-      setMessage(`❌ ${err.message}`);
+      
+      // Better error messages
+      let errorMessage = err.message;
+      if (err.message.includes('Failed to fetch')) {
+        errorMessage = 'Cannot connect to server. Make sure backend is running on http://localhost:3000';
+      } else if (err.message.includes('<!DOCTYPE')) {
+        errorMessage = 'Server returned HTML instead of JSON. Check if backend is running correctly.';
+      }
+      
+      setMessage(`❌ ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -217,9 +257,6 @@ export default function CodeSapiensPlatform() {
     setMessage(null);
     setFormData({ email: '', password: '' });
     setTurnstileToken(null);
-    if (window.turnstile && turnstileRef.current) {
-      window.turnstile.reset(turnstileRef.current);
-    }
   };
 
   const features = [
@@ -351,7 +388,7 @@ export default function CodeSapiensPlatform() {
                   </div>
                 </div>
                 <div className="my-4">
-                  <div ref={turnstileRef} className="cf-turnstile" data-sitekey="0x4AAAAAAB8LVUdoo8-C9TDo" />
+                  <div ref={turnstileRef} />
                 </div>
                 <button
                   type="submit"
@@ -438,7 +475,7 @@ export default function CodeSapiensPlatform() {
                   </div>
                 </div>
                 <div className="my-4">
-                  <div ref={turnstileRef} className="cf-turnstile" data-sitekey="0x4AAAAAAB8LVUdoo8-C9TDo" />
+                  <div ref={turnstileRef} />
                 </div>
                 <button
                   type="submit"
