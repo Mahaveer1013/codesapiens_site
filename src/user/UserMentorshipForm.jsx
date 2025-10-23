@@ -4,6 +4,9 @@ import { Loader2, X, Eye } from "lucide-react";
 import { Link } from "react-router-dom"; // Import Link for navigation
 
 const UserMentorshipForm = () => {
+  // Define the cooldown duration (in seconds)
+  const COOLDOWN_DURATION = 300; // Changed from 15 to 30 seconds
+
   const [formData, setFormData] = useState({
     email: "",
     reasonForMentorship: "",
@@ -90,8 +93,8 @@ const UserMentorshipForm = () => {
           if (latestRequest) {
             setLastSubmissionTime(latestRequest.created_at);
             const timePassed = Math.floor((Date.now() - new Date(latestRequest.created_at)) / 1000);
-            if (timePassed < 15) {
-              setCountdown(15 - timePassed);
+            if (timePassed < COOLDOWN_DURATION) { // Updated to use COOLDOWN_DURATION
+              setCountdown(COOLDOWN_DURATION - timePassed); // Updated
               setShowCountdown(true);
             }
           }
@@ -119,7 +122,7 @@ const UserMentorshipForm = () => {
     if (lastSubmissionTime && countdown > 0) {
       const timer = setInterval(() => {
         const timePassed = Math.floor((Date.now() - new Date(lastSubmissionTime)) / 1000);
-        const remaining = 15 - timePassed;
+        const remaining = COOLDOWN_DURATION - timePassed; // Updated to use COOLDOWN_DURATION
         if (remaining <= 0) {
           setCountdown(null);
           setShowCountdown(false);
@@ -158,13 +161,13 @@ const UserMentorshipForm = () => {
         throw new Error("User email not available. Please ensure your account has an email.");
       }
 
-      // Check if 15 seconds have passed since last submission
+      // Check if COOLDOWN_DURATION seconds have passed since last submission
       if (lastSubmissionTime) {
         const timePassed = Math.floor((Date.now() - new Date(lastSubmissionTime)) / 1000);
-        if (timePassed < 15) {
-          setCountdown(15 - timePassed);
+        if (timePassed < COOLDOWN_DURATION) { // Updated to use COOLDOWN_DURATION
+          setCountdown(COOLDOWN_DURATION - timePassed); // Updated
           setShowCountdown(true);
-          setError(`Please wait ${formatCountdown(15 - timePassed)} before submitting again.`);
+          setError(`Please wait ${formatCountdown(COOLDOWN_DURATION - timePassed)} before submitting again.`); // Updated
           setLoading(false);
           return;
         }
@@ -226,7 +229,7 @@ const UserMentorshipForm = () => {
       console.log("[Frontend] : Mentorship request saved:", data);
       setSuccess("Mentorship request submitted successfully!");
       setLastSubmissionTime(mentorshipRequest.created_at);
-      setCountdown(15);
+      setCountdown(COOLDOWN_DURATION); // Updated to use COOLDOWN_DURATION
       setShowCountdown(true);
       setFormData({
         email: user.email || "",
