@@ -176,14 +176,16 @@ const UserCodingPlatform = () => {
           className={`w-2 cursor-col-resize ${theme === 'vs-dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-300 hover:bg-gray-400'}`}
           onMouseDown={handleMouseDown}
         />
-        <div className="flex-1 flex flex-col gap-4">
+        <div className="flex-1 flex flex-col gap-4 min-w-0">
           <pre
-            className={`flex-1 p-4 rounded-lg overflow-auto ${theme === 'vs-dark' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800 border border-gray-800'}`}
+            className={`flex-1 p-4 rounded-lg overflow-auto whitespace-pre ${theme === 'vs-dark' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800 border border-gray-800'}`}
+            style={{ overflowX: 'auto', overflowY: 'auto' }}
           >
             {output || 'Output will appear here...'}
           </pre>
           <pre
-            className={`p-4 rounded-lg ${theme === 'vs-dark' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800 border border-gray-800'}`}
+            className={`p-4 rounded-lg whitespace-nowrap ${theme === 'vs-dark' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800 border border-gray-800'}`}
+            style={{ overflowX: 'auto' }}
           >
             {executionTime || 'Execution time will appear here...'}
           </pre>

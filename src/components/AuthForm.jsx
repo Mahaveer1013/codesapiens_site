@@ -197,6 +197,16 @@ export default function CodeSapiensPlatform() {
       console.log('[CodeSapiens] Turnstile verification result:', verifyResult);
 
       if (!verifyResult.success) {
+        // Reset Turnstile on verification failure
+        setTurnstileToken(null);
+        if (window.turnstile && widgetIdRef.current !== null) {
+          try {
+            console.log('[CodeSapiens] Resetting Turnstile after verification failure');
+            window.turnstile.reset(widgetIdRef.current);
+          } catch (resetErr) {
+            console.warn('[CodeSapiens] Failed to reset Turnstile:', resetErr);
+          }
+        }
         throw new Error(verifyResult.error || 'CAPTCHA verification failed');
       }
 
@@ -208,7 +218,14 @@ export default function CodeSapiensPlatform() {
             : 'https://codesapiens-management-website.vercel.app/reset-password';
 
         const { error } = await supabase.auth.resetPasswordForEmail(formData.email, { redirectTo });
-        if (error) throw error;
+        if (error) {
+          // Reset Turnstile on password reset error
+          setTurnstileToken(null);
+          if (window.turnstile && widgetIdRef.current !== null) {
+            window.turnstile.reset(widgetIdRef.current);
+          }
+          throw error;
+        }
         setMessage('✅ Password reset link has been sent to your email!');
         setTimeout(() => {
           navigate('/auth');
@@ -221,7 +238,14 @@ export default function CodeSapiensPlatform() {
           email: formData.email,
           password: formData.password,
         });
-        if (error) throw error;
+        if (error) {
+          // Reset Turnstile on signup error
+          setTurnstileToken(null);
+          if (window.turnstile && widgetIdRef.current !== null) {
+            window.turnstile.reset(widgetIdRef.current);
+          }
+          throw error;
+        }
         setMessage('✅ Check your inbox for a confirmation email.');
         setFormData({ email: '', password: '' });
         setTurnstileToken(null);
@@ -230,7 +254,14 @@ export default function CodeSapiensPlatform() {
           email: formData.email,
           password: formData.password,
         });
-        if (error) throw error;
+        if (error) {
+          // Reset Turnstile on signin error
+          setTurnstileToken(null);
+          if (window.turnstile && widgetIdRef.current !== null) {
+            window.turnstile.reset(widgetIdRef.current);
+          }
+          throw error;
+        }
         navigate('/');
         setMessage('✅ Signed in!');
         setTurnstileToken(null);
@@ -247,6 +278,17 @@ export default function CodeSapiensPlatform() {
       }
       
       setMessage(`❌ ${errorMessage}`);
+      
+      // Reset Turnstile widget on error so user can try again with new token
+      setTurnstileToken(null);
+      if (window.turnstile && widgetIdRef.current !== null) {
+        try {
+          console.log('[CodeSapiens] Resetting Turnstile widget after error');
+          window.turnstile.reset(widgetIdRef.current);
+        } catch (resetErr) {
+          console.warn('[CodeSapiens] Failed to reset Turnstile:', resetErr);
+        }
+      }
     } finally {
       setLoading(false);
     }
