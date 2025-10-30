@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import {
   ArrowLeft,
@@ -39,6 +38,54 @@ const debounce = (func, delay) => {
   };
 };
 
+// Utility function to extract GitHub username from URL
+const extractGithubUsername = (url) => {
+  if (!url) return null;
+  try {
+    const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
+    const urlObj = new URL(normalizedUrl);
+    const pathParts = urlObj.pathname.split("/").filter(Boolean);
+    // Expecting URL like https://github.com/username or https://www.github.com/username
+    return pathParts[0] === "github.com" && pathParts[1] ? pathParts[1] : null;
+  } catch (e) {
+    console.warn("[Frontend] : Invalid GitHub URL format:", url, e.message);
+    return null;
+  }
+};
+
+// Utility function to fetch GitHub avatar with retry
+const fetchGithubAvatar = async (username, retries = 2, delay = 1000) => {
+  if (!username) return null;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`[Frontend] : Fetching GitHub avatar for username: ${username} (Attempt ${attempt}/${retries})`);
+      const response = await fetch(`https://api.github.com/users/${username}`);
+      if (!response.ok) {
+        if (response.status === 403) {
+          console.warn("[Frontend] : GitHub API rate limit exceeded");
+          throw new Error("GitHub API rate limit exceeded");
+        }
+        throw new Error(`GitHub API error: ${response.status}`);
+      }
+      const githubData = await response.json();
+      if (githubData.avatar_url) {
+        console.log("[Frontend] : GitHub avatar fetched successfully:", githubData.avatar_url);
+        return githubData.avatar_url;
+      }
+      throw new Error("No avatar_url in GitHub response");
+    } catch (err) {
+      console.error("[Frontend] : Error fetching GitHub avatar (Attempt ${attempt}):", err.message);
+      if (attempt < retries) {
+        console.log(`[Frontend] : Retrying GitHub API call after ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        console.error("[Frontend] : Failed to fetch GitHub avatar after ${retries} attempts");
+        return null;
+      }
+    }
+  }
+};
+
 const UserProfile = () => {
   const [activeTab, setActiveTab] = useState("Overview");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -69,6 +116,7 @@ const UserProfile = () => {
   const [dragActive, setDragActive] = useState(false);
   const [usernameError, setUsernameError] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [githubAvatar, setGithubAvatar] = useState(null);
 
   const resumeDropRef = useRef(null);
   const collegeInputRef = useRef(null);
@@ -82,7 +130,6 @@ const UserProfile = () => {
   // Utility function to validate and normalize URLs
   const validateUrl = (url) => {
     if (!url) return "";
-    // Basic URL validation
     try {
       new URL(url.startsWith("http") ? url : `https://${url}`);
       return url.startsWith("http") ? url : `https://${url}`;
@@ -92,7 +139,7 @@ const UserProfile = () => {
     }
   };
 
-  // Fetch user data from Supabase
+  // Fetch user data from Supabase and GitHub avatar if GitHub URL exists
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -184,6 +231,16 @@ const UserProfile = () => {
           setUserData(transformedUser);
           setEditedData(transformedUser);
           setUserSkills(skills);
+
+          // Fetch GitHub profile image if githubUrl is provided
+          const githubUsername = extractGithubUsername(transformedUser.githubUrl);
+          if (githubUsername) {
+            const avatarUrl = await fetchGithubAvatar(githubUsername);
+            setGithubAvatar(avatarUrl);
+          } else {
+            console.log("[Frontend] : No valid GitHub username found, skipping avatar fetch");
+            setGithubAvatar(null);
+          }
         } else {
           setError("User profile not found");
         }
@@ -646,6 +703,16 @@ const UserProfile = () => {
       setCollegeError(null);
       setLastSelectedCollege(finalCollege);
       setUsernameError(null);
+
+      // Fetch GitHub avatar if github_url was updated
+      const githubUsername = extractGithubUsername(updateData.github_url);
+      if (githubUsername) {
+        const avatarUrl = await fetchGithubAvatar(githubUsername);
+        setGithubAvatar(avatarUrl);
+      } else {
+        console.log("[Frontend] : No valid GitHub username after save, clearing avatar");
+        setGithubAvatar(null);
+      }
     } catch (err) {
       console.error("[Frontend] : Save error:", err.message);
       setSaveError(err.message || "Failed to save profile. Please try again.");
@@ -776,8 +843,27 @@ const UserProfile = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
             {/* Avatar */}
             <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-              {userData.avatar ? (
-                <img src={userData.avatar} alt={userData.displayName} className="w-full h-full rounded-full object-cover" />
+              {githubAvatar ? (
+                <img
+                  src={githubAvatar}
+                  alt={userData.displayName}
+                  className="w-full h-full rounded-full object-cover"
+                  onError={(e) => {
+                    console.error("[Frontend] : Failed to load GitHub avatar:", githubAvatar);
+                    e.target.style.display = "none";
+                    setGithubAvatar(null);
+                  }}
+                />
+              ) : userData.avatar ? (
+                <img
+                  src={userData.avatar}
+                  alt={userData.displayName}
+                  className="w-full h-full rounded-full object-cover"
+                  onError={(e) => {
+                    console.error("[Frontend] : Failed to load user avatar:", userData.avatar);
+                    e.target.style.display = "none";
+                  }}
+                />
               ) : (
                 <span className="text-white font-bold text-xl sm:text-2xl lg:text-3xl">
                   {userData.displayName?.charAt(0).toUpperCase() || "U"}
@@ -1085,7 +1171,6 @@ const UserProfile = () => {
                 <div className="space-y-4">
                   {socialLinks.map((link, index) => {
                     const IconComponent = link.icon;
-                    // Validate URL for display
                     const isValidUrl = link.href && validateUrl(link.href) === link.href;
                     console.log(`[Frontend] : Rendering social link - ${link.label}:`, {
                       href: link.href,

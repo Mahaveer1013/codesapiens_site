@@ -17,6 +17,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import Tesseract from 'tesseract.js';
+import * as pdfjsLib from 'pdfjs-dist/build/pdf'; // Use specific import for pdfjs-dist
 
 const AllUserList = () => {
   const [users, setUsers] = useState([]);
@@ -27,7 +29,18 @@ const AllUserList = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrError, setOcrError] = useState(null);
+  const [resumeFeedback, setResumeFeedback] = useState(null);
+  const [resumeScore, setResumeScore] = useState(null);
   const usersPerPage = 10;
+
+  // Gemini API Key (Store securely in environment variables in production)
+  const GEMINI_API_KEY = 'AIzaSyD-q7Ky0_NIz7x1mjp458yNRVZYVw0HEbk';
+  const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+
+  // Configure pdf.js worker to match version 3.11.174
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 
   // Format date function
   const formatDate = (dateString) => {
@@ -85,7 +98,7 @@ const AllUserList = () => {
 
         setUsers(transformedUsers);
         setFilteredUsers(transformedUsers);
-        setCurrentPage(1); // Reset to first page when users are fetched
+        setCurrentPage(1);
       } catch (err) {
         console.error('Error fetching users:', err);
         setError(err.message);
@@ -105,8 +118,129 @@ const AllUserList = () => {
       user.email.toLowerCase().includes(lowerQuery)
     );
     setFilteredUsers(filtered);
-    setCurrentPage(1); // Reset to first page when search changes
+    setCurrentPage(1);
   }, [searchQuery, users]);
+
+  // Process resume with Tesseract and Gemini
+  useEffect(() => {
+    if (selectedUser && selectedUser.resumeUrl && isDetailsOpen) {
+      const processResume = async () => {
+        setOcrLoading(true);
+        setOcrError(null);
+        setResumeFeedback(null);
+        setResumeScore(null);
+
+        try {
+          let text = '';
+
+          // Determine if the resume is a PDF or an image
+          const isPdf = selectedUser.resumeUrl.toLowerCase().endsWith('.pdf');
+
+          if (isPdf) {
+            // Handle PDF: Extract images and process with Tesseract
+            const response = await fetch(selectedUser.resumeUrl, {
+              headers: { 'Accept': 'application/pdf' },
+              mode: 'cors',
+              credentials: 'same-origin' // Adjust based on your setup
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+            // Process first page only (extend for multiple pages if needed)
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 1.5 }); // Increase scale for better OCR
+
+            // Render PDF page to canvas
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({
+              canvasContext: context,
+              viewport: viewport
+            }).promise;
+
+            // Extract text from rendered canvas
+            const { data: { text: ocrText } } = await Tesseract.recognize(
+              canvas.toDataURL('image/png'),
+              'eng',
+              {
+                logger: (m) => console.log(m),
+              }
+            );
+
+            text = ocrText;
+          } else {
+            // Handle image directly
+            const { data: { text: ocrText } } = await Tesseract.recognize(
+              selectedUser.resumeUrl,
+              'eng',
+              {
+                logger: (m) => console.log(m),
+              }
+            );
+
+            text = ocrText;
+          }
+
+          if (!text) {
+            throw new Error('No text extracted from resume');
+          }
+
+          // Send extracted text to Gemini AI
+          const prompt = `Analyze the following resume text and provide detailed feedback on its quality, structure, and content. Highlight strengths, weaknesses, and suggestions for improvement. Also, assign a score from 0 to 100 based on its overall effectiveness. Return the response in JSON format with fields "feedback" (string) and "score" (number).
+
+Resume text:
+${text}`;
+
+          const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: prompt
+                }]
+              }]
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.statusText}`);
+          }
+
+          const result = await response.json();
+          const generatedText = result.candidates[0].content.parts[0].text;
+
+          // Parse the JSON response from Gemini
+          let feedbackData;
+          try {
+            feedbackData = JSON.parse(generatedText);
+          } catch (e) {
+            throw new Error('Invalid JSON response from Gemini AI');
+          }
+
+          setResumeFeedback(feedbackData.feedback);
+          setResumeScore(feedbackData.score);
+        } catch (err) {
+          console.error('Error processing resume:', err);
+          setOcrError(err.message);
+        } finally {
+          setOcrLoading(false);
+        }
+      };
+
+      processResume();
+    }
+  }, [selectedUser, isDetailsOpen]);
 
   // Pagination logic
   const indexOfLastUser = currentPage * usersPerPage;
@@ -137,7 +271,12 @@ const AllUserList = () => {
 
   const handleCloseDetails = () => {
     setIsDetailsOpen(false);
-    setTimeout(() => setSelectedUser(null), 300);
+    setTimeout(() => {
+      setSelectedUser(null);
+      setResumeFeedback(null);
+      setResumeScore(null);
+      setOcrError(null);
+    }, 300);
   };
 
   const socialLinks = selectedUser ? [
@@ -257,7 +396,6 @@ const AllUserList = () => {
       {/* Desktop Table View */}
       <div className="flex-1 overflow-auto hidden md:block">
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-          {/* Mobile Table View */}
           <div className="block sm:hidden">
             <div className="divide-y divide-gray-200">
               {currentUsers.map((user) => (
@@ -310,7 +448,6 @@ const AllUserList = () => {
             </div>
           </div>
 
-          {/* Desktop Table View */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-20">
@@ -395,20 +532,17 @@ const AllUserList = () => {
       {/* Details Panel */}
       {isDetailsOpen && (
         <>
-          {/* Overlay */}
           <div 
             className="fixed inset-0 bg-gray-800 bg-opacity-50 backdrop-blur-md z-40 transition-all duration-300 ease-in-out"
             onClick={handleCloseDetails}
           />
           
-          {/* Details Panel - Full Page */}
           <div 
             className={`fixed top-0 right-0 h-full w-full bg-white shadow-2xl transform transition-all duration-300 ease-in-out overflow-y-auto z-50
               ${isDetailsOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}
           >
             {selectedUser && (
               <>
-                {/* Header */}
                 <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate pr-2">
                     {selectedUser.displayName}'s Profile
@@ -423,7 +557,6 @@ const AllUserList = () => {
                 </div>
 
                 <div className="p-4 sm:p-6 space-y-6">
-                  {/* User Info */}
                   <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6">
                     <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                       {selectedUser.avatar ? (
@@ -463,7 +596,6 @@ const AllUserList = () => {
                     </div>
                   </div>
 
-                  {/* Account Information */}
                   <div className="bg-white rounded-lg shadow-sm border">
                     <div className="p-3 sm:p-4 border-b flex items-center space-x-2">
                       <Clock className="w-5 h-5 text-gray-500" />
@@ -481,7 +613,6 @@ const AllUserList = () => {
                     </div>
                   </div>
 
-                  {/* Personal Information */}
                   <div className="bg-white rounded-lg shadow-sm border">
                     <div className="p-3 sm:p-4 border-b">
                       <h3 className="text-base sm:text-lg font-semibold text-gray-900">Personal Information</h3>
@@ -514,7 +645,6 @@ const AllUserList = () => {
                     </div>
                   </div>
 
-                  {/* Social Links */}
                   <div className="bg-white rounded-lg shadow-sm border">
                     <div className="p-3 sm:p-4 border-b">
                       <h3 className="text-base sm:text-lg font-semibold text-gray-900">Social Links</h3>
@@ -548,7 +678,6 @@ const AllUserList = () => {
                     </div>
                   </div>
 
-                  {/* Resume Section */}
                   <div className="bg-white rounded-lg shadow-sm border">
                     <div className="p-3 sm:p-4 border-b">
                       <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center space-x-2">
@@ -558,26 +687,55 @@ const AllUserList = () => {
                     </div>
                     <div className="p-3 sm:p-4">
                       {selectedUser.resumeUrl ? (
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">Resume:</span>
-                          <div className="flex items-center space-x-2">
-                            <a
-                              href={selectedUser.resumeUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
-                            >
-                              <Eye className="w-4 h-4" />
-                              <span>View Resume</span>
-                            </a>
-                            <a
-                              href={selectedUser.resumeUrl}
-                              download
-                              className="flex items-center space-x-1 text-green-600 hover:text-green-800 text-sm font-medium hover:underline"
-                            >
-                              <Download className="w-4 h-4" />
-                              <span>Download</span>
-                            </a>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-700">Resume:</span>
+                            <div className="flex items-center space-x-2">
+                              <a
+                                href={selectedUser.resumeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
+                              >
+                                <Eye className="w-4 h-4" />
+                                <span>View Resume</span>
+                              </a>
+                              <a
+                                href={selectedUser.resumeUrl}
+                                download
+                                className="flex items-center space-x-1 text-green-600 hover:text-green-800 text-sm font-medium hover:underline"
+                              >
+                                <Download className="w-4 h-4" />
+                                <span>Download</span>
+                              </a>
+                            </div>
+                          </div>
+                          <div className="border-t pt-4">
+                            <h4 className="text-sm font-semibold text-gray-900 mb-2">Resume Feedback</h4>
+                            {ocrLoading ? (
+                              <div className="text-center">
+                                <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-2" />
+                                <p className="text-sm text-gray-600">Processing resume...</p>
+                              </div>
+                            ) : ocrError ? (
+                              <div className="text-center">
+                                <X className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                                <p className="text-sm text-red-600">{ocrError}</p>
+                              </div>
+                            ) : resumeFeedback && resumeScore !== null ? (
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-gray-600">Score:</span>
+                                  <span className="text-sm font-bold text-gray-900">{resumeScore}/100</span>
+                                </div>
+                                <div>
+                                  <span className="text-sm font-medium text-gray-600">Feedback:</span>
+                                  <p className="text-sm text-gray-700 mt-1">{resumeFeedback}</p>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500">No feedback available</p>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -589,7 +747,6 @@ const AllUserList = () => {
                     </div>
                   </div>
 
-                  {/* Technical Skills */}
                   <div className="bg-white rounded-lg shadow-sm border">
                     <div className="p-3 sm:p-4 border-b">
                       <h3 className="text-base sm:text-lg font-semibold text-gray-900">Technical Skills</h3>
@@ -618,7 +775,6 @@ const AllUserList = () => {
                     </div>
                   </div>
 
-                  {/* Achievements */}
                   <div className="bg-white rounded-lg shadow-sm border">
                     <div className="p-3 sm:p-4 border-b">
                       <h3 className="text-base sm:text-lg font-semibold text-gray-900">Achievements</h3>
@@ -628,8 +784,7 @@ const AllUserList = () => {
                       <p className="text-gray-500 text-sm">No achievements available</p>
                     </div>
                   </div>
-                  
-                  {/* Activity Timeline */}
+
                   <div className="bg-white rounded-lg shadow-sm border">
                     <div className="p-3 sm:p-4 border-b">
                       <h3 className="text-base sm:text-lg font-semibold text-gray-900">Activity Timeline</h3>

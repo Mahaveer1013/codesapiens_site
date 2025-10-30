@@ -498,16 +498,7 @@ export default function UnifiedNavbar() {
                 <Computer className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span>Mentorship</span>
               </button>
-              <button
-                onClick={() => {
-                  setIsProfileDropdownOpen(false);
-                  navigate('/code');
-                }}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
-              >
-                <Code className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>Playground (Beta)</span>
-              </button>
+            
               <button
                 onClick={() => {
                   setIsProfileDropdownOpen(false);
