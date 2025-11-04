@@ -38,51 +38,23 @@ const debounce = (func, delay) => {
   };
 };
 
-// Utility function to extract GitHub username from URL
+// Update the extractGithubUsername function to handle both URL formats
 const extractGithubUsername = (url) => {
   if (!url) return null;
   try {
-    const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
-    const urlObj = new URL(normalizedUrl);
-    const pathParts = urlObj.pathname.split("/").filter(Boolean);
-    // Expecting URL like https://github.com/username or https://www.github.com/username
-    return pathParts[0] === "github.com" && pathParts[1] ? pathParts[1] : null;
+    // Handle both full URLs and simple usernames
+    if (url.includes('github.com/')) {
+      const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
+      const urlObj = new URL(normalizedUrl);
+      const pathParts = urlObj.pathname.split("/").filter(Boolean);
+      return pathParts[0];
+    } else {
+      // If it's just a username, return it directly
+      return url.split("/").pop();
+    }
   } catch (e) {
     console.warn("[Frontend] : Invalid GitHub URL format:", url, e.message);
     return null;
-  }
-};
-
-// Utility function to fetch GitHub avatar with retry
-const fetchGithubAvatar = async (username, retries = 2, delay = 1000) => {
-  if (!username) return null;
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      console.log(`[Frontend] : Fetching GitHub avatar for username: ${username} (Attempt ${attempt}/${retries})`);
-      const response = await fetch(`https://api.github.com/users/${username}`);
-      if (!response.ok) {
-        if (response.status === 403) {
-          console.warn("[Frontend] : GitHub API rate limit exceeded");
-          throw new Error("GitHub API rate limit exceeded");
-        }
-        throw new Error(`GitHub API error: ${response.status}`);
-      }
-      const githubData = await response.json();
-      if (githubData.avatar_url) {
-        console.log("[Frontend] : GitHub avatar fetched successfully:", githubData.avatar_url);
-        return githubData.avatar_url;
-      }
-      throw new Error("No avatar_url in GitHub response");
-    } catch (err) {
-      console.error("[Frontend] : Error fetching GitHub avatar (Attempt ${attempt}):", err.message);
-      if (attempt < retries) {
-        console.log(`[Frontend] : Retrying GitHub API call after ${delay}ms...`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      } else {
-        console.error("[Frontend] : Failed to fetch GitHub avatar after ${retries} attempts");
-        return null;
-      }
-    }
   }
 };
 
@@ -116,7 +88,6 @@ const UserProfile = () => {
   const [dragActive, setDragActive] = useState(false);
   const [usernameError, setUsernameError] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
-  const [githubAvatar, setGithubAvatar] = useState(null);
 
   const resumeDropRef = useRef(null);
   const collegeInputRef = useRef(null);
@@ -125,7 +96,10 @@ const UserProfile = () => {
   const tabs = ["Overview", "Skills", "Achievements", "Activity"];
 
   // Generate years from 2020 to 2040 for the dropdown
-  const graduationYears = Array.from({ length: 2040 - 2020 + 1 }, (_, i) => (2020 + i).toString());
+  const graduationYears =  [
+  ...Array.from({ length: 21 }, (_, i) => (2020 + i).toString()),
+  "Already Graduated"
+];
 
   // Utility function to validate and normalize URLs
   const validateUrl = (url) => {
@@ -231,16 +205,6 @@ const UserProfile = () => {
           setUserData(transformedUser);
           setEditedData(transformedUser);
           setUserSkills(skills);
-
-          // Fetch GitHub profile image if githubUrl is provided
-          const githubUsername = extractGithubUsername(transformedUser.githubUrl);
-          if (githubUsername) {
-            const avatarUrl = await fetchGithubAvatar(githubUsername);
-            setGithubAvatar(avatarUrl);
-          } else {
-            console.log("[Frontend] : No valid GitHub username found, skipping avatar fetch");
-            setGithubAvatar(null);
-          }
         } else {
           setError("User profile not found");
         }
@@ -703,16 +667,6 @@ const UserProfile = () => {
       setCollegeError(null);
       setLastSelectedCollege(finalCollege);
       setUsernameError(null);
-
-      // Fetch GitHub avatar if github_url was updated
-      const githubUsername = extractGithubUsername(updateData.github_url);
-      if (githubUsername) {
-        const avatarUrl = await fetchGithubAvatar(githubUsername);
-        setGithubAvatar(avatarUrl);
-      } else {
-        console.log("[Frontend] : No valid GitHub username after save, clearing avatar");
-        setGithubAvatar(null);
-      }
     } catch (err) {
       console.error("[Frontend] : Save error:", err.message);
       setSaveError(err.message || "Failed to save profile. Please try again.");
@@ -842,26 +796,21 @@ const UserProfile = () => {
         <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
             {/* Avatar */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-              {githubAvatar ? (
+            <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
+              {userData.githubUrl && extractGithubUsername(userData.githubUrl) ? (
                 <img
-                  src={githubAvatar}
+                  src={`https://avatars.githubusercontent.com/${extractGithubUsername(userData.githubUrl)}`}
                   alt={userData.displayName}
-                  className="w-full h-full rounded-full object-cover"
+                  className="w-full h-full object-cover"
                   onError={(e) => {
-                    console.error("[Frontend] : Failed to load GitHub avatar:", githubAvatar);
-                    e.target.style.display = "none";
-                    setGithubAvatar(null);
-                  }}
-                />
-              ) : userData.avatar ? (
-                <img
-                  src={userData.avatar}
-                  alt={userData.displayName}
-                  className="w-full h-full rounded-full object-cover"
-                  onError={(e) => {
-                    console.error("[Frontend] : Failed to load user avatar:", userData.avatar);
-                    e.target.style.display = "none";
+                    console.error("[Frontend] : Failed to load GitHub avatar");
+                    e.target.onError = null;
+                    e.target.src = ''; // Clear the failed image
+                    // Fallback to initial letter
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = `<span class="text-white font-bold text-xl sm:text-2xl lg:text-3xl">
+                      ${userData.displayName?.charAt(0).toUpperCase() || "U"}
+                    </span>`;
                   }}
                 />
               ) : (
