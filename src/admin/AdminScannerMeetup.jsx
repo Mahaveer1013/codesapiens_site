@@ -1,189 +1,214 @@
+// src/pages/AdminScannerMeetup.jsx
 import React, { useEffect, useRef, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
-import { Scan, Camera, CameraOff } from "lucide-react";
+import { supabase } from "../lib/supabaseClient";
+import toast, { Toaster } from "react-hot-toast";
+import { ArrowLeft, QrCode, Loader2 } from "lucide-react";
 
-const AdminScannerMeetup = () => {
+export default function AdminScannerMeetup() {
+  const { meetupId } = useParams();
+  const navigate = useNavigate();
+
   const scannerRef = useRef(null);
-  const [cameraId, setCameraId] = useState("");
   const [scanning, setScanning] = useState(false);
-  const [error, setError] = useState("");
+  const [lastResult, setLastResult] = useState(null);
+  const [meetup, setMeetup] = useState(null);
+  const [initialized, setInitialized] = useState(false);
 
-  // Load cameras and prefer back camera
+  // ---------- Beep ----------
+  const beep = (success) => {
+    const audio = new Audio(
+      success
+        ? "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="
+        : "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="
+    );
+    audio.volume = 0.3;
+    audio.play().catch(() => {});
+  };
+
+  // ---------- Fetch meetup title ----------
   useEffect(() => {
-    const initCamera = async () => {
+    const fetchMeetup = async () => {
+      const { data, error } = await supabase
+        .from("meetup")
+        .select("title")
+        .eq("id", meetupId)
+        .single();
+
+      if (error) {
+        toast.error("Meetup not found");
+        navigate("/admin/meetups");
+      } else {
+        setMeetup(data);
+      }
+    };
+    fetchMeetup();
+  }, [meetupId, navigate]);
+
+  // ---------- Scanner ----------
+  useEffect(() => {
+    let qrCode = null;
+
+    const start = async () => {
+      if (initialized || !meetupId) return;
+
+      qrCode = new Html5Qrcode("reader");
+      scannerRef.current = qrCode;
+
+      const config = { fps: 15, qrbox: { width: 280, height: 280 }, aspectRatio: 1 };
+
       try {
         const cameras = await Html5Qrcode.getCameras();
-        if (cameras.length === 0) {
-          setError("No camera found");
-          return;
-        }
+        if (!cameras?.length) throw new Error("No camera");
 
-        const backCam = cameras.find((c) =>
-          c.label.toLowerCase().includes("back")
+        await qrCode.start(
+          { facingMode: "environment" },
+          config,
+          async (decodedText) => {
+            if (!scanning) return;
+            await qrCode.stop();
+            setScanning(false);
+            beep(true);
+
+            try {
+              const { data, error } = await supabase
+                .from("registrations")
+                .select("user_name, is_checked_in")
+                .eq("token", decodedText.trim())
+                .eq("meetup_id", meetupId)
+                .single();
+
+              if (error || !data) throw new Error("Invalid QR");
+
+              if (data.is_checked_in) {
+                setLastResult({ name: data.user_name, status: "already" });
+                toast.error(`${data.user_name} already checked in`);
+                beep(false);
+              } else {
+                const { error: upd } = await supabase
+                  .from("registrations")
+                  .update({
+                    is_checked_in: true,
+                    checked_in_at: new Date().toISOString(),
+                  })
+                  .eq("token", decodedText.trim());
+
+                if (upd) throw upd;
+
+                setLastResult({ name: data.user_name, status: "success" });
+                toast.success(`${data.user_name} checked in!`);
+              }
+            } catch (e) {
+              beep(false);
+              setLastResult({ name: e.message || "Invalid QR", status: "error" });
+              toast.error(e.message || "Invalid QR");
+            }
+
+            // restart after short pause
+            setTimeout(() => {
+              setLastResult(null);
+              start();
+            }, 2500);
+          },
+          () => {}
         );
-        const defaultCam = backCam || cameras[0];
-        setCameraId(defaultCam.id);
-      } catch (err) {
-        setError("Camera access denied");
+
+        setScanning(true);
+        setInitialized(true);
+      } catch (e) {
+        toast.error("Camera access denied or not available");
       }
     };
 
-    initCamera();
-  }, []);
+    start();
 
-  // Start scanning
-  const startScanner = async () => {
-    if (!cameraId || scanning) return;
-
-    try {
-      const qrScanner = new Html5Qrcode("qr-reader");
-      scannerRef.current = qrScanner;
-
-      await qrScanner.start(
-        cameraId,
-        { fps: 10, qrbox: { width: 220, height: 220 } },
-        (decodedText) => {
-          // Success: vibrate + alert (or emit event)
-          if (navigator.vibrate) navigator.vibrate(200);
-          alert(`Scanned: ${decodedText}`);
-          stopScanner(); // optional: stop after scan
-        },
-        () => {
-          // Scan error (silent)
-        }
-      );
-
-      setScanning(true);
-      setError("");
-    } catch (err) {
-      setError("Failed to start camera");
-    }
-  };
-
-  // Stop scanning
-  const stopScanner = async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        await scannerRef.current.clear();
-        scannerRef.current = null;
-      } catch (err) {
-        console.error(err);
+    return () => {
+      if (qrCode && scanning) {
+        qrCode.stop().catch(() => {});
+        setScanning(false);
       }
-    }
-    setScanning(false);
-  };
-
-  // Auto-start when camera is ready
-  useEffect(() => {
-    if (cameraId && !scanning) {
-      const timer = setTimeout(startScanner, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [cameraId]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => stopScanner();
-  }, []);
+    };
+  }, [meetupId, initialized]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black flex flex-col items-center justify-center p-4">
-      {/* Title */}
-      <h1 className="text-2xl font-light text-white mb-6 tracking-wider">
-        QR Scanner
-      </h1>
+    <>
+      <Toaster position="top-center" />
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-indigo-900 text-white">
+        {/* Header */}
+        <div className="bg-black/50 backdrop-blur p-4">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center space-x-2 text-white/80 hover:text-white"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back</span>
+            </button>
+            <h1 className="text-xl font-bold flex items-center space-x-2">
+              <QrCode className="w-6 h-6" />
+              <span>QR Scanner</span>
+            </h1>
+            <div className="w-16" />
+          </div>
+          {meetup && <p className="text-center mt-2 text-lg">{meetup.title}</p>}
+        </div>
 
-      {/* Scanner Container */}
-      <div className="relative w-80 h-80 bg-black rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
-        {/* QR Reader */}
-        <div id="qr-reader" className="w-full h-full" />
+        {/* Feedback */}
+        {lastResult && (
+          <div
+            className={`p-8 text-center text-4xl font-bold transition-all ${
+              lastResult.status === "success"
+                ? "bg-green-600"
+                : lastResult.status === "already"
+                ? "bg-yellow-600"
+                : "bg-red-600"
+            }`}
+          >
+            {lastResult.status === "success" && "Checked In"}
+            {lastResult.status === "already" && "Already Checked In"}
+            {lastResult.status === "error" && "Failed"}
+            <p className="text-2xl mt-3 opacity-90">{lastResult.name}</p>
+          </div>
+        )}
 
-        {/* Scanning Animation Overlay */}
-        {scanning && (
-          <div className="absolute inset-0 pointer-events-none">
-            {/* Corner Brackets */}
-            <div className="absolute top-4 left-4 w-12 h-12 border-l-4 border-t-4 border-green-400 rounded-tl-lg"></div>
-            <div className="absolute top-4 right-4 w-12 h-12 border-r-4 border-t-4 border-green-400 rounded-tr-lg"></div>
-            <div className="absolute bottom-4 left-4 w-12 h-12 border-l-4 border-b-4 border-green-400 rounded-bl-lg"></div>
-            <div className="absolute bottom-4 right-4 w-12 h-12 border-r-4 border-b-4 border-green-400 rounded-br-lg"></div>
-
-            {/* Laser Line Animation */}
-            <div className="absolute w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent opacity-70">
-              <div
-                className="h-full w-32 mx-auto bg-green-400 blur-sm"
-                style={{
-                  animation: "scan 2s ease-in-out infinite",
-                }}
-              ></div>
+        {/* Scanner */}
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="relative">
+            <div id="reader" className="rounded-2xl overflow-hidden shadow-2xl w-80 h-80" />
+            {!scanning && !lastResult && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+                <Loader2 className="w-12 h-12 animate-spin" />
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-72 h-72 border-4 border-white/30 rounded-3xl relative">
+                <div className="absolute top-0 left-0 w-20 h-20 border-t-8 border-l-8 border-cyan-400 rounded-tl-3xl" />
+                <div className="absolute top-0 right-0 w-20 h-20 border-t-8 border-r-8 border-cyan-400 rounded-tr-3xl" />
+                <div className="absolute bottom-0 left-0 w-20 h-20 border-b-8 border-l-8 border-cyan-400 rounded-bl-3xl" />
+                <div className="absolute bottom-0 right-0 w-20 h-20 border-b-8 border-r-8 border-cyan-400 rounded-br-3xl" />
+                <div className="scan-line" />
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Error or Loading State */}
-        {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80">
-            <p className="text-red-400 text-sm font-medium">{error}</p>
-          </div>
-        )}
+        <style>
+          {`
+            @keyframes scan {
+              0%   { transform: translateY(-300px); opacity:0; }
+              50%  { opacity:1; }
+              100% { transform: translateY(300px); opacity:0; }
+            }
+            .scan-line {
+              position:absolute; left:0; right:0; height:3px;
+              background:linear-gradient(90deg,transparent,#06b6d4,transparent);
+              animation:scan 2.5s linear infinite;
+              box-shadow:0 0 10px #06b6d4;
+            }
+          `}
+        </style>
       </div>
-
-      {/* Controls */}
-      <div className="flex gap-4 mt-6">
-        <button
-          onClick={scanning ? stopScanner : startScanner}
-          className="flex items-center gap-2 px-5 py-2.5 bg-white text-black rounded-full font-medium text-sm transition-all hover:scale-105 active:scale-95"
-        >
-          {scanning ? (
-            <>
-              <CameraOff size={18} />
-              Stop
-            </>
-          ) : (
-            <>
-              <Camera size={18} />
-              Start
-            </>
-          )}
-        </button>
-
-        {/* Optional: Camera Switcher (minimal) */}
-        {/* Uncomment if you want camera switcher */}
-        {/* <select
-          value={cameraId}
-          onChange={(e) => {
-            stopScanner();
-            setCameraId(e.target.value);
-          }}
-          className="bg-gray-800 text-white text-xs px-3 py-2 rounded-full"
-        >
-          {cameraList.map((cam) => (
-            <option key={cam.id} value={cam.id}>
-              {cam.label.split("(")[0].trim()}
-            </option>
-          ))}
-        </select> */}
-      </div>
-
-      {/* Subtle Status */}
-      <p className="text-gray-500 text-xs mt-4">
-        {scanning ? "Scanning..." : "Ready"}
-      </p>
-
-      {/* CSS Animation */}
-      <style jsx>{`
-        @keyframes scan {
-          0%,
-          100% {
-            transform: translateY(60px);
-          }
-          50% {
-            transform: translateY(260px);
-          }
-        }
-      `}</style>
-    </div>
+    </>
   );
-};
-
-export default AdminScannerMeetup;
+}

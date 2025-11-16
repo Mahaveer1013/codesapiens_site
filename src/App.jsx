@@ -33,6 +33,9 @@ import UserPlayGround from './user/UserPlayGround';
 import UserMentorshipFormList from './user/UserMentorshipFormList';
 import UserCodingPlatform from './user/UserCodingPlatform';
 import AdminScannerMeetup from './admin/AdminScannerMeetup';
+import AdminMeetup from './admin/AdminMeetup';
+import AdminMeetupsList from './admin/AdminMeetupList';
+import AdminMeetupEdit from './admin/AdminMeetupEdit';
 
 
 
@@ -91,6 +94,10 @@ function Root() {
              <Route path="/mentorship-list" element={<UserMentorshipFormList/>} />
              <Route path="/code" element={<UserCodingPlatform/>} />
              <Route path="/scanner" element={<AdminScannerMeetup/>} />
+             <Route path="/meetup" element={<AdminMeetup/>} />
+             <Route path="/admin/meetups" element={<AdminMeetupsList/>} />
+             <Route path="/admin/scanner/:meetupId" element={<AdminScannerMeetup />} />
+             <Route path="/admin/meetup/edit/:meetupId" element={<AdminMeetupEdit/>} />
          
           
 
