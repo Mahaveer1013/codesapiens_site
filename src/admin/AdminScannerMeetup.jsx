@@ -10,204 +10,216 @@ export default function AdminScannerMeetup() {
   const { meetupId } = useParams();
   const navigate = useNavigate();
 
-  const scannerRef = useRef(null);
+  const scannerRef = useRef(null); // Html5Qrcode instance
   const [scanning, setScanning] = useState(false);
-  const [lastResult, setLastResult] = useState(null);
-  const [meetup, setMeetup] = useState(null);
-  const [initialized, setInitialized] = useState(false);
+  const [feedback, setFeedback] = useState(null); // { name: string, status: "success" | "already" | "error" }
+  const [meetupTitle, setMeetupTitle] = useState("");
 
-  // ---------- Beep ----------
-  const beep = (success) => {
-    const audio = new Audio(
-      success
-        ? "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="
-        : "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="
-    );
-    audio.volume = 0.3;
-    audio.play().catch(() => {});
-  };
-
-  // ---------- Fetch meetup title ----------
+  /* ---------- Fetch Meetup Title ---------- */
   useEffect(() => {
     const fetchMeetup = async () => {
       const { data, error } = await supabase
-        .from("meetup")
+        .from("meetups")
         .select("title")
         .eq("id", meetupId)
         .single();
 
       if (error) {
-        toast.error("Meetup not found");
-        navigate("/admin/meetups");
+        toast.error("Failed to load meetup");
+        console.error(error);
       } else {
-        setMeetup(data);
+        setMeetupTitle(data.title);
       }
     };
+
     fetchMeetup();
-  }, [meetupId, navigate]);
+  }, [meetupId]);
 
-  // ---------- Scanner ----------
+  /* ---------- Start Scanner ---------- */
+  const startScanner = async () => {
+    try {
+      setScanning(true);
+      setFeedback(null);
+
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      scannerRef.current = html5QrCode;
+
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        async (decodedText) => {
+          await handleScan(decodedText);
+        },
+        (error) => {
+          // Ignore scan errors (optional: log for debugging)
+          // console.warn("Scan error:", error);
+        }
+      );
+    } catch (err) {
+      console.error("Failed to start scanner:", err);
+      toast.error("Camera access denied or not available");
+      setScanning(false);
+    }
+  };
+
+  /* ---------- Handle QR Code Scan ---------- */
+  const handleScan = async (userId) => {
+    if (!userId) return;
+
+    try {
+      // Stop scanning temporarily
+      if (scannerRef.current) {
+        await scannerRef.current.stop();
+      }
+
+      // Check if already scanned
+      const { data: existing } = await supabase
+        .from("attendance")
+        .select("id")
+        .eq("meetup_id", meetupId)
+        .eq("user_id", userId)
+        .single();
+
+      if (existing) {
+        setFeedback({ name: "Already Scanned", status: "already" });
+        toast("Already scanned!", { icon: "Warning" });
+      } else {
+        // Fetch user name
+        const { data: user } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", userId)
+          .single();
+
+        const name = user?.full_name || "Unknown User";
+
+        // Insert attendance
+        const { error } = await supabase
+          .from("attendance")
+          .insert({
+            meetup_id: meetupId,
+            user_id: userId,
+            scanned_at: new Date().toISOString(),
+          });
+
+        if (error) {
+          setFeedback({ name, status: "error" });
+          toast.error("Failed to mark attendance");
+        } else {
+          setFeedback({ name, status: "success" });
+          toast.success(`${name} checked in!`);
+        }
+      }
+
+      // Restart scanner after 2 seconds
+      setTimeout(() => {
+        if (scannerRef.current) {
+          scannerRef.current.start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+            },
+            async (text) => {
+              await handleScan(text);
+            },
+            () => {}
+          );
+        }
+      }, 2000);
+    } catch (err) {
+      console.error("Scan handling error:", err);
+      toast.error("Something went wrong");
+      setFeedback({ name: "Error", status: "error" });
+    }
+  };
+
+  /* ---------- Stop Scanner on Unmount ---------- */
   useEffect(() => {
-    let qrCode = null;
-
-    const start = async () => {
-      if (initialized || !meetupId) return;
-
-      qrCode = new Html5Qrcode("reader");
-      scannerRef.current = qrCode;
-
-      const config = { fps: 15, qrbox: { width: 280, height: 280 }, aspectRatio: 1 };
-
-      try {
-        const cameras = await Html5Qrcode.getCameras();
-        if (!cameras?.length) throw new Error("No camera");
-
-        await qrCode.start(
-          { facingMode: "environment" },
-          config,
-          async (decodedText) => {
-            if (!scanning) return;
-            await qrCode.stop();
-            setScanning(false);
-            beep(true);
-
-            try {
-              const { data, error } = await supabase
-                .from("registrations")
-                .select("user_name, is_checked_in")
-                .eq("token", decodedText.trim())
-                .eq("meetup_id", meetupId)
-                .single();
-
-              if (error || !data) throw new Error("Invalid QR");
-
-              if (data.is_checked_in) {
-                setLastResult({ name: data.user_name, status: "already" });
-                toast.error(`${data.user_name} already checked in`);
-                beep(false);
-              } else {
-                const { error: upd } = await supabase
-                  .from("registrations")
-                  .update({
-                    is_checked_in: true,
-                    checked_in_at: new Date().toISOString(),
-                  })
-                  .eq("token", decodedText.trim());
-
-                if (upd) throw upd;
-
-                setLastResult({ name: data.user_name, status: "success" });
-                toast.success(`${data.user_name} checked in!`);
-              }
-            } catch (e) {
-              beep(false);
-              setLastResult({ name: e.message || "Invalid QR", status: "error" });
-              toast.error(e.message || "Invalid QR");
-            }
-
-            // restart after short pause
-            setTimeout(() => {
-              setLastResult(null);
-              start();
-            }, 2500);
-          },
-          () => {}
-        );
-
-        setScanning(true);
-        setInitialized(true);
-      } catch (e) {
-        toast.error("Camera access denied or not available");
-      }
-    };
-
-    start();
-
     return () => {
-      if (qrCode && scanning) {
-        qrCode.stop().catch(() => {});
-        setScanning(false);
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
       }
     };
-  }, [meetupId, initialized]);
+  }, []);
 
   return (
     <>
       <Toaster position="top-center" />
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-indigo-900 text-white">
-        {/* Header */}
-        <div className="bg-black/50 backdrop-blur p-4">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-md mx-auto">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center space-x-2 text-white/80 hover:text-white"
+              className="p-2 rounded-lg bg-white shadow hover:bg-gray-50 transition"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span>Back</span>
             </button>
-            <h1 className="text-xl font-bold flex items-center space-x-2">
-              <QrCode className="w-6 h-6" />
-              <span>QR Scanner</span>
-            </h1>
-            <div className="w-16" />
-          </div>
-          {meetup && <p className="text-center mt-2 text-lg">{meetup.title}</p>}
-        </div>
-
-        {/* Feedback */}
-        {lastResult && (
-          <div
-            className={`p-8 text-center text-4xl font-bold transition-all ${
-              lastResult.status === "success"
-                ? "bg-green-600"
-                : lastResult.status === "already"
-                ? "bg-yellow-600"
-                : "bg-red-600"
-            }`}
-          >
-            {lastResult.status === "success" && "Checked In"}
-            {lastResult.status === "already" && "Already Checked In"}
-            {lastResult.status === "error" && "Failed"}
-            <p className="text-2xl mt-3 opacity-90">{lastResult.name}</p>
-          </div>
-        )}
-
-        {/* Scanner */}
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="relative">
-            <div id="reader" className="rounded-2xl overflow-hidden shadow-2xl w-80 h-80" />
-            {!scanning && !lastResult && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
-                <Loader2 className="w-12 h-12 animate-spin" />
-              </div>
-            )}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-72 h-72 border-4 border-white/30 rounded-3xl relative">
-                <div className="absolute top-0 left-0 w-20 h-20 border-t-8 border-l-8 border-cyan-400 rounded-tl-3xl" />
-                <div className="absolute top-0 right-0 w-20 h-20 border-t-8 border-r-8 border-cyan-400 rounded-tr-3xl" />
-                <div className="absolute bottom-0 left-0 w-20 h-20 border-b-8 border-l-8 border-cyan-400 rounded-bl-3xl" />
-                <div className="absolute bottom-0 right-0 w-20 h-20 border-b-8 border-r-8 border-cyan-400 rounded-br-3xl" />
-                <div className="scan-line" />
-              </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">QR Scanner</h1>
+              <p className="text-sm text-gray-600">{meetupTitle || "Loading..."}</p>
             </div>
           </div>
-        </div>
 
-        <style>
-          {`
-            @keyframes scan {
-              0%   { transform: translateY(-300px); opacity:0; }
-              50%  { opacity:1; }
-              100% { transform: translateY(300px); opacity:0; }
-            }
-            .scan-line {
-              position:absolute; left:0; right:0; height:3px;
-              background:linear-gradient(90deg,transparent,#06b6d4,transparent);
-              animation:scan 2.5s linear infinite;
-              box-shadow:0 0 10px #06b6d4;
-            }
-          `}
-        </style>
+          {/* Scanner Container */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div className="relative">
+              <div
+                id="qr-reader"
+                className="w-full aspect-square rounded-xl overflow-hidden bg-gray-100"
+              />
+              {!scanning && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 rounded-xl">
+                  <QrCode className="w-16 h-16 text-white mb-4" />
+                  <button
+                    onClick={startScanner}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                  >
+                    <QrCode className="w-5 h-5" />
+                    Start Scanning
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Feedback */}
+          {feedback && (
+            <div
+              className={`p-4 rounded-xl text-center font-medium transition-all ${
+                feedback.status === "success"
+                  ? "bg-green-100 text-green-800"
+                  : feedback.status === "already"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {feedback.status === "success" && (
+                <span>{feedback.name} checked in successfully!</span>
+              )}
+              {feedback.status === "already" && (
+                <span>{feedback.name} already scanned</span>
+              )}
+              {feedback.status === "error" && (
+                <span>Failed to scan {feedback.name}</span>
+              )}
+            </div>
+          )}
+
+          {/* Instructions */}
+          <div className="bg-white rounded-xl shadow p-4 text-sm text-gray-600">
+            <p className="font-medium text-gray-900 mb-2">How to scan:</p>
+            <ul className="space-y-1">
+              <li>• Point camera at QR code</li>
+              <li>• Hold steady until scanned</li>
+              <li>• Feedback appears below</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </>
   );

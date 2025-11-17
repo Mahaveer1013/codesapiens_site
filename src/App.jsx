@@ -8,15 +8,10 @@ import {
 } from '@supabase/auth-helpers-react';
 import { supabase } from './lib/supabaseClient';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-import NavBar from './components/ui/NavBar';
-import Hero from './components/ui/Hero';
-import Footer from './components/ui/Footer';
 import AuthForm from './components/AuthForm';
 import Dashboard from './admin/Dashboard';
 import UserProfile from './user/UserProfile';
 import UserDashboard from './user/UserDashboard';
-import UserNavbar from './user/UserNavbar';
 import AnalyticsPage from './admin/AnalyticsPage';
 import NotFoundPage from './components/ui/NotFoundPage';
 import CodeSapiensHero from './components/CodesapiensHero';
@@ -38,6 +33,7 @@ import AdminMeetupsList from './admin/AdminMeetupList';
 import AdminMeetupEdit from './admin/AdminMeetupEdit';
 import UserMeetup from './user/UserMeetup';
 import UserMeetupsList from './user/UserMeetupsList';
+import Navbar from './components/Navbar';
 
 
 
@@ -77,7 +73,7 @@ function Root() {
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow">
         <Router>
-          <UserNavbar />
+          <Navbar/>
           <Routes>
             <Route path="/admin" element={<Dashboard />} />
             <Route path="/profile" element={<UserProfile />} />
