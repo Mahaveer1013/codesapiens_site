@@ -53,11 +53,11 @@ Built with modern tooling and best practices, it integrates seamlessly with **Su
 - **Project Management** - Full lifecycle management, milestones, file attachments
 - **RBAC (Role-Based Access)** - Granular permissions (Admin, Moderator, Editor)
 - **Real-Time Updates** - Live sync via Supabase Realtime
-- **Media Handling** - Upload & optimize via Cloudinary + Vercel Blob
+- **Media Handling** - Upload & optimize via Cloudinary
 - **Secure Auth** - Supabase Auth + Turnstile CAPTCHA
-- **Responsive UI** - Mobile-first, dark mode, accessible
+- **Responsive UI** - Mobile-first, accessible
 - **Audit Logs** - Track all admin actions
-- **Export/Import** - CSV, JSON, PDF export
+- **Export/Import** -  JSON Export
 
 ---
 
@@ -68,12 +68,9 @@ Built with modern tooling and best practices, it integrates seamlessly with **Su
 **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)  
 **Build Tool:** [Vite](https://vitejs.dev/)  
 **Backend:** [Supabase](https://supabase.com/) (Auth, DB, Realtime, Storage)  
-**Media:** [Cloudinary](https://cloudinary.com/)  
-**Blob Storage:** [Vercel Blob](https://vercel.com/docs/storage/vercel-blob)  
+**Media:** [Cloudinary](https://cloudinary.com/) 
 **CAPTCHA:** [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/)  
 **State Management:** React Context / Zustand  
-**Forms:** React Hook Form + Zod  
-**Routing:** React Router DOM v6  
 **Icons:** [Lucide React](https://lucide.dev/)
 
 > Full dependency list available in [`package.json`](./package.json)
@@ -131,7 +128,6 @@ You'll also need accounts and API keys for:
 
 - [Supabase](https://supabase.com/)
 - [Cloudinary](https://cloudinary.com/)
-- [Vercel Blob](https://vercel.com/)
 - [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/)
 
 Verify your installations:
@@ -192,9 +188,6 @@ CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=123456789
 CLOUDINARY_API_SECRET=your-secret
 
-# Vercel Blob Storage
-VERCEL_BLOB_TOKEN=vercel_blob_rw_...
-
 # Cloudflare Turnstile
 REACT_APP_TURNSTILE_SITE_KEY=0x4AAAAAA...
 
@@ -204,7 +197,7 @@ NODE_ENV=development
 
 **Important:** 
 - Add `.env.local` to your `.gitignore`
-- See `.env.example` for a complete template
+- See `EXAMPLEENV` for a complete template
 - Never commit sensitive keys to version control
 
 ---
@@ -216,10 +209,6 @@ NODE_ENV=development
 | `npm run dev` | Start development server with HMR |
 | `npm run build` | Build production bundle to `dist/` |
 | `npm run preview` | Preview production build locally |
-| `npm run lint` | Run ESLint for code quality |
-| `npm run format` | Format code with Prettier |
-| `npm run test` | Run tests with Vitest |
-| `npm run test:coverage` | Generate test coverage report |
 
 ---
 
@@ -227,7 +216,7 @@ NODE_ENV=development
 
 ### Authentication Flow
 
-- **Login Page:** `/login` → Uses Supabase Auth (email/password, OAuth, magic links)
+- **Login Page:** `/login` → Uses Supabase Auth (email/password)
 - **Protected Routes:** All pages except login require authentication
 - **Role-Based Access Control (RBAC):** User roles checked via `user.metadata.role`
 - **Session Management:** Automatic token refresh, logout on timeout
@@ -249,31 +238,6 @@ function AdminPage() {
   return <Dashboard />;
 }
 ```
-
----
-
-## 🧪 Testing
-
-This project uses **Vitest** and **React Testing Library** for testing.
-
-### Run Tests
-
-```bash
-npm run test
-```
-
-### Generate Coverage Report
-
-```bash
-npm run test:coverage
-```
-
-### Test Coverage Includes:
-
-- Unit tests for custom hooks
-- Integration tests for forms and user flows
-- Snapshot tests for UI components
-- API mocking for Supabase calls
 
 ---
 
@@ -319,25 +283,20 @@ We welcome contributions from the community!
    git checkout -b feat/your-feature-name
    ```
 3. **Make your changes**
-4. **Run linting and tests:**
-   ```bash
-   npm run lint
-   npm run test
-   ```
-5. **Commit your changes:**
+  
+4. **Commit your changes:**
    ```bash
    git commit -m "feat: add user export functionality"
    ```
-6. **Push to your fork:**
+5. **Push to your fork:**
    ```bash
    git push origin feat/your-feature-name
    ```
-7. **Open a Pull Request** to the `main` branch
+6. **Open a Pull Request** to the `main` branch
 
 ### Guidelines
 
 - Follow [Conventional Commits](https://www.conventionalcommits.org/) for commit messages
-- Write tests for new features
 - Update documentation as needed
 - Be respectful and constructive in discussions
 
@@ -362,7 +321,7 @@ export default {
 ```
 
 **Supabase authentication errors:**
-- Verify your Supabase URL and anon key in `.env.local`
+- Verify your Supabase URL and anon key in `.env`
 - Check Row Level Security (RLS) policies in Supabase dashboard
 
 **Images not uploading:**
