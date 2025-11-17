@@ -81,38 +81,73 @@ Built with modern tooling and best practices, it integrates seamlessly with **Su
 
 ```
 Codesapiens_management_website/
+├── .deepsource.toml (115 bytes)
+├── .flowbite-react/
+│   ├── class-list.json (2 bytes)
+│   ├── config.json (189 bytes)
+│   └── init.tsx (490 bytes)
+├── .github/
+│   └── workflows/
+│       └── node.js.yml (844 bytes)
+├── .gitignore (259 bytes)
+├── ENVEXAMPLE (50 bytes)
+├── README.md (3808 bytes)
+├── eslint.config.js (763 bytes)
+├── index.html (360 bytes)
+├── package-lock.json (210603 bytes)
+├── package.json (1372 bytes)
 ├── public/
-│   └── index.html
+│   ├── logo.jpg (25536 bytes)
+│   └── vite.svg (1497 bytes)
 ├── src/
+│   ├── App.jsx (4658 bytes)
+│   ├── admin/
+│   │   ├── AdminMeetup.jsx (9505 bytes)
+│   │   ├── AdminMeetupEdit.jsx (6720 bytes)
+│   │   ├── AdminMeetupList.jsx (10654 bytes)
+│   │   ├── AdminMentorshipSubmission.jsx (22416 bytes)
+│   │   ├── AdminScannerMeetup.jsx (7117 bytes)
+│   │   ├── AllUserList.jsx (37582 bytes)
+│   │   ├── AnalyticsPage.jsx (34761 bytes)
+│   │   └── Dashboard.jsx (19458 bytes)
 │   ├── assets/
+│   │   ├── academic.json (2608 bytes)
+│   │   ├── react.svg (4126 bytes)
+│   │   └── skills.json (4265 bytes)
 │   ├── components/
-│   │   ├── common/
-│   │   ├── dashboard/
-│   │   └── forms/
-│   ├── pages/
-│   │   ├── Dashboard.jsx
-│   │   ├── Users.jsx
-│   │   ├── Projects.jsx
-│   │   └── Login.jsx
-│   ├── hooks/
-│   │   ├── useAuth.js
-│   │   └── useProjects.js
-│   ├── services/
-│   │   ├── supabase.js
-│   │   └── cloudinary.js
-│   ├── utils/
-│   │   ├── validation.js
-│   │   └── constants.js
-│   ├── App.jsx
-│   └── main.jsx
-├── .env.example
-├── .gitignore
-├── package.json
-├── vite.config.js
-├── tailwind.config.js
-├── postcss.config.js
-└── README.md
-```
+│   │   ├── AuthForm.jsx (22858 bytes)
+│   │   ├── CodesapiensHero.jsx (35197 bytes)
+│   │   ├── LumaEmbed.jsx (503 bytes)
+│   │   ├── Navbar.jsx (23541 bytes)
+│   │   ├── PublicProfile.jsx (14214 bytes)
+│   │   ├── ResetPassword.jsx (3422 bytes)
+│   │   ├── ResetPasswordConfirm.jsx (2013 bytes)
+│   │   └── ui/
+│   │       └── NotFoundPage.jsx (1511 bytes)
+│   ├── index.css (114 bytes)
+│   ├── lib/
+│   │   ├── authContext.jsx (292 bytes)
+│   │   ├── authFetch.js (960 bytes)
+│   │   ├── supabaseClient.jsx (202 bytes)
+│   │   └── useAuth.js (960 bytes)
+│   ├── main.jsx (255 bytes)
+│   └── user/
+│       ├── UserCodingPlatform.jsx (7828 bytes)
+│       ├── UserDashboard.jsx (18401 bytes)
+│       ├── UserEvents.jsx (214 bytes)
+│       ├── UserMeetup.jsx (10358 bytes)
+│       ├── UserMeetupsList.jsx (11133 bytes)
+│       ├── UserMentorshipForm.jsx (18732 bytes)
+│       ├── UserMentorshipFormList.jsx (10321 bytes)
+│       ├── UserPlayGround.jsx (2564 bytes)
+│       ├── UserProfile.jsx (60884 bytes)
+│       ├── UserResource.jsx (299 bytes)
+│       └── UserResumeBuilder.jsx (307 bytes)
+├── tailwind.config.js (961 bytes)
+├── test-results/
+│   └── .last-run.json (45 bytes)
+├── vercel.json (70 bytes)
+└── vite.config.js (529 bytes)
 
 ---
 
