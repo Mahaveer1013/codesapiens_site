@@ -1,94 +1,407 @@
 # Codesapiens Management Website
 
-A JavaScript-based management website for the Codesapiens project. This repository contains the source code for the management/admin interface used to manage users, projects, and other application data.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-19.1.1-61DAFB?logo=react&logoColor=white)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+[![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-LTS-6DA55F?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-## Key Features
-
-- Admin dashboard and management UI
-- User and role management
-- CRUD operations for core resources
-- Authentication and authorization (implementation-dependent)
-- Configurable via environment variables
-
-## Tech Stack
-
-- Language: Javascript
-- Runtime / frameworks: React(19.1.1) & Tailwind CSS(v4)
-- Package manager: npm
-
-## Prerequisites
-
-- Node.js (LTS recommended)
-- npm
-- supabase & cloudinary
-
-## Installation & Local Setup
-
-1. Clone the repository:
-
-   git clone https://github.com/jayasurya261/Codesapiens_management_website.git
-   cd Codesapiens_management_website
-
-2. Install dependencies:
-
-   npm install
-
-3. Review package.json for available scripts (common scripts shown below):
-
-   - npm run dev — Run the development server with hot reload
-   - npm run build — Build the production bundle
-
-4. Start the app:
-
-   npm run dev
-
-   Open your browser at http://localhost:5173  (the port specified by the app)
-
-## Environment Variables / Configuration
-
-Create a .env file in the project root (if the project uses dotenv or similar). Common variables you may need to set:
-
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-VERCEL_BLOB_TOKEN=
-REACT_APP_TURNSTILE_SITE_KEY=
-NODE_ENV=development
-
-
-Do not commit .env files or secrets to version control. Add .env to .gitignore if not already present.
-
-## Usage / Common Commands
-
-- npm run dev — Start development server
-- npm run build — Build assets for production
-
-Check package.json for exact script names and details.
-
-## Deployment Notes
-
-- Frontend-only apps can be deployed to Netlify, Vercel, or GitHub Pages.
-- Make sure environment variables are configured on the hosting platform.
-- Build assets before deploying a static/frontend site (npm run build).
-
-## Contributing
-
-Contributions are welcome. Suggested workflow:
-
-1. Fork the repository
-2. Create a feature branch: git checkout -b feature/your-feature
-3. Commit changes with clear messages
-4. Push to your fork and open a pull request
-
-
-## Troubleshooting
-
-- If dependencies fail to install, try removing node_modules and reinstalling:
-  rm -rf node_modules package-lock.json && npm install
-- If the app fails to start, check environment variables and that any required backend services are running.
-
-
-## Contact
-
-For questions or issues, open an issue on the repository or contact the maintainers.
+> A **JavaScript-based admin dashboard** for the **Codesapiens** platform. Manage users, projects, roles, and resources with a modern, responsive UI powered by **React 19**, **Tailwind CSS v4**, **Supabase**, and **Cloudinary**.
 
 ---
+
+## 📑 Table of Contents
+
+- [Introduction](#introduction)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Installation & Local Setup](#installation--local-setup)
+- [Environment Variables](#environment-variables)
+- [Usage & Commands](#usage--commands)
+- [Authentication & Security](#authentication--security)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+- [Contact](#contact)
+
+---
+
+## 🎯 Introduction
+
+Welcome to the **Codesapiens Management Website** — the central admin interface for the [Codesapiens](https://github.com/jayasurya261/codesapiens) ecosystem.
+
+This frontend application provides a **secure, intuitive, and real-time** admin panel to manage:
+
+- Users & roles
+- Projects & tasks
+- Media assets
+- System analytics
+
+Built with modern tooling and best practices, it integrates seamlessly with **Supabase** (auth, DB, realtime) and **Cloudinary** (media), and supports deployment on **Vercel**, **Netlify**, or **GitHub Pages**.
+
+---
+
+## ✨ Key Features
+
+- **Admin Dashboard** - Real-time analytics, widgets, notifications
+- **User Management** - CRUD operations, role assignment, bulk actions, avatar upload
+- **Project Management** - Full lifecycle management, milestones, file attachments
+- **RBAC (Role-Based Access)** - Granular permissions (Admin, Moderator, Editor)
+- **Real-Time Updates** - Live sync via Supabase Realtime
+- **Media Handling** - Upload & optimize via Cloudinary + Vercel Blob
+- **Secure Auth** - Supabase Auth + Turnstile CAPTCHA
+- **Responsive UI** - Mobile-first, dark mode, accessible
+- **Audit Logs** - Track all admin actions
+- **Export/Import** - CSV, JSON, PDF export
+
+---
+
+## 🛠️ Tech Stack
+
+**Language:** JavaScript (ES6+)  
+**Framework:** [React 19.1.1](https://react.dev/)  
+**Styling:** [Tailwind CSS v4](https://tailwindcss.com/)  
+**Build Tool:** [Vite](https://vitejs.dev/)  
+**Backend:** [Supabase](https://supabase.com/) (Auth, DB, Realtime, Storage)  
+**Media:** [Cloudinary](https://cloudinary.com/)  
+**Blob Storage:** [Vercel Blob](https://vercel.com/docs/storage/vercel-blob)  
+**CAPTCHA:** [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/)  
+**State Management:** React Context / Zustand  
+**Forms:** React Hook Form + Zod  
+**Routing:** React Router DOM v6  
+**Icons:** [Lucide React](https://lucide.dev/)
+
+> Full dependency list available in [`package.json`](./package.json)
+
+---
+
+## 📁 Project Structure
+
+```
+Codesapiens_management_website/
+├── public/
+│   └── index.html
+├── src/
+│   ├── assets/
+│   ├── components/
+│   │   ├── common/
+│   │   ├── dashboard/
+│   │   └── forms/
+│   ├── pages/
+│   │   ├── Dashboard.jsx
+│   │   ├── Users.jsx
+│   │   ├── Projects.jsx
+│   │   └── Login.jsx
+│   ├── hooks/
+│   │   ├── useAuth.js
+│   │   └── useProjects.js
+│   ├── services/
+│   │   ├── supabase.js
+│   │   └── cloudinary.js
+│   ├── utils/
+│   │   ├── validation.js
+│   │   └── constants.js
+│   ├── App.jsx
+│   └── main.jsx
+├── .env.example
+├── .gitignore
+├── package.json
+├── vite.config.js
+├── tailwind.config.js
+├── postcss.config.js
+└── README.md
+```
+
+---
+
+## 📋 Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** (LTS recommended: v20.x+)
+- **npm** (v10+)
+- **Git**
+
+You'll also need accounts and API keys for:
+
+- [Supabase](https://supabase.com/)
+- [Cloudinary](https://cloudinary.com/)
+- [Vercel Blob](https://vercel.com/)
+- [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/)
+
+Verify your installations:
+
+```bash
+node --version  # Should be >= 20
+npm --version   # Should be >= 10
+```
+
+---
+
+## 🚀 Installation & Local Setup
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/jayasurya261/Codesapiens_management_website.git
+cd Codesapiens_management_website
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure Environment Variables
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your actual API keys (see [Environment Variables](#environment-variables) section below).
+
+### 4. Start Development Server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+The app uses Vite HMR — changes will reflect instantly!
+
+---
+
+## 🔐 Environment Variables
+
+Create a `.env.local` file in the root directory (never commit this file!):
+
+```env
+# Supabase Configuration
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=123456789
+CLOUDINARY_API_SECRET=your-secret
+
+# Vercel Blob Storage
+VERCEL_BLOB_TOKEN=vercel_blob_rw_...
+
+# Cloudflare Turnstile
+REACT_APP_TURNSTILE_SITE_KEY=0x4AAAAAA...
+
+# Environment
+NODE_ENV=development
+```
+
+**Important:** 
+- Add `.env.local` to your `.gitignore`
+- See `.env.example` for a complete template
+- Never commit sensitive keys to version control
+
+---
+
+## 💻 Usage & Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server with HMR |
+| `npm run build` | Build production bundle to `dist/` |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint for code quality |
+| `npm run format` | Format code with Prettier |
+| `npm run test` | Run tests with Vitest |
+| `npm run test:coverage` | Generate test coverage report |
+
+---
+
+## 🔒 Authentication & Security
+
+### Authentication Flow
+
+- **Login Page:** `/login` → Uses Supabase Auth (email/password, OAuth, magic links)
+- **Protected Routes:** All pages except login require authentication
+- **Role-Based Access Control (RBAC):** User roles checked via `user.metadata.role`
+- **Session Management:** Automatic token refresh, logout on timeout
+- **CAPTCHA Protection:** Turnstile verification on registration/login
+
+### Example: Auth Hook Usage
+
+```javascript
+import { useAuth } from './hooks/useAuth';
+
+function AdminPage() {
+  const { user, loading } = useAuth();
+  
+  if (loading) return <Spinner />;
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/login" />;
+  }
+  
+  return <Dashboard />;
+}
+```
+
+---
+
+## 🧪 Testing
+
+This project uses **Vitest** and **React Testing Library** for testing.
+
+### Run Tests
+
+```bash
+npm run test
+```
+
+### Generate Coverage Report
+
+```bash
+npm run test:coverage
+```
+
+### Test Coverage Includes:
+
+- Unit tests for custom hooks
+- Integration tests for forms and user flows
+- Snapshot tests for UI components
+- API mocking for Supabase calls
+
+---
+
+## 🚢 Deployment
+
+### Recommended: Vercel (Zero-Config)
+
+1. **Build the project:**
+   ```bash
+   npm run build
+   ```
+
+2. **Connect your repository to Vercel:**
+   - Import your GitHub repository
+   - Vercel auto-detects Vite configuration
+   - Deployment happens automatically
+
+3. **Set environment variables:**
+   - Go to Vercel Dashboard → Project Settings → Environment Variables
+   - Add all variables from `.env.local`
+
+### Alternative Platforms
+
+| Platform | Build Command | Output Directory |
+|----------|--------------|------------------|
+| **Netlify** | `npm run build` | `dist` |
+| **GitHub Pages** | `npm run build` | `dist` (use `gh-pages` branch) |
+| **AWS Amplify** | `npm run build` | `dist` |
+
+**Important:** Ensure all environment variables are configured in your deployment platform.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from the community!
+
+### Contribution Workflow
+
+1. **Fork the repository**
+2. **Create a feature branch:**
+   ```bash
+   git checkout -b feat/your-feature-name
+   ```
+3. **Make your changes**
+4. **Run linting and tests:**
+   ```bash
+   npm run lint
+   npm run test
+   ```
+5. **Commit your changes:**
+   ```bash
+   git commit -m "feat: add user export functionality"
+   ```
+6. **Push to your fork:**
+   ```bash
+   git push origin feat/your-feature-name
+   ```
+7. **Open a Pull Request** to the `main` branch
+
+### Guidelines
+
+- Follow [Conventional Commits](https://www.conventionalcommits.org/) for commit messages
+- Write tests for new features
+- Update documentation as needed
+- Be respectful and constructive in discussions
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues and Solutions
+
+**npm install fails:**
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**Port already in use:**
+Edit `vite.config.js`:
+```javascript
+export default {
+  server: { port: 3000 }
+}
+```
+
+**Supabase authentication errors:**
+- Verify your Supabase URL and anon key in `.env.local`
+- Check Row Level Security (RLS) policies in Supabase dashboard
+
+**Images not uploading:**
+- Verify Cloudinary API keys are correct
+- Check browser console for CORS errors
+
+**Tailwind styles not working:**
+- Restart the dev server: `npm run dev`
+- Clear Vite cache: `rm -rf node_modules/.vite`
+
+**Build fails:**
+```bash
+rm -rf node_modules/.vite dist
+npm install
+npm run build
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** – free to use, modify, and distribute.
+
+See [LICENSE](./LICENSE) for details.
+
+---
+
+## 📧 Contact
+
+**Maintainer:** [jayasurya261](https://github.com/jayasurya261)  
+**Issues:** [GitHub Issues](https://github.com/jayasurya261/Codesapiens_management_website/issues)  
+**Discussions:** [GitHub Discussions](https://github.com/jayasurya261/Codesapiens_management_website/discussions)
+
+---
+
+<div align="center">
+  
+**Made with ❤️ for the Codesapiens community**
+
+[⬆ Back to Top](#codesapiens-management-website)
+
+</div>
