@@ -4,7 +4,7 @@ import {
   SessionContextProvider,
   useSession,
   useSessionContext,
-  useUser,
+  
 } from '@supabase/auth-helpers-react';
 import { supabase } from './lib/supabaseClient';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
