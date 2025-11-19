@@ -4,7 +4,7 @@ import {
   SessionContextProvider,
   useSession,
   useSessionContext,
-  
+
 } from '@supabase/auth-helpers-react';
 import { supabase } from './lib/supabaseClient';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -31,6 +31,7 @@ import AdminScannerMeetup from './admin/AdminScannerMeetup';
 import AdminMeetup from './admin/AdminMeetup';
 import AdminMeetupsList from './admin/AdminMeetupList';
 import AdminMeetupEdit from './admin/AdminMeetupEdit';
+import AdminMeetupRegistrations from './admin/AdminMeetupRegistrations';
 import UserMeetupsList from './user/UserMeetupsList';
 import Navbar from './components/Navbar';
 
@@ -50,59 +51,60 @@ function Root() {
   }
 
   if (!session) {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Router>
-        <Routes>
-          <Route path="/" element={<CodeSapiensHero />} />
-          <Route path="/auth" element={<AuthForm />} />
-          <Route path="/profile/:username" element={<PublicProfile/>} />
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Router>
+          <Routes>
+            <Route path="/" element={<CodeSapiensHero />} />
+            <Route path="/auth" element={<AuthForm />} />
+            <Route path="/profile/:username" element={<PublicProfile />} />
 
-            <Route path="/forgot-password" element={<ResetPassword/>} />
-            <Route path="/reset-password" element={<ResetPasswordConfirm/>} />
-             <Route path="*" element={<NotFoundPage/>} />
-        </Routes>
-      </Router>
-    </div>
-  );
-}
+            <Route path="/forgot-password" element={<ResetPassword />} />
+            <Route path="/reset-password" element={<ResetPasswordConfirm />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Router>
+      </div>
+    );
+  }
 
 
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow">
         <Router>
-          <Navbar/>
+          <Navbar />
           <Routes>
             <Route path="/admin" element={<Dashboard />} />
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/" element={<UserDashboard />} />
-            <Route path="/analytics" element={<AnalyticsPage/>} />
-            <Route path="/user-list" element={<AllUserList/>} />
-            <Route path="/forgot-password" element={<ResetPassword/>} />
-            <Route path="/reset-password" element={<ResetPasswordConfirm/>} />
-            <Route path="/events" element={<UserEvents/>} />
-            <Route path="/resource" element={<UserResource/>} />
-            <Route path="/resume" element={<UserResumeBuilder/>} />
-            <Route path="/mentorship" element={<UserMentorshipForm/>} />
-            <Route path="/mentorship-form" element={<AdminMentorshipSubmission/>} />
-             <Route path="/profile/:username" element={<PublicProfile/>} />
-             <Route path="/playground" element={<UserPlayGround/>} />
-             <Route path="/mentorship-list" element={<UserMentorshipFormList/>} />
-             <Route path="/code" element={<UserCodingPlatform/>} />
-             <Route path="/scanner" element={<AdminScannerMeetup/>} />
-             <Route path="/admin/meetup/create" element={<AdminMeetup/>} />
-             <Route path="/admin/meetups" element={<AdminMeetupsList/>} />
-             <Route path="/admin/scanner/:meetupId" element={<AdminScannerMeetup />} />
-             <Route path="/admin/meetup/edit/:meetupId" element={<AdminMeetupEdit/>} />
-             
-             <Route path="/meetups" element={<UserMeetupsList/>} />
-                  
-          
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/user-list" element={<AllUserList />} />
+            <Route path="/forgot-password" element={<ResetPassword />} />
+            <Route path="/reset-password" element={<ResetPasswordConfirm />} />
+            <Route path="/events" element={<UserEvents />} />
+            <Route path="/resource" element={<UserResource />} />
+            <Route path="/resume" element={<UserResumeBuilder />} />
+            <Route path="/mentorship" element={<UserMentorshipForm />} />
+            <Route path="/mentorship-form" element={<AdminMentorshipSubmission />} />
+            <Route path="/profile/:username" element={<PublicProfile />} />
+            <Route path="/playground" element={<UserPlayGround />} />
+            <Route path="/mentorship-list" element={<UserMentorshipFormList />} />
+            <Route path="/code" element={<UserCodingPlatform />} />
+            <Route path="/scanner" element={<AdminScannerMeetup />} />
+            <Route path="/admin/meetup/create" element={<AdminMeetup />} />
+            <Route path="/admin/meetups" element={<AdminMeetupsList />} />
+            <Route path="/admin/scanner/:meetupId" element={<AdminScannerMeetup />} />
+            <Route path="/admin/meetup/edit/:meetupId" element={<AdminMeetupEdit />} />
+            <Route path="/admin/meetup/registrations/:meetupId" element={<AdminMeetupRegistrations />} />
 
-           
-            <Route path="*" element={<NotFoundPage/>} />
-         
+            <Route path="/meetups" element={<UserMeetupsList />} />
+
+
+
+
+            <Route path="*" element={<NotFoundPage />} />
+
           </Routes>
         </Router>
       </main>
