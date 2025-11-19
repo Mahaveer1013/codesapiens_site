@@ -21,9 +21,7 @@ export default function UserMeetupsList() {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
   
-  // State to control which ticket modal is open
   const [selectedTicket, setSelectedTicket] = useState(null);
-  // State to control which registration form is open
   const [expandedRegisterId, setExpandedRegisterId] = useState(null);
 
   // 1. Fetch User Profile
@@ -47,8 +45,6 @@ export default function UserMeetupsList() {
     const fetchMeetups = async () => {
       setLoading(true);
 
-      // We select all meetups. 
-      // Supabase returns dates in ISO 8601 format (UTC), e.g., "2025-11-29T13:00:00+00:00"
       const { data: meetupsData, error: meetupError } = await supabase
         .from("meetup")
         .select("*")
@@ -202,14 +198,25 @@ export default function UserMeetupsList() {
 /* --- Sub Components --- */
 
 function MeetupCard({ meetup, user, userProfile, isRegistering, onToggleRegister, onRegisterConfirm, onViewTicket }) {
-  // Browser parses UTC ISO string to Local Date Object automatically
-  const startDateObj = new Date(meetup.start_date_time);
-  const endDateObj = new Date(meetup.end_date_time);
+  // ✅ FIX: If DB stores LOCAL time (not UTC), treat it as local time
+  // Parse the timestamp WITHOUT timezone conversion
+  const parseLocalDate = (dateString) => {
+    if (!dateString) return new Date();
+    
+    // Remove timezone indicator if present (Z, +00:00, etc)
+    // This forces the browser to interpret it as LOCAL time
+    const cleanedString = dateString.replace(/Z$|[+-]\d{2}:\d{2}$/, '');
+    
+    // Create date object - browser treats this as local time
+    return new Date(cleanedString);
+  };
+
+  const startDateObj = parseLocalDate(meetup.start_date_time);
+  const endDateObj = parseLocalDate(meetup.end_date_time);
   
   const isUpcoming = startDateObj > new Date();
 
-  // Helper to format time (e.g. "04:29 PM")
-  // Using 'default' or 'en-US' ensures AM/PM formatting
+  // Format time in 12-hour format
   const formatTime = (date) => {
     if (!date || isNaN(date.getTime())) return "";
     return date.toLocaleTimeString("en-US", { 
@@ -366,15 +373,14 @@ function TicketModal({ meetup, onClose }) {
 function RegistrationForm({ userProfile, onConfirm }) {
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitting(true);
-    await onConfirm();
-    setSubmitting(false);
+    onConfirm().finally(() => setSubmitting(false));
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+    <div className="max-w-md mx-auto">
       <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Confirm Registration</h3>
       
       <div className="grid gap-4 mb-6">
@@ -393,14 +399,14 @@ function RegistrationForm({ userProfile, onConfirm }) {
       </div>
 
       <button
-        type="submit"
+        onClick={handleSubmit}
         disabled={submitting}
         className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-70 flex justify-center items-center gap-2 transition-colors shadow-md shadow-indigo-100"
       >
         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
         Confirm Registration
       </button>
-    </form>
+    </div>
   );
 }
 
