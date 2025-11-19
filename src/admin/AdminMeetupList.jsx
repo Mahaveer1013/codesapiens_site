@@ -93,7 +93,7 @@ const AdminMeetupsList = () => {
     <>
       <Toaster position="top-center" />
       <div className="min-h-screen bg-gray-50/50 pb-12">
-        
+
         {/* Header Section */}
         <div className="bg-white border-b border-gray-200 sticky top-0 z-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
@@ -114,30 +114,30 @@ const AdminMeetupsList = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-          
+
           {/* Dashboard Stats Cards */}
           {!loading && meetups.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatCard 
-                label="Total Events" 
-                value={stats.total} 
-                icon={CalendarDays} 
-                color="text-blue-600" 
-                bg="bg-blue-50" 
+              <StatCard
+                label="Total Events"
+                value={stats.total}
+                icon={CalendarDays}
+                color="text-blue-600"
+                bg="bg-blue-50"
               />
-              <StatCard 
-                label="Upcoming" 
-                value={stats.upcoming} 
-                icon={TrendingUp} 
-                color="text-green-600" 
-                bg="bg-green-50" 
+              <StatCard
+                label="Upcoming"
+                value={stats.upcoming}
+                icon={TrendingUp}
+                color="text-green-600"
+                bg="bg-green-50"
               />
-              <StatCard 
-                label="Total Attendees" 
-                value={stats.totalAttendees} 
-                icon={Users} 
-                color="text-purple-600" 
-                bg="bg-purple-50" 
+              <StatCard
+                label="Total Attendees"
+                value={stats.totalAttendees}
+                icon={Users}
+                color="text-purple-600"
+                bg="bg-purple-50"
               />
             </div>
           )}
@@ -190,7 +190,7 @@ const AdminMeetupCard = ({ meetup, onDelete, deletingId, navigate }) => {
   // FIX: Slice strings to avoid Timezone shifts
   const rawStart = meetup.start_date_time.slice(0, 19);
   const rawEnd = meetup.end_date_time.slice(0, 19);
-  
+
   const startObj = new Date(rawStart);
   const endObj = new Date(rawEnd);
   const isUpcoming = startObj > new Date();
@@ -200,7 +200,7 @@ const AdminMeetupCard = ({ meetup, onDelete, deletingId, navigate }) => {
 
   return (
     <div className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 flex flex-col overflow-hidden">
-      
+
       {/* Top Section: Date & Content */}
       <div className="p-6 flex gap-5 flex-1">
         {/* Date Leaf Visual */}
@@ -213,21 +213,21 @@ const AdminMeetupCard = ({ meetup, onDelete, deletingId, navigate }) => {
 
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start mb-1">
-             {/* Status Label */}
+            {/* Status Label */}
             {isLive ? (
-               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 animate-pulse">
-                  ● Live Now
-               </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 animate-pulse">
+                ● Live Now
+              </span>
             ) : isUpcoming ? (
-               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
-                  Upcoming
-               </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                Upcoming
+              </span>
             ) : (
-               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                  Past Event
-               </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                Past Event
+              </span>
             )}
-            
+
             {/* Relative Time */}
             <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
               {formatDistanceToNow(startObj, { addSuffix: true })}
@@ -260,6 +260,14 @@ const AdminMeetupCard = ({ meetup, onDelete, deletingId, navigate }) => {
         >
           <QrCode className="w-4 h-4" />
           Scan Tickets
+        </button>
+
+        <button
+          onClick={() => navigate(`/admin/meetup/registrations/${meetup.id}`)}
+          className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 py-2.5 px-4 rounded-xl text-sm font-medium transition-colors shadow-sm"
+        >
+          <Users className="w-4 h-4" />
+          Registrations
         </button>
 
         <div className="flex gap-1">
