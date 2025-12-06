@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch, BookPlus, CalendarSearch, FileCheck2, Computer, BrainCircuit, Code } from 'lucide-react';
+import { Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch, BookPlus, CalendarSearch, FileCheck2, Computer, BrainCircuit, Code, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 
-export default function UnifiedNavbar() {
+export default function NavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -378,7 +378,7 @@ export default function UnifiedNavbar() {
     if (isAdmin) {
       return (
         <div className="hidden md:flex items-center justify-center flex-1 max-w-md mx-auto">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-8">
             <button
               onClick={() => navigate('/user-list')}
               className={`text-gray-700 ${hoverColor} px-3 py-2 rounded-md font-medium transition-colors flex items-center space-x-2`}
@@ -393,7 +393,14 @@ export default function UnifiedNavbar() {
               Analytics
             </button>
             <button
-              onClick={() => navigate('/admin/meetup')}
+              onClick={() => navigate('/mentorship-form')}
+              className={`text-gray-700 ${hoverColor} px-3 py-2 rounded-md font-medium transition-colors`}
+            >
+              MentorShip
+            </button>
+
+            <button
+              onClick={() => navigate('/admin/meetups')}
               className={`text-gray-700 ${hoverColor} px-3 py-2 rounded-md font-medium transition-colors`}
             >
               Meetups
@@ -402,13 +409,7 @@ export default function UnifiedNavbar() {
               onClick={() => navigate('/admin/mentorship-programs')}
               className={`text-gray-700 ${hoverColor} px-3 py-2 rounded-md font-medium transition-colors`}
             >
-              Mentorships
-            </button>
-            <button
-              onClick={() => navigate('/admin/all-program-registrations')}
-              className={`text-gray-700 ${hoverColor} px-3 py-2 rounded-md font-medium transition-colors`}
-            >
-              Registrations
+              Programs
             </button>
           </div>
         </div>
@@ -467,6 +468,27 @@ export default function UnifiedNavbar() {
                 <BrainCircuit className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span>Mentorship Form Submission</span>
               </button>
+
+              <button
+                onClick={() => {
+                  setIsProfileDropdownOpen(false);
+                  navigate('/admin/meetups');
+                }}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              >
+                <CalendarSearch className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Meetups</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsProfileDropdownOpen(false);
+                  navigate('/admin/mentorship-programs');
+                }}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              >
+                <BookPlus className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Programs</span>
+              </button>
             </>
           ) : (
             <>
@@ -503,23 +525,53 @@ export default function UnifiedNavbar() {
               <button
                 onClick={() => {
                   setIsProfileDropdownOpen(false);
-                  navigate('/mentorship-landing');
+                  navigate('/mentorship');
                 }}
                 className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
               >
-                <Computer className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span>Mentorship</span>
               </button>
+              <button
+                onClick={() => {
+                  setIsProfileDropdownOpen(false);
+                  navigate('/mentorship-list');
+                }}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              >
+                <FileCheck2 className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>My Submissions</span>
+              </button>
+
 
               <button
                 onClick={() => {
                   setIsProfileDropdownOpen(false);
-                  window.open("https://luma.com/codesapiens?k=c&period=past", "_blank");
+                  navigate('/events');
                 }}
                 className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
               >
                 <CalendarSearch className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span>Events</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsProfileDropdownOpen(false);
+                  navigate('/meetups');
+                }}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              >
+                <Users className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Meetups</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsProfileDropdownOpen(false);
+                  navigate('/blogs');
+                }}
+                className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              >
+                <BookOpen className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span>Blogs</span>
               </button>
             </>
           )}
