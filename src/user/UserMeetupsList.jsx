@@ -4,18 +4,83 @@ import { QRCodeCanvas } from "qrcode.react";
 import { useUser } from "@supabase/auth-helpers-react";
 import { supabase } from "../lib/supabaseClient";
 import toast, { Toaster } from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Calendar,
-  Clock,
-  MapPin,
-  Loader2,
-  CheckCircle,
-  X,
-  Ticket,
-  ChevronRight,
-  Sparkles,
-  ArrowRight,
+  Calendar, Clock, MapPin, Loader2, CheckCircle, X,
+  Ticket, ArrowRight, Zap, Hexagon, MoveUpRight, Smile, PenTool
 } from "lucide-react";
+
+// --- CUSTOM SVG DOODLES & GRID ---
+
+// The "Framework" Grid System (Blue lines on left)
+const FrameworkGrid = () => (
+  <div className="absolute inset-0 pointer-events-none z-0 flex w-full h-full">
+    {/* Line 1: Far Left (Sidebar edge) */}
+    <div className="h-full w-px bg-[#0061FE]/30 absolute left-[40px] hidden md:block"></div>
+    {/* Line 2: Content Start */}
+    <div className="h-full w-px bg-[#0061FE]/30 absolute left-[40px] md:left-[240px]"></div>
+    {/* Line 3: Grid Cell (Right) */}
+    <div className="h-full w-px bg-[#0061FE]/20 absolute right-[40px] hidden lg:block"></div>
+    
+    {/* Horizontal Lines for "Grid" look in Hero */}
+    <div className="absolute top-[180px] left-0 right-0 h-px bg-[#0061FE]/20"></div>
+    <div className="absolute top-[500px] left-0 right-0 h-px bg-[#0061FE]/20"></div>
+  </div>
+);
+
+// Messy oval for text highlight
+const MessyOval = ({ width = 140, height = 65, color = "#0061FE" }) => (
+  <svg width={width} height={height} viewBox="0 0 140 65" className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-[45%] pointer-events-none">
+    <motion.path
+      d="M5,32.5 C5,10 35,5 70,5 C105,5 135,10 135,32.5 C135,55 105,60 70,60 C35,60 5,55 5,32.5 Z"
+      fill="none"
+      stroke={color}
+      strokeWidth="4"
+      initial={{ pathLength: 0 }}
+      animate={{ pathLength: 1 }}
+      transition={{ duration: 1.2, ease: "easeInOut" }}
+    />
+  </svg>
+);
+
+const HandDrawnCrown = () => (
+  <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#C2E812" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transform -rotate-12">
+    <motion.path
+      d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"
+      initial={{ pathLength: 0, opacity: 0 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{ duration: 1.5, ease: "easeOut" }}
+    />
+  </svg>
+);
+
+const LightningBolt = () => (
+  <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#FF5018" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transform rotate-12">
+    <motion.path
+      d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+      animate={{ scale: [1, 1.1, 1], rotate: [12, 15, 12] }}
+      transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
+    />
+  </svg>
+);
+
+const HandDrawnHeart = () => (
+  <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="#D83B01" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transform -rotate-6">
+    <motion.path
+        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
+    />
+  </svg>
+)
+
+const HandDrawnStar = () => (
+  <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#FEEA3B" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transform rotate-6">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+  </svg>
+)
+
+// --- MAIN COMPONENT ---
 
 export default function UserMeetupsList() {
   const user = useUser();
@@ -24,197 +89,135 @@ export default function UserMeetupsList() {
   const [userProfile, setUserProfile] = useState(null);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [expandedRegisterId, setExpandedRegisterId] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // 1. Fetch User Profile (Reliable & Required)
   useEffect(() => {
-    if (!user) {
-      setUserProfile(null);
-      return;
-    }
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % pastEvents.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
+  useEffect(() => {
+    if (!user) { setUserProfile(null); return; }
     const fetchUserProfile = async () => {
       try {
-        const { data, error } = await supabase
-          .from("users")
-          .select("display_name, email, avatar")
-          .eq("uid", user.id)
-          .single();
-
-        if (error) throw error;
-
-        if (!data?.display_name) {
-          toast.error("Please set your display name in your profile.");
-        }
-
+        const { data } = await supabase.from("users").select("display_name, email, avatar").eq("uid", user.id).single();
         setUserProfile(data);
-      } catch (err) {
-        console.error("Error fetching user profile:", err);
-        toast.error("Failed to load your profile. Please refresh.");
-      }
+      } catch (err) { console.error(err); }
     };
-
     fetchUserProfile();
   }, [user]);
 
-  // 2. Fetch Meetups + Registration Status
   useEffect(() => {
     const fetchMeetups = async () => {
       setLoading(true);
-
-      const { data: meetupsData, error: meetupError } = await supabase
+      const { data: meetupsData, error } = await supabase
         .from("meetup")
         .select("*, venue, registration_start_time, registration_end_time, registration_open_until_meetup_end")
         .order("start_date_time", { ascending: true });
 
-      if (meetupError) {
-        toast.error("Failed to load meetups");
-        setLoading(false);
-        return;
-      }
+      if (error) { toast.error("Failed to load meetups"); setLoading(false); return; }
 
       let enrichedMeetups = meetupsData;
-
       if (user) {
-        const { data: registrations } = await supabase
-          .from("registrations")
-          .select("meetup_id, token, user_name, user_email, created_at")
-          .eq("user_id", user.id);
-
+        const { data: registrations } = await supabase.from("registrations").select("*").eq("user_id", user.id);
         const registeredMap = {};
         registrations?.forEach((reg) => {
-          registeredMap[reg.meetup_id] = {
-            token: reg.token,
-            name: reg.user_name,
-            email: reg.user_email,
-            registeredAt: reg.created_at,
-          };
+          registeredMap[reg.meetup_id] = { token: reg.token, name: reg.user_name, email: reg.user_email, registeredAt: reg.created_at };
         });
-
-        enrichedMeetups = meetupsData.map((m) => ({
-          ...m,
-          registered: !!registeredMap[m.id],
-          registrationData: registeredMap[m.id] || null,
-        }));
+        enrichedMeetups = meetupsData.map((m) => ({ ...m, registered: !!registeredMap[m.id], registrationData: registeredMap[m.id] || null }));
       }
-
       setMeetups(enrichedMeetups);
       setLoading(false);
     };
-
     fetchMeetups();
   }, [user]);
 
-  // 3. Handle Registration – Uses display_name from users table
   const handleRegister = async (meetupId) => {
     if (!user) return toast.error("Please log in to register");
-    if (!userProfile?.display_name) {
-      toast.error("Please set your display name in your profile first.");
-      return;
-    }
-
-    const nameToUse = userProfile.display_name.trim();
-    const emailToUse = userProfile.email || user.email;
-
-    if (!nameToUse) {
-      toast.error("Display name is required. Update your profile.");
-      return;
-    }
+    if (!userProfile?.display_name) return toast.error("Please set your display name in your profile.");
 
     try {
-      const { data, error } = await supabase
-        .from("registrations")
-        .insert({
-          meetup_id: meetupId,
-          user_name: nameToUse,
-          user_email: emailToUse,
-          user_id: user.id,
-        })
-        .select("token, created_at")
-        .single();
+      const { data, error } = await supabase.from("registrations").insert({
+        meetup_id: meetupId, user_name: userProfile.display_name, user_email: userProfile.email || user.email, user_id: user.id
+      }).select("token, created_at").single();
 
-      if (error) {
-        if (error.code === "23505") {
-          toast.error("You're already registered for this event!");
-          return;
-        }
-        throw error;
-      }
+      if (error) throw error;
 
-      // Update UI instantly
-      setMeetups((prev) =>
-        prev.map((m) =>
-          m.id === meetupId
-            ? {
-              ...m,
-              registered: true,
-              registrationData: {
-                token: data.token,
-                name: nameToUse,
-                email: emailToUse,
-                registeredAt: data.created_at,
-              },
-            }
-            : m
-        )
-      );
+      setMeetups((prev) => prev.map((m) => m.id === meetupId ? {
+        ...m, registered: true, registrationData: { token: data.token, name: userProfile.display_name, email: userProfile.email, registeredAt: data.created_at }
+      } : m));
 
-      toast.success("Registered successfully!");
-
-      // Auto-open ticket
-      const registeredMeetup = meetups.find((m) => m.id === meetupId);
-      if (registeredMeetup) {
-        setSelectedTicket({
-          ...registeredMeetup,
-          registrationData: {
-            token: data.token,
-            name: nameToUse,
-            email: emailToUse,
-          },
-        });
-      }
-
+      toast.success("Welcome to the chaos!");
       setExpandedRegisterId(null);
-    } catch (err) {
-      console.error("Registration error:", err);
-      toast.error(err.message || "Registration failed");
-    }
+      const m = meetups.find(x => x.id === meetupId);
+      if (m) setSelectedTicket({ ...m, registrationData: { token: data.token, name: userProfile.display_name } });
+
+    } catch (err) { toast.error(err.message || "Failed"); }
   };
 
   if (loading) return <LoadingScreen />;
 
   return (
     <>
-      <Toaster position="top-center" />
-      <div className="min-h-screen bg-gray-50/50 pb-12 font-sans">
-        {/* Hero Section */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-5xl mx-auto px-4 py-12 sm:py-16">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold uppercase tracking-wider">
-                  <Sparkles className="w-3 h-3" />
-                  Community Events
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
-                  Discover & Connect
-                </h1>
-                <p className="text-lg text-gray-500 max-w-lg">
-                  Join our latest meetups, workshops, and hackathons. Connect with fellow developers and grow your skills.
+      <Toaster position="bottom-right" toastOptions={{ style: { background: '#1E1E1E', color: '#fff' } }} />
+
+      <div className="min-h-screen bg-[#F7F5F2] font-sans text-[#1E1E1E] selection:bg-[#C2E812] selection:text-black overflow-x-hidden relative">
+        
+        {/* --- BLUE GRID LINES (Full Height) --- */}
+        <FrameworkGrid />
+
+        {/* --- HERO SECTION --- */}
+        <div className="bg-[#1E1E1E] text-white pt-24 pb-48 px-6 relative overflow-hidden">
+          
+          {/* Top Doodles */}
+          <motion.div className="absolute top-12 left-[280px]" animate={{ rotate: [-5, 5, -5] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}>
+            <HandDrawnCrown />
+          </motion.div>
+          <motion.div className="absolute top-20 right-[10%]" animate={{ y: [0, -15, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
+            <LightningBolt />
+          </motion.div>
+          <motion.div className="absolute bottom-24 right-[20%]" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
+            <HandDrawnHeart />
+          </motion.div>
+
+          {/* LEFT ALIGNED CONTENT CONTAINER */}
+          <div className="w-full pl-[60px] md:pl-[260px] pr-4 relative z-10 text-left">
+            
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
+              {/* Massive Left Aligned Typography */}
+              <h1 className="text-6xl md:text-9xl font-black tracking-tighter leading-[0.9] mb-8 relative z-10 text-left">
+                WE MEET.<br />
+                WE <span className="relative inline-block text-white z-10">
+                  CODE
+                  <MessyOval width={220} height={100} color="#0061FE" />
+                </span>.<br />
+                WE CREATE.
+              </h1>
+            </motion.div>
+
+            <div className="flex flex-col md:flex-row gap-8 items-start mt-16 pt-8 border-t-2 border-white/10 max-w-4xl">
+              <div className="max-w-lg text-left">
+                <p className="text-2xl md:text-3xl font-bold leading-tight opacity-90">
+                  How we all work today is <span className="relative inline-block text-[#C2E812]">
+                    messy
+                    <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 10" preserveAspectRatio="none">
+                        <path d="M0,5 Q50,10 100,5" stroke="#C2E812" strokeWidth="3" fill="none" />
+                    </svg>
+                  </span>.
+                  Our meetups bring structure to the chaos.
                 </p>
               </div>
-
-              {user && userProfile && (
-                <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100 shadow-sm">
-                  <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg shrink-0">
-                    {userProfile.avatar ? (
-                      <img src={userProfile.avatar} alt="" className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      userProfile.display_name?.charAt(0).toUpperCase() || "U"
-                    )}
+              
+              {userProfile && (
+                <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl flex items-center gap-4 border border-white/20">
+                  <div className="w-12 h-12 bg-[#C2E812] rounded-full flex items-center justify-center text-black font-black text-xl border-2 border-black">
+                    {userProfile.display_name?.[0]}
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{userProfile.display_name || "Welcome!"}</p>
-                    <p className="text-xs text-gray-500">{userProfile.email || user.email}</p>
+                  <div className="text-left">
+                    <div className="font-black text-sm uppercase tracking-widest text-[#C2E812]">Logged in as</div>
+                    <div className="font-bold text-white">{userProfile.display_name}</div>
                   </div>
                 </div>
               )}
@@ -222,21 +225,18 @@ export default function UserMeetupsList() {
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 py-12 space-y-8">
-          {meetups.length === 0 ? (
-            <EmptyState />
-          ) : (
-            <div className="grid gap-8">
-              {meetups.map((meetup) => (
+        {/* --- CONTENT GRID --- */}
+        <div className="w-full pl-[60px] md:pl-[260px] pr-4 md:pr-12 -mt-32 relative z-20 pb-24 text-left">
+          {meetups.length === 0 ? <EmptyState /> : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+              {meetups.map((meetup, index) => (
                 <MeetupCard
                   key={meetup.id}
                   meetup={meetup}
+                  index={index}
                   user={user}
-                  userProfile={userProfile}
                   isRegistering={expandedRegisterId === meetup.id}
-                  onToggleRegister={() =>
-                    setExpandedRegisterId(expandedRegisterId === meetup.id ? null : meetup.id)
-                  }
+                  onToggleRegister={() => setExpandedRegisterId(expandedRegisterId === meetup.id ? null : meetup.id)}
                   onRegisterConfirm={() => handleRegister(meetup.id)}
                   onViewTicket={() => setSelectedTicket(meetup)}
                 />
@@ -244,307 +244,283 @@ export default function UserMeetupsList() {
             </div>
           )}
         </div>
+
+        {/* --- PAST EVENTS GALLERY --- */}
+        <div className="w-full pl-[60px] md:pl-[260px] pr-4 md:pr-12 pb-24 relative text-left">
+           <div className="absolute -top-20 right-20 opacity-20 pointer-events-none">
+              <HandDrawnStar />
+           </div>
+
+          <div className="mb-12 text-left">
+            <h2 className="text-5xl md:text-6xl font-black tracking-tighter text-[#1E1E1E] mb-6 relative inline-block">
+              PAST <span className="text-[#0061FE]">CHAOS</span>
+            </h2>
+            <p className="text-xl font-bold text-gray-600 max-w-xl">
+              A glimpse into our previous gatherings. Where code meets community.
+            </p>
+          </div>
+
+          {/* Featured Image - Rotated Frame */}
+          <div className="mb-16 max-w-5xl">
+            <motion.div
+              initial={{ opacity: 0, rotate: -1 }}
+              whileInView={{ opacity: 1, rotate: -1 }}
+              viewport={{ once: true }}
+              className="relative p-3 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-4 border-[#1E1E1E]"
+            >
+              <div className="relative overflow-hidden border-2 border-[#1E1E1E] h-[400px] md:h-[500px]">
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={currentImageIndex}
+                    src={pastEvents[currentImageIndex].image}
+                    alt={pastEvents[currentImageIndex].title}
+                    initial={{ opacity: 0, scale: 1.05 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="w-full h-full object-cover"
+                  />
+                </AnimatePresence>
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t-4 border-[#1E1E1E]">
+                  <h3 className="text-3xl font-black text-[#1E1E1E] mb-1">{pastEvents[currentImageIndex].title}</h3>
+                  <div className="flex items-center gap-2 font-bold text-[#0061FE]">
+                    <Calendar className="w-5 h-5" />
+                    {pastEvents[currentImageIndex].date}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Grid of smaller photos */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl">
+            {pastEvents.map((event, index) => {
+               // Slight random rotation for collage effect
+               const rotation = index % 2 === 0 ? 2 : -2; 
+               return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.02, rotate: 0, zIndex: 10 }}
+                className={`relative p-2 bg-white shadow-md border-2 border-[#1E1E1E] cursor-pointer ${currentImageIndex === index ? 'ring-4 ring-[#C2E812] z-10' : ''}`}
+                style={{ transform: `rotate(${rotation}deg)` }}
+                onClick={() => setCurrentImageIndex(index)}
+              >
+                <div className="aspect-square overflow-hidden border-2 border-[#1E1E1E]">
+                  <img
+                    src={event.image}
+                    alt={event.title}
+                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                  />
+                </div>
+              </motion.div>
+            )})}
+          </div>
+        </div>
+
       </div>
 
-      {/* Ticket Modal */}
-      {selectedTicket && <TicketModal meetup={selectedTicket} onClose={() => setSelectedTicket(null)} />}
+      {/* --- TICKET MODAL --- */}
+      <AnimatePresence>
+        {selectedTicket && <TicketModal meetup={selectedTicket} onClose={() => setSelectedTicket(null)} />}
+      </AnimatePresence>
     </>
   );
 }
 
-/* === Sub Components === */
-function MeetupCard({ meetup, user, userProfile, isRegistering, onToggleRegister, onRegisterConfirm, onViewTicket }) {
-  const parseLocalDate = (dateString) => {
-    if (!dateString) return new Date();
-    const cleanedString = dateString.replace(/Z$|[+-]\d{2}:\d{2}$/, "");
-    return new Date(cleanedString);
-  };
+// --- SUB COMPONENTS ---
 
-  const startDateObj = parseLocalDate(meetup.start_date_time);
-  const endDateObj = parseLocalDate(meetup.end_date_time);
-  const isUpcoming = startDateObj > new Date();
-  const isLive = startDateObj <= new Date() && new Date() <= endDateObj;
-
-  const formatTime = (date) => {
-    if (!date || isNaN(date.getTime())) return "";
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
-
-  // Registration Status Logic
-  const getRegistrationStatus = () => {
-    const now = new Date();
-
-    // 1. Not Open Yet
-    if (meetup.registration_start_time && now < new Date(meetup.registration_start_time)) {
-      return {
-        isOpen: false,
-        message: `Opens ${new Date(meetup.registration_start_time).toLocaleDateString()}`,
-        type: 'upcoming'
-      };
-    }
-
-    // 2. Closed
-    let closeTime = null;
-    if (meetup.registration_open_until_meetup_end) {
-      closeTime = endDateObj;
-    } else if (meetup.registration_end_time) {
-      closeTime = new Date(meetup.registration_end_time);
-    } else {
-      // Default: Close when event starts if no specific end time set
-      closeTime = startDateObj;
-    }
-
-    if (now > closeTime) {
-      return { isOpen: false, message: "Registration Closed", type: 'closed' };
-    }
-
-    // 3. Open
-    return { isOpen: true, message: "Register Now", type: 'open' };
-  };
-
-  const regStatus = getRegistrationStatus();
+const MeetupCard = ({ meetup, index, isRegistering, onToggleRegister, onRegisterConfirm, onViewTicket, user }) => {
+  const startDate = new Date(meetup.start_date_time);
+  const isRegistered = meetup.registered;
+  // Use index to alternate tilt slightly
+  const rotation = index % 2 === 0 ? 1 : -1;
 
   return (
-    <div
-      className={`group bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-xl hover:border-indigo-100 ${!isUpcoming && !isLive ? "opacity-75 grayscale-[0.3]" : ""
-        }`}
+    <motion.div
+      initial={{ opacity: 0, y: 60 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ delay: index * 0.1, type: "spring", bounce: 0.2 }}
+      whileHover={{ y: -10, rotate: 0 }}
+      className="relative flex flex-col bg-white rounded-[2rem] border-[3px] border-[#1E1E1E] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden"
+      style={{ rotate: `${rotation}deg` }}
     >
-      <div className="flex flex-col md:flex-row">
-        {/* Left: Date */}
-        <div className="md:w-48 bg-gray-50 p-6 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-gray-100 group-hover:bg-indigo-50/30 transition-colors">
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 w-full max-w-[100px]">
-            <span className="block text-xs font-bold uppercase tracking-wider text-indigo-600 mb-1">
-              {startDateObj.toLocaleString("default", { month: "short" })}
+        {/* Banner */}
+        <div className="h-48 bg-[#F2F2F2] relative overflow-hidden flex items-center justify-center border-b-[3px] border-[#1E1E1E]">
+          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
+          {/* Blob */}
+          <div className={`absolute w-32 h-32 rounded-full mix-blend-multiply opacity-90 ${index % 2 === 0 ? 'bg-[#C2E812] -right-8 -top-8' : 'bg-[#0061FE] -left-8 -bottom-8'}`}></div>
+
+          <div className="relative z-10 flex flex-col items-center">
+            <span className="text-6xl font-black text-[#1E1E1E] tracking-tighter leading-none">
+              {startDate.getDate()}
             </span>
-            <span className="block text-3xl font-black text-gray-900">{startDateObj.getDate()}</span>
+            <span className="text-xl font-black uppercase tracking-widest text-[#1E1E1E]">
+              {startDate.toLocaleString('default', { month: 'short' })}
+            </span>
           </div>
-          <div className="mt-4 space-y-1">
-            <div className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-100">
-              <Clock className="w-3 h-3" />
-              {formatTime(startDateObj)}
+
+          {isRegistered && (
+            <div className="absolute top-4 right-4 bg-[#C2E812] text-[#1E1E1E] px-3 py-1 text-xs font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_black]">
+              Going
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Right: Content */}
-        <div className="flex-1 p-6 md:p-8 flex flex-col">
-          <div className="flex-1">
-            <div className="flex justify-between items-start gap-4 mb-3">
-              <div>
-                {isLive && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-600 animate-pulse mb-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                    LIVE NOW
-                  </span>
-                )}
-                <h2 className="text-2xl font-bold text-gray-900 leading-tight group-hover:text-indigo-600 transition-colors">
-                  {meetup.title}
-                </h2>
-              </div>
-              {meetup.registered && (
-                <div className="hidden sm:flex flex-col items-end">
-                  <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5" /> Registered
-                  </span>
-                </div>
-              )}
-            </div>
+        {/* Content */}
+        <div className="p-8 flex-1 flex flex-col bg-white">
+          <h2 className="text-3xl font-black leading-tight mb-4 text-[#1E1E1E] tracking-tight hover:text-[#0061FE] transition-colors text-left">
+            {meetup.title}
+          </h2>
 
-            <p className="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-2 md:line-clamp-3">
-              {meetup.description}
-            </p>
-
-            <div className="flex flex-wrap gap-4 mb-6">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <span className="font-medium">{meetup.venue || "Venue not set"}</span>
-              </div>
-            </div>
+          <div className="flex flex-col gap-2 mb-6 text-left">
+             <div className="flex items-center gap-2 text-gray-600 font-bold">
+                <Clock className="w-5 h-5 text-[#FF5018]" />
+                {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+             </div>
+             <div className="flex items-center gap-2 text-gray-600 font-bold">
+                <MapPin className="w-5 h-5 text-[#0061FE]" />
+                {meetup.venue}
+             </div>
           </div>
 
-          {/* Action Footer */}
-          <div className="pt-6 border-t border-gray-50 flex items-center justify-between gap-4">
-            {meetup.registered ? (
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <span className="sm:hidden bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5" /> Registered
-                </span>
-                <button
-                  onClick={onViewTicket}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 hover:shadow-xl hover:-translate-y-0.5"
-                >
-                  <Ticket className="w-4 h-4" />
-                  View Entry Pass
-                </button>
+          <p className="text-[#1E1E1E] text-lg font-medium leading-relaxed mb-8 text-left">
+            {meetup.description}
+          </p>
+
+          <div className="mt-auto pt-6 border-t-[3px] border-dashed border-[#1E1E1E]/20 text-left">
+            {isRegistering ? (
+              <div className="bg-[#F7F5F2] p-4 rounded-xl border-[3px] border-[#1E1E1E] animate-in slide-in-from-bottom-2">
+                <p className="font-black text-sm mb-3">Secure your spot?</p>
+                <div className="flex gap-2">
+                  <button onClick={onRegisterConfirm} className="flex-1 bg-[#1E1E1E] text-white py-2 rounded-lg font-black hover:bg-[#0061FE] shadow-[3px_3px_0px_0px_black] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_black]">
+                    Yes
+                  </button>
+                  <button onClick={onToggleRegister} className="px-4 py-2 border-[2px] border-[#1E1E1E] rounded-lg font-bold hover:bg-gray-200">
+                    No
+                  </button>
+                </div>
               </div>
-            ) : regStatus.isOpen ? (
-              !user ? (
-                <button
-                  onClick={() => toast.error("Please log in to register")}
-                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
-                >
-                  Log in to register <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  onClick={onToggleRegister}
-                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${isRegistering
-                      ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 hover:shadow-indigo-300 hover:-translate-y-0.5"
-                    }`}
-                >
-                  {isRegistering ? "Cancel" : "Register Now"}
-                  {!isRegistering && <ChevronRight className="w-4 h-4" />}
-                </button>
-              )
             ) : (
-              <span className={`text-sm font-medium px-4 py-2 rounded-lg ${regStatus.type === 'upcoming' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'
-                }`}>
-                {regStatus.message}
-              </span>
+               isRegistered ? (
+                 <button onClick={onViewTicket} className="flex items-center gap-2 font-black text-[#1E1E1E] hover:text-[#0061FE] group/btn">
+                    <Ticket className="w-6 h-6" />
+                    <span className="text-lg">View Ticket</span>
+                    <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
+                 </button>
+               ) : (
+                 <button onClick={onToggleRegister} className="bg-[#1E1E1E] text-white px-6 py-3 rounded-xl font-black text-lg hover:bg-[#0061FE] transition-all shadow-[4px_4px_0px_0px_black] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_black] flex items-center gap-2 w-fit">
+                    Register Now <PenTool className="w-4 h-4" />
+                 </button>
+               )
             )}
           </div>
         </div>
-      </div>
-
-      {/* Registration Confirmation */}
-      {isRegistering && (
-        <div className="bg-gray-50/50 border-t border-gray-100 p-6 md:p-8 animate-in slide-in-from-top-2">
-          <RegistrationForm userProfile={userProfile} user={user} onConfirm={onRegisterConfirm} />
-        </div>
-      )}
-    </div>
+    </motion.div>
   );
-}
+};
 
-function TicketModal({ meetup, onClose }) {
-  if (!meetup) return null;
-
+const TicketModal = ({ meetup, onClose }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
-        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 text-white text-center relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors backdrop-blur-sm"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          <h3 className="text-xl font-black tracking-tight mb-2 relative z-10">ENTRY PASS</h3>
-          <p className="text-indigo-100 text-sm line-clamp-1 relative z-10 font-medium opacity-90">
-            {meetup.title}
-          </p>
-        </div>
-
-        <div className="p-8 flex flex-col items-center text-center relative bg-white">
-          <div className="absolute top-[-12px] left-0 w-6 h-12 bg-black/60 rounded-r-full z-10" style={{ transform: "translateY(-50%)" }}></div>
-          <div className="absolute top-[-12px] right-0 w-6 h-12 bg-black/60 rounded-l-full z-10" style={{ transform: "translateY(-50%)" }}></div>
-
-          <div className="bg-white p-3 rounded-2xl border-2 border-dashed border-gray-200 mb-8">
-            <QRCodeCanvas value={meetup.registrationData?.token || "error"} size={180} level="H" className="rounded-lg" />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1E1E1E]/90 backdrop-blur-md"
+    >
+      <div className="relative w-full max-w-md">
+        <motion.div
+          initial={{ rotate: 0, scale: 0.9, y: 0 }}
+          animate={{ rotate: -5, scale: 0.95, y: 5 }}
+          className="absolute inset-0 bg-white rounded-[2rem] border-[3px] border-[#1E1E1E] shadow-2xl"
+        />
+        <motion.div
+          initial={{ y: 100, scale: 0.8 }}
+          animate={{ y: 0, scale: 1 }}
+          exit={{ y: 100, scale: 0.8 }}
+          className="relative bg-white rounded-[2rem] border-[4px] border-[#1E1E1E] shadow-2xl overflow-hidden"
+        >
+          <div className="bg-[#0061FE] p-6 text-white flex justify-between items-start border-b-[4px] border-[#1E1E1E]">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Hexagon className="w-5 h-5 text-[#C2E812]" />
+                <span className="text-xs font-black uppercase tracking-widest text-[#C2E812]">Ticket</span>
+              </div>
+              <h3 className="text-2xl font-black leading-tight">{meetup.title}</h3>
+            </div>
+            <button onClick={onClose} className="bg-white/20 p-2 rounded-full hover:bg-white/40 transition">
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
-          <div className="space-y-1 mb-8 w-full">
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-2">Attendee</p>
-            <h4 className="text-gray-900 font-bold text-xl">{meetup.registrationData?.name}</h4>
-            <p className="text-gray-500 text-sm">{meetup.registrationData?.email}</p>
+          <div className="p-8 flex flex-col items-center bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]">
+            <div className="p-4 bg-white rounded-xl border-[3px] border-dashed border-[#1E1E1E] mb-6 shadow-sm">
+              <QRCodeCanvas value={meetup.registrationData?.token || "error"} size={160} />
+            </div>
+            <div className="text-center w-full">
+              <h4 className="text-2xl font-black text-[#1E1E1E] mb-2">{meetup.registrationData?.name}</h4>
+              <div className="inline-block bg-[#1E1E1E] text-white px-4 py-1 rounded-lg font-mono text-sm font-bold">
+                {meetup.registrationData?.token?.substring(0, 8).toUpperCase()}
+              </div>
+            </div>
           </div>
-
-          <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 w-full flex flex-col items-center">
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1">Token ID</p>
-            <p className="font-mono text-sm text-indigo-600 font-bold tracking-wider">{meetup.registrationData?.token}</p>
-          </div>
-        </div>
-
-        <div className="bg-gray-50 p-4 text-center border-t border-gray-100">
-          <p className="text-xs text-gray-400 font-medium">
-            Show this QR code at {meetup.venue || "the venue"} entrance
-          </p>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-function RegistrationForm({ userProfile, onConfirm }) {
-  const [submitting, setSubmitting] = useState(false);
+const LoadingScreen = () => (
+  <div className="min-h-screen bg-[#1E1E1E] flex flex-col items-center justify-center text-white relative overflow-hidden">
+    <Loader2 className="w-16 h-16 animate-spin text-[#C2E812] mb-6" />
+    <p className="font-black text-xl tracking-[0.2em] animate-pulse">LOADING...</p>
+  </div>
+);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    onConfirm().finally(() => setSubmitting(false));
-  };
-
-  const displayName = userProfile?.display_name || "User";
-  const displayEmail = userProfile?.email || "your@email.com";
-
-  return (
-    <div className="max-w-lg mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-          {displayName.charAt(0).toUpperCase()}
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-gray-900">Confirm Registration</h3>
-          <p className="text-xs text-gray-500">Review your details before registering</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="group">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Name</label>
-          <div className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm font-medium shadow-sm group-hover:border-indigo-300 transition-colors">
-            {displayName}
-          </div>
-        </div>
-        <div className="group">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Email</label>
-          <div className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm font-medium shadow-sm group-hover:border-indigo-300 transition-colors">
-            {displayEmail}
-          </div>
-        </div>
-      </div>
-
-      <button
-        onClick={handleSubmit}
-        disabled={submitting}
-        className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-70 flex justify-center items-center gap-2 transition-all shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5"
-      >
-        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
-        {submitting ? "Registering..." : "Confirm & Get Ticket"}
-      </button>
+const EmptyState = () => (
+  <div className="bg-white border-[3px] border-dashed border-[#1E1E1E] rounded-[2.5rem] p-12 text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)]">
+    <div className="w-20 h-20 bg-[#F7F5F2] rounded-full flex items-center justify-center mx-auto mb-6 border-[3px] border-[#1E1E1E]">
+      <Smile className="w-10 h-10 text-[#1E1E1E]" />
     </div>
-  );
-}
+    <h3 className="text-3xl font-black text-[#1E1E1E] mb-2">No Meetups</h3>
+    <p className="text-lg font-bold text-gray-500">Check back later for new events.</p>
+  </div>
+);
 
-function LoadingScreen() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
-        <p className="text-gray-500 font-medium animate-pulse">Loading events...</p>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="text-center py-24 bg-white rounded-3xl border border-gray-100 shadow-sm">
-      <div className="bg-indigo-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-        <Calendar className="w-10 h-10 text-indigo-600" />
-      </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-2">No Upcoming Meetups</h3>
-      <p className="text-gray-500 max-w-md mx-auto">
-        We don't have any events scheduled right now. Check back later for updates!
-      </p>
-    </div>
-  );
-}
+// --- PAST EVENTS DATA ---
+const pastEvents = [
+  {
+    id: 1,
+    title: "August Meetup 2025",
+    image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/users_cme79i2lk00qls401ar5qxqnc_tYvYry0ll1qJY9Cr-sZlcWmpyKLCEVr3R-WhatsApp25202025-08-10252015.15.02_25567a3d_c0frk5_dpl25k.jpg",
+    date: "August 2025",
+  },
+  {
+    id: 2,
+    title: "July Meetup 2024",
+    image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122532/width_800_pmtms3_cqtzrn.webp",
+    date: "July 2025",
+  },
+  {
+    id: 3,
+    title: "Summer of code 2024",
+    image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122534/codesapiens_3_md0nvd_ceyry4.png",
+    date: "Summer 2024",
+  },
+  {
+    id: 5,
+    title: "September Meetup 2025",
+    image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122957/users_cme79i2lk00qls401ar5qxqnc_OadwAYSr5ySuegEn-IMG-20250914-WA0012_gvyeye_n1s3az.jpg",
+    date: "September 2025",
+  },
+  {
+    id: 6,
+    title: "Github Contest",
+    image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122991/1753106111524_wqepam_wam1st.jpg",
+    date: "July 2025",
+  }
+];

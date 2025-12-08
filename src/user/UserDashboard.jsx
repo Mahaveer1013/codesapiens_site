@@ -1,428 +1,509 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, Trophy, Users, TrendingUp, Settings, X, ExternalLink } from "lucide-react";
+import {
+  ArrowUpRight, Settings, Users, Star,
+  Zap, LogOut, ChevronRight, PenTool, Calendar,
+  FileText, Handshake, MapPin, X, BookOpen
+} from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { useUser } from '@supabase/auth-helpers-react';
 import { useNavigate } from "react-router-dom";
-import DashboardBlogSection from "../components/DashboardBlogSection";
+import { motion, AnimatePresence } from "framer-motion";
+
+// --- CUSTOM ANIMATED VISUALS ---
+
+// 2. The "Framework" Dots Animation (Profile Background)
+const FrameworkNodes = () => (
+  <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
+    <motion.div
+      className="absolute top-1/4 left-10 w-4 h-4 bg-white rounded-full"
+      animate={{ scale: [1, 1.2, 1] }}
+      transition={{ duration: 2, repeat: Infinity }}
+    />
+    <motion.div
+      className="absolute bottom-1/4 right-10 w-4 h-4 bg-white rounded-full"
+      animate={{ scale: [1, 1.2, 1] }}
+      transition={{ duration: 2, delay: 1, repeat: Infinity }}
+    />
+    <svg className="absolute inset-0 w-full h-full">
+      <line x1="40" y1="25%" x2="calc(100% - 40px)" y2="75%" stroke="white" strokeWidth="2" />
+    </svg>
+  </div>
+);
+
+// 3. The "Typography" Big Aa Style
+const TypographyVisual = ({ isHovered }) => (
+  <div className="absolute bottom-[-20px] right-[-20px] font-sans font-bold leading-none select-none pointer-events-none opacity-90 transition-transform duration-500 transform"
+    style={{ transform: isHovered ? 'scale(1.1) translate(-10px, -10px)' : 'scale(1)' }}>
+    <span className="text-[140px] tracking-tighter text-[#2B2929]">Aa</span>
+  </div>
+);
+
+// --- MAIN COMPONENTS ---
+
+const BentoCard = ({ children, className, onClick, delay = 0, hoverColor }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay, ease: "easeOut" }}
+      whileHover={{ y: -5, transition: { duration: 0.2 } }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      onClick={onClick}
+      className={`relative overflow-hidden cursor-pointer flex flex-col justify-between p-6 sm:p-8 transition-shadow hover:shadow-2xl ${className}`}
+    >
+      {/* Dynamic Hover Overlay */}
+      {hoverColor && (
+        <motion.div
+          className="absolute inset-0 z-0 pointer-events-none mix-blend-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isHovered ? 0.1 : 0 }}
+          style={{ backgroundColor: hoverColor }}
+        />
+      )}
+
+      <div className="relative z-10 w-full h-full flex flex-col justify-between">
+        {typeof children === 'function' ? children(isHovered) : children}
+      </div>
+    </motion.div>
+  );
+};
+
+const BlogPopup = ({ onClose }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, y: 50, scale: 0.9 }}
+    className="fixed bottom-4 left-4 right-4 md:left-auto md:right-8 md:bottom-8 z-50 md:w-full md:max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+  >
+    <div className="bg-[#FF5018] p-4 flex justify-between items-center text-white">
+      <div className="flex items-center gap-2">
+        <BookOpen className="w-5 h-5" />
+        <span className="font-bold">New Insights!</span>
+      </div>
+      <button onClick={onClose} className="hover:bg-white/20 p-1 rounded-full transition-colors">
+        <X className="w-5 h-5" />
+      </button>
+    </div>
+    <div className="p-6">
+      <h3 className="text-xl font-bold text-gray-900 mb-2">Explore Our Latest Blogs</h3>
+      <p className="text-gray-600 mb-4 text-sm">Discover stories, tutorials, and updates from the community.</p>
+      <a
+        href="/blogs"
+        className="block w-full text-center bg-[#2B2929] text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors"
+      >
+        Read Now
+      </a>
+    </div>
+  </motion.div>
+);
+
+const TransitionOverlay = ({ data, onComplete }) => {
+  if (!data.isActive) return null;
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[100]"
+      initial={{
+        clipPath: `circle(0px at ${data.x}px ${data.y}px)`,
+        backgroundColor: data.color
+      }}
+      animate={{
+        clipPath: `circle(150vmax at ${data.x}px ${data.y}px)`,
+        backgroundColor: "#ffffff"
+      }}
+      transition={{
+        clipPath: { duration: 0.6, ease: [0.4, 0, 0.2, 1] }, // Smooth expansion
+        backgroundColor: { delay: 0.5, duration: 0.4, ease: "easeOut" } // Fade to white near end
+      }}
+      onAnimationComplete={onComplete}
+    />
+  );
+};
 
 export default function UserDashboard() {
   const user = useUser();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [authChecking, setAuthChecking] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [mode, setMode] = useState("dashboard");
-  const [formData, setFormData] = useState({ email: "" });
+  const [meetups, setMeetups] = useState([]);
+  const [showBlogPopup, setShowBlogPopup] = useState(false);
   const navigate = useNavigate();
 
-  // Utility function to validate and normalize URLs
-  const validateUrl = (url) => {
-    if (!url) return "#";
-    return url.startsWith("http") ? url : `https://${url}`;
-  };
-
-  useEffect(() => {
-    const handleAuthEvent = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const urlParams = new URLSearchParams(window.location.search);
-      const type = urlParams.get("type");
-
-      if (type === "recovery" && session?.access_token) {
-        setMode("newPassword");
-        setFormData({ ...formData, email: session.user.email });
-      }
-    };
-    handleAuthEvent();
-  }, []);
+  // Transition State
+  const [transitionData, setTransitionData] = useState({
+    isActive: false,
+    color: "",
+    x: 0,
+    y: 0,
+    path: ""
+  });
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        setAuthChecking(true);
         setLoading(true);
-        setError(null);
+        if (!user) return;
 
-
-
-        if (!user) {
-          setIsAuthenticated(false);
-          setAuthChecking(false);
-          return;
-        }
-
-        setIsAuthenticated(true);
-
-        const { data, error: profileError } = await supabase
+        // 1. Fetch User Profile
+        const { data: profile, error: profileError } = await supabase
           .from("users")
           .select("*")
           .eq("uid", user.id)
           .single();
 
-        console.log("Fetched profile:", data, profileError);
-
-        if (profileError) {
-          console.error("Error fetching profile:", profileError);
-          setError(profileError.message);
-          return;
+        if (profile) {
+          setUserData({
+            displayName: profile.display_name || "Creator",
+            email: profile.email,
+            avatar: profile.avatar,
+            points: profile.points || 1250,
+            college: profile.college || "Codesapiens Univ"
+          });
         }
 
-        if (data) {
-          if (data.role === "admin") {
-            navigate("/admin");
-            return;
+        // 2. Fetch Registered Meetups
+        const { data: registrations, error: regError } = await supabase
+          .from("registrations")
+          .select("meetup_id")
+          .eq("user_id", user.id);
+
+        if (registrations && registrations.length > 0) {
+          const meetupIds = registrations.map(r => r.meetup_id);
+          const { data: meetupsData, error: meetupsError } = await supabase
+            .from("meetup")
+            .select("*")
+            .in("id", meetupIds)
+            .order("start_date_time", { ascending: true });
+
+          if (meetupsData) {
+            setMeetups(meetupsData);
           }
-
-          const transformedData = {
-            uid: data.uid,
-            displayName: data.display_name || "",
-            email: data.email || user.email || "",
-            phoneNumber: data.phone_number || "",
-            avatar: data.avatar || "",
-            adminApproved: data.admin_approved || false,
-            badgesEarned: data.badges_earned || 0,
-            bio: data.bio || "",
-            college: data.college || "",
-            createdAt: data.created_at,
-            emailVerified: data.email_verified || user.email_confirmed_at !== null,
-            githubUrl: data.github_url || "",
-            linkedinUrl: data.linkedin_url || "",
-            phoneVerified: data.phone_verified || false,
-            points: data.points || 0,
-            portfolioUrl: data.portfolio_url || "",
-            role: data.role || "",
-            sessionsAttended: data.sessions_attended || 0,
-            skills: data.skills || [],
-            updatedAt: data.updated_at,
-            volunteeringHours: data.volunteering_hours || 0,
-          };
-
-          setUserData(transformedData);
         } else {
-          setError("User profile not found");
+          setMeetups([]);
         }
+
       } catch (err) {
-        setError(err.message);
-        console.error("Error in fetchUserData:", err);
+        console.error(err);
       } finally {
         setLoading(false);
-        setAuthChecking(false);
       }
     };
-
     fetchUserData();
   }, [user]);
 
-  // Handle external link navigation for events
-  const handleEventsClick = () => {
-    window.open("https://luma.com/codesapiens?k=c&period=past", "_blank", "noopener,noreferrer");
-  };
+  // Blog Popup Timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowBlogPopup(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
-  // Render password recovery form
-  if (mode === "newPassword") {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Set New Password</h2>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              /* Handle password update */
-            }}
-          >
-            <input
-              type="email"
-              value={formData.email}
-              readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 bg-gray-50"
-              placeholder="Email"
-            />
-            <input
-              type="password"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
-              placeholder="New Password"
-            />
-            <input
-              type="password"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
-              placeholder="Confirm New Password"
-            />
-            <button
-              type="submit"
-              className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
-            >
-              Update Password
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+  // Handle Card Click for Transition
+  const handleCardClick = (e, path, color) => {
+    if (!path) return;
 
-  // Generate personalized welcome message
-  const getPersonalizedWelcomeMessage = () => {
-    if (!userData) return "Welcome back, Student!";
-    const name = userData.displayName || userData.email?.split("@")[0] || "Student";
-    const role = userData.role ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1) : "Member";
-    const hasSkills = userData.skills && userData.skills.length > 0;
-    const hasBadges = userData.badgesEarned > 0;
-
-    if (hasBadges && hasSkills) {
-      return `Welcome back, ${name}! As a ${role} with ${userData.badgesEarned} badge${userData.badgesEarned > 1 ? "s" : ""} and skills like ${userData.skills[0]}, you're making waves in our community!`;
-    } else if (hasBadges) {
-      return `Welcome back, ${name}! Your ${userData.badgesEarned} badge${userData.badgesEarned > 1 ? "s" : ""} as a ${role} show your dedication—keep shining!`;
-    } else if (hasSkills) {
-      return `Welcome back, ${name}! Your skills like ${userData.skills[0]} make you a standout ${role} in our community!`;
-    } else {
-      return `Welcome back, ${name}! Excited to see you grow as a ${role} in our community!`;
+    // If external link, open directly
+    if (path.startsWith('http')) {
+      window.open(path, '_blank');
+      return;
     }
+
+    // Get click coordinates
+    const x = e.clientX;
+    const y = e.clientY;
+
+    setTransitionData({
+      isActive: true,
+      color,
+      x,
+      y,
+      path
+    });
   };
 
-  const handleSignOut = async () => {
-    try {
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        console.error('Error signing out:', error);
-      }
-
-      // Clear any local state and redirect
-      setUserData(null);
-      setIsMobileMenuOpen(false);
-      setIsProfileDropdownOpen(false);
-
-      // Redirect to login or home page
-      navigate('/');
-    } catch (err) {
-      console.error('Sign out error:', err);
-    }
+  const handleTransitionComplete = () => {
+    navigate(transitionData.path);
+    // Reset state after navigation (optional, but good for cleanup if component stays mounted)
+    setTimeout(() => {
+      setTransitionData({ isActive: false, color: "", x: 0, y: 0, path: "" });
+    }, 500);
   };
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#F7F5F2] flex items-center justify-center">
+      <div className="animate-spin w-12 h-12 border-4 border-[#00C6F7] border-t-transparent rounded-full" />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {authChecking && (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+    <div className="min-h-screen bg-[#F7F5F2] text-[#2B2929] font-sans p-4 sm:p-8 lg:p-12 selection:bg-[#FFC845]">
+      <TransitionOverlay data={transitionData} onComplete={handleTransitionComplete} />
+
+      <div className="max-w-[1400px] mx-auto">
+
+        {/* Navbar / Header area */}
+        <div className="flex justify-between items-end mb-10 border-b-2 border-[#2B2929] pb-6">
+          <div>
+            <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-2 text-[#2B2929]">
+              DASHBOARD
+            </h1>
+            <p className="text-xl md:text-2xl font-medium text-[#2B2929]/70">
+              Welcome back, {userData?.displayName?.split(' ')[0]}
+            </p>
           </div>
         </div>
-      )}
 
-      {!authChecking && !isAuthenticated && (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
-            <p className="text-gray-600 mb-4">Please log in to access your dashboard.</p>
-            <button
-              onClick={() => handleSignOut()}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
-            >
-              Go to Login
-            </button>
-          </div>
+        {/* BENTO GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 auto-rows-[minmax(280px,auto)]">
+
+          {/* 1. PROFILE (The "Framework" Card) - Navy Blue */}
+          <BentoCard
+            className="col-span-1 md:col-span-2 row-span-2 bg-[#1E293B] text-white relative group border-none"
+            onClick={(e) => handleCardClick(e, '/profile', '#1E293B')}
+          >
+            {(isHovered) => (
+              <>
+                <FrameworkNodes />
+
+                {/* Profile Label */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[120px] font-black text-white/5 pointer-events-none select-none tracking-widest">
+                  PROFILE
+                </div>
+
+                <div className="flex justify-between items-start z-10">
+                  <div className="w-24 h-24 border-4 border-white overflow-hidden bg-white/10">
+                    {userData?.avatar ? (
+                      <img src={userData.avatar} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-3xl font-bold">
+                        {userData?.displayName?.[0]}
+                      </div>
+                    )}
+                  </div>
+                  <ArrowUpRight className={`w-12 h-12 transition-transform duration-300 ${isHovered ? 'translate-x-2 -translate-y-2 text-[#00C6F7]' : 'text-white/50'}`} />
+                </div>
+
+                <div className="mt-auto z-10">
+                  <h2 className="text-4xl font-bold mb-1 tracking-tight">{userData?.displayName}</h2>
+                  <p className="text-white/60 text-lg mb-8 font-mono">{userData?.college}</p>
+
+                  <div className="grid grid-cols-2 gap-8 border-t border-white/20 pt-8">
+                    <div>
+                      <div className="text-[#C2E812] text-5xl font-black tracking-tighter">{userData?.points}</div>
+                      <div className="text-white/60 font-medium uppercase tracking-widest text-sm mt-1">Total Points</div>
+                    </div>
+                    <div>
+                      <div className="text-[#00C6F7] text-5xl font-black tracking-tighter">{meetups.length}</div>
+                      <div className="text-white/60 font-medium uppercase tracking-widest text-sm mt-1">Attended Meetups</div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </BentoCard>
+
+          {/* 2. BLOGS - Red/Orange */}
+          <BentoCard
+            className="bg-[#FF5018] text-[#2B2929] relative overflow-hidden"
+            onClick={(e) => handleCardClick(e, '/blogs', '#FF5018')}
+            delay={0.1}
+          >
+            {(isHovered) => (
+              <>
+                <div className="z-10">
+                  <h3 className="text-3xl font-bold mb-2">Blogs &<br />Stories</h3>
+                  <p className="font-medium opacity-80">Read the latest insights.</p>
+                </div>
+                <TypographyVisual isHovered={isHovered} />
+                <div className="mt-auto z-10">
+                  <button className="bg-[#2B2929] text-white px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-white hover:text-[#FF5018] transition-colors">
+                    Read Now
+                  </button>
+                </div>
+              </>
+            )}
+          </BentoCard>
+
+          {/* 3. RESUME BUILDER - Blue */}
+          <BentoCard
+            className="bg-[#0061FE] text-white"
+            onClick={(e) => handleCardClick(e, '/resume', '#0061FE')}
+            delay={0.2}
+          >
+            {(isHovered) => (
+              <>
+                <div className="flex justify-between items-start">
+                  <FileText className="w-10 h-10 stroke-[2]" />
+                  <motion.div animate={isHovered ? { y: -5 } : { y: 0 }}>
+                    <ArrowUpRight className="w-8 h-8" />
+                  </motion.div>
+                </div>
+                <div className="mt-auto">
+                  <h3 className="text-3xl font-bold mb-2">Resume<br />Builder</h3>
+                  <p className="text-white/80 font-medium">Create your professional CV</p>
+                </div>
+              </>
+            )}
+          </BentoCard>
+
+          {/* 4. MEETUPS - Yellow */}
+          <BentoCard
+            className="bg-[#FFD600] text-[#2B2929]"
+            onClick={(e) => handleCardClick(e, '/meetups', '#FFD600')}
+            delay={0.3}
+          >
+            {(isHovered) => (
+              <>
+                <div className="flex justify-between items-start">
+                  <MapPin className="w-10 h-10 stroke-[2]" />
+                  <motion.div animate={isHovered ? { scale: 1.2 } : { scale: 1 }}>
+                    <div className="w-3 h-3 bg-[#2B2929] rounded-full" />
+                  </motion.div>
+                </div>
+                <div className="mt-auto">
+                  <h3 className="text-3xl font-bold mb-2">Meetups</h3>
+                  <p className="text-[#2B2929]/80 font-medium">Connect locally</p>
+                </div>
+              </>
+            )}
+          </BentoCard>
+
+          {/* 5. MENTORSHIP - Lime */}
+          <BentoCard
+            className="bg-[#CCFF00] text-[#2B2929]"
+            onClick={(e) => handleCardClick(e, '/mentorship', '#CCFF00')}
+            delay={0.4}
+          >
+            {(isHovered) => (
+              <>
+                <div className="flex justify-between items-start">
+                  <Handshake className="w-10 h-10 stroke-[2]" />
+                  <Star className={`w-8 h-8 ${isHovered ? 'fill-[#2B2929]' : 'fill-transparent'} transition-colors`} />
+                </div>
+                <div className="mt-auto">
+                  <h3 className="text-3xl font-bold mb-2">Mentorship</h3>
+                  <p className="text-[#2B2929]/80 font-medium">Find or become a mentor</p>
+                </div>
+              </>
+            )}
+          </BentoCard>
+
+          {/* 6. ATTENDED MEETUPS LIST (Replaces Analytics) - Lavender */}
+          <BentoCard
+            className="col-span-1 md:col-span-2 bg-[#D8C3F8] relative overflow-hidden"
+            delay={0.5}
+          >
+            {(isHovered) => (
+              <div className="h-full flex flex-col relative z-10">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-2xl font-bold text-[#2B2929]">Attended Meetups</h3>
+                  <div className="bg-[#2B2929] text-white text-xs px-2 py-1 font-bold rounded">
+                    {meetups.length} Total
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                  {meetups.length > 0 ? (
+                    meetups.map((meetup) => (
+                      <div key={meetup.id} className="bg-white/50 p-3 rounded-xl flex items-center justify-between hover:bg-white/80 transition-colors">
+                        <div>
+                          <h4 className="font-bold text-[#2B2929] text-sm line-clamp-1">{meetup.title}</h4>
+                          <p className="text-xs text-gray-600">{new Date(meetup.start_date_time).toLocaleDateString()}</p>
+                        </div>
+                        <div className="bg-[#2B2929] p-1.5 rounded-full">
+                          <MapPin className="w-3 h-3 text-white" />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center opacity-60">
+                      <Calendar className="w-12 h-12 mb-2" />
+                      <p className="font-medium">No meetups yet.</p>
+                      <button onClick={(e) => handleCardClick(e, '/meetups', '#FFD600')} className="text-sm underline mt-1">Register for one!</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </BentoCard>
+
+          {/* 7. RESOURCES - Cyan */}
+          <BentoCard
+            className="bg-[#00C6F7] text-[#2B2929]"
+            onClick={(e) => handleCardClick(e, '/resource', '#00C6F7')}
+            delay={0.6}
+          >
+            {(isHovered) => (
+              <>
+                <div className="flex justify-between">
+                  <h3 className="text-3xl font-bold">Tools</h3>
+                  <motion.div
+                    animate={isHovered ? { rotate: 90 } : { rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 200 }}
+                  >
+                    <Zap className="w-10 h-10 fill-[#2B2929]" />
+                  </motion.div>
+                </div>
+
+                <div className="mt-auto space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-2 bg-[#2B2929] opacity-20 w-full rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-[#2B2929]"
+                        initial={{ width: "0%" }}
+                        whileInView={{ width: `${Math.random() * 100}%` }}
+                        transition={{ duration: 1, delay: 0.5 + (i * 0.1) }}
+                      />
+                    </div>
+                  ))}
+                  <p className="text-sm font-bold mt-2 pt-2">Resource Library</p>
+                </div>
+              </>
+            )}
+          </BentoCard>
+
+          {/* 8. EVENTS (Luma) - White/Cream */}
+          <BentoCard
+            className="bg-white text-[#2B2929] border border-gray-200"
+            onClick={() => window.open("https://luma.com/codesapiens", "_blank")}
+            delay={0.7}
+          >
+            {(isHovered) => (
+              <>
+                <div className="flex justify-between items-start">
+                  <Calendar className="w-10 h-10 stroke-[2.5]" />
+                  <ExternalLinkIcon isHovered={isHovered} />
+                </div>
+                <div className="mt-auto">
+                  <h3 className="text-3xl font-black tracking-tighter mb-2">LUMA<br />EVENTS</h3>
+                  <p className="text-gray-500 font-medium">Register now</p>
+                </div>
+              </>
+            )}
+          </BentoCard>
+
         </div>
-      )}
+      </div>
 
-      {!authChecking && isAuthenticated && (
-        <main className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
-          {loading && (
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-              <p className="ml-3 text-gray-600">Loading your dashboard...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center">
-                <X className="w-5 h-5 text-red-500 mr-2" />
-                <p className="text-red-700">Error loading user data: {error}</p>
-              </div>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-              >
-                Try again
-              </button>
-            </div>
-          )}
-
-          {!loading && !error && userData && (
-            <>
-              <div className="mb-8">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                  {getPersonalizedWelcomeMessage()}
-                </h1>
-                <p className="text-gray-600">Here's what's happening in your student community today.</p>
-                {userData.bio && <p className="text-gray-500 text-sm mt-1">{userData.bio}</p>}
-                <div className="flex items-center mt-2 space-x-4 text-sm text-gray-500">
-                  <span>{userData.college || "No college set"}</span>
-                  <span>•</span>
-                  <span>{userData.role?.charAt(0).toUpperCase() + userData.role?.slice(1)}</span>
-                  {userData.emailVerified && (
-                    <>
-                      <span>•</span>
-                      <span className="text-green-600">✓ Email Verified</span>
-                    </>
-                  )}
-                  {!userData.emailVerified && (
-                    <>
-                      <span>•</span>
-                      <span className="text-yellow-600">⚠ Email Not Verified</span>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Blog Section */}
-              <DashboardBlogSection maxPosts={3} />
-
-              {userData.skills && userData.skills.length > 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Skills</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {userData.skills.map((skill, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Skills</h2>
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                      <Settings className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500">No skills added yet. Add your skills to help others find you!</p>
-                    <button
-                      className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
-                      onClick={() => navigate("/profile")}
-                    >
-                      Add Skills
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <Calendar className="w-6 h-6 text-blue-500" />
-                    <h2 className="text-xl font-semibold text-gray-900">Upcoming Events</h2>
-                  </div>
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                      <Calendar className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Events</h3>
-                    <p className="text-gray-500 mb-4">
-                      We're working on an exciting events system where you can discover and join amazing learning opportunities.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-                      <button
-                        onClick={handleEventsClick}
-                        className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-sm font-medium"
-                      >
-                        View Events
-                        <ExternalLink className="w-4 h-4 ml-1" />
-                      </button>
-                      <span className="text-sm text-gray-400">Opens in new tab</span>
-                    </div>
-                    <p className="text-sm text-gray-400 mt-2">Stay tuned for updates!</p>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <Trophy className="w-6 h-6 text-purple-500" />
-                    <h2 className="text-xl font-semibold text-gray-900">Badges & Achievements</h2>
-                  </div>
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                      <Trophy className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Badges Coming Soon!</h3>
-                    <p className="text-gray-500 mb-4">
-                      We're creating an exciting badge system to recognize your achievements and progress.
-                    </p>
-                    <p className="text-sm text-gray-400">Get ready to earn your first badge!</p>
-                  </div>
-                </div>
-              </div>
-
-              {userData.githubUrl || userData.linkedinUrl || userData.portfolioUrl ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Links</h2>
-                  <div className="flex flex-wrap gap-3">
-                    {userData.githubUrl && (
-                      <a
-                        href={validateUrl(userData.githubUrl)}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          window.open(validateUrl(userData.githubUrl), "_blank", "noopener,noreferrer");
-                        }}
-                        className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200"
-                      >
-                        <span className="text-sm font-medium text-gray-700">GitHub</span>
-                      </a>
-                    )}
-                    {userData.linkedinUrl && (
-                      <a
-                        href={validateUrl(userData.linkedinUrl)}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          window.open(validateUrl(userData.linkedinUrl), "_blank", "noopener,noreferrer");
-                        }}
-                        className="flex items-center px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors duration-200"
-                      >
-                        <span className="text-sm font-medium text-blue-700">LinkedIn</span>
-                      </a>
-                    )}
-                    {userData.portfolioUrl && (
-                      <a
-                        href={validateUrl(userData.portfolioUrl)}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          window.open(validateUrl(userData.portfolioUrl), "_blank", "noopener,noreferrer");
-                        }}
-                        className="flex items-center px-4 py-2 bg-purple-100 hover:bg-purple-200 rounded-lg transition-colors duration-200"
-                      >
-                        <span className="text-sm font-medium text-purple-700">Portfolio</span>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Links</h2>
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                      <Settings className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 mb-2">Add Profile Links</p>
-                    <button
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
-                      onClick={() => navigate("/profile")}
-                    >
-                      Add Profile Links
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </main>
-      )}
+      {/* Blog Popup */}
+      <AnimatePresence>
+        {showBlogPopup && <BlogPopup onClose={() => setShowBlogPopup(false)} />}
+      </AnimatePresence>
     </div>
   );
 }
+
+const ExternalLinkIcon = ({ isHovered }) => (
+  <motion.svg
+    width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    animate={isHovered ? { x: 2, y: -2 } : { x: 0, y: 0 }}
+  >
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    <polyline points="15 3 21 3 21 9" />
+    <line x1="10" y1="14" x2="21" y2="3" />
+  </motion.svg>
+);
