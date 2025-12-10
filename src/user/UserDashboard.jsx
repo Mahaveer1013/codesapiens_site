@@ -124,12 +124,15 @@ const TransitionOverlay = ({ data, onComplete }) => {
   );
 };
 
+import CompleteProfileDialog from "../components/CompleteProfileDialog";
+
 export default function UserDashboard() {
   const user = useUser();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [meetups, setMeetups] = useState([]);
   const [showBlogPopup, setShowBlogPopup] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
   const navigate = useNavigate();
 
   // Transition State
@@ -155,13 +158,27 @@ export default function UserDashboard() {
           .single();
 
         if (profile) {
+          console.log("Fetched Profile:", profile); // DEBUG LOG
+          console.log("Missing Fields Check:", {
+            college: !profile.college,
+            dept: !profile.department,
+            year: !profile.year
+          }); // DEBUG LOG
+
           setUserData({
             displayName: profile.display_name || "Creator",
             email: profile.email,
             avatar: profile.avatar,
             points: profile.points || 1250,
-            college: profile.college || "Codesapiens Univ"
+            college: profile.college, // Keep raw value
+            department: profile.department,
+            year: profile.year
           });
+
+          // Check if profile is incomplete
+          if (!profile.college || !profile.department || !profile.year) {
+            setShowProfileDialog(true);
+          }
         }
 
         // 2. Fetch Registered Meetups
@@ -291,7 +308,7 @@ export default function UserDashboard() {
 
                 <div className="mt-auto z-10">
                   <h2 className="text-4xl font-bold mb-1 tracking-tight">{userData?.displayName}</h2>
-                  <p className="text-white/60 text-lg mb-8 font-mono">{userData?.college}</p>
+                  <p className="text-white/60 text-lg mb-8 font-mono">{userData?.college || "Codesapiens Univ"}</p>
 
 
                 </div>
@@ -485,6 +502,22 @@ export default function UserDashboard() {
       {/* Blog Popup */}
       <AnimatePresence>
         {showBlogPopup && <BlogPopup onClose={() => setShowBlogPopup(false)} />}
+      </AnimatePresence>
+
+      {/* Profile Completion Dialog */}
+      <AnimatePresence>
+        {showProfileDialog && (
+          <CompleteProfileDialog
+            isOpen={showProfileDialog}
+            onClose={() => setShowProfileDialog(false)}
+            userId={user?.id}
+            initialData={userData}
+            onComplete={(newData) => {
+              setUserData(prev => ({ ...prev, ...newData }));
+              setShowProfileDialog(false);
+            }}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

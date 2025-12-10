@@ -1,742 +1,530 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Github, Instagram, Linkedin, Twitter, Calendar, Users, Code, Award, Mail, Phone, MapPin, Clock, UserPlus, ArrowRight, Youtube, Users2, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, ChevronDown, Menu, X, Github, Linkedin, Youtube, Users, Calendar, Code, Award } from 'lucide-react';
+import { StickyScrollReveal } from './StickyScrollReveal';
 
-const CodeSapiensHero = () => {
-    const [isVisible, setIsVisible] = useState(false);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [sectionsInView, setSectionsInView] = useState({});
-    const [showLoginPopup, setShowLoginPopup] = useState(false);
-    const navigate = useNavigate();
+const StatsSection = () => {
+    const [stats, setStats] = useState({ totalUsers: 0, totalColleges: 0, topColleges: [] });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const checkAuthAndSchedulePopup = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                const timer = setTimeout(() => {
-                    setShowLoginPopup(true);
-                }, 5000);
-                return () => clearTimeout(timer);
-            }
-        };
-        checkAuthAndSchedulePopup();
+        // Use localhost for dev, or relative path if proxied. 
+        // For now hardcoding localhost as per session context.
+        fetch('http://localhost:3001/api/public-stats')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setStats(data.stats);
+                }
+            })
+            .catch(err => console.error("Stats fetch error:", err))
+            .finally(() => setLoading(false));
     }, []);
 
-    const handleGoogleLogin = async () => {
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: window.location.origin,
-            },
-        });
-        if (error) console.error('Error logging in:', error.message);
-    };
+    return (
+        <section className="py-24 bg-[#101010] text-white relative overflow-hidden">
+            {/* Background Elements */}
+            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[#0061FE] rounded-full blur-[100px]"></div>
+                <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#9B0032] rounded-full blur-[100px]"></div>
+            </div>
 
-    // Updated past events data from bento.me and web sources
-    const pastEvents = [
-        {
-            id: 1,
-            title: "August Meetup 2025",
-            image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/users_cme79i2lk00qls401ar5qxqnc_tYvYry0ll1qJY9Cr-sZlcWmpyKLCEVr3R-WhatsApp25202025-08-10252015.15.02_25567a3d_c0frk5_dpl25k.jpg",
-            date: "August 2025",
-            description: "A 3-hour mini hackathon with mentors, developers, and certificates for participants.",
-            participants: 75
-        },
-        {
-            id: 2,
-            title: "July Meetup 2024",
-            image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122532/width_800_pmtms3_cqtzrn.webp",
-            date: "July 2025",
-            description: "Online session introducing security concepts via Google hacking and CTFs.",
-            participants: 44
-        },
-        {
-            id: 3,
-            title: "Summer of code 2024",
-            image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122534/codesapiens_3_md0nvd_ceyry4.png",
-            date: "Summer 2024",
-            description: "Session on building AI accelerators using VLSI and RTL coding.",
-            participants: 50
-        },
-        {
-            id: 4,
-            title: "Mentorship Programme 2024",
-            image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122917/codesapiens_2_mqadi2_h1bbbi.png",
-            date: "2024",
-            description: "Student-run program for contributing to open-source projects.",
-            participants: 100
-        },
-        {
-            id: 5,
-            title: "September Meetup 2025",
-            image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122957/users_cme79i2lk00qls401ar5qxqnc_OadwAYSr5ySuegEn-IMG-20250914-WA0012_gvyeye_n1s3az.jpg",
-            date: "September 2025",
-            description: "Exciting meetup filled with tech talks, networking, and hands-on workshops at ContentStack, Velachery, Chennai.",
-            participants: 80
-        },
-        {
-            id: 6,
-            title: "Github Contest",
-            image: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122991/1753106111524_wqepam_wam1st.jpg",
-            date: "July 2025",
-            description: "Exciting meetup filled with tech talks, networking, and hands-on workshops at ContentStack, Velachery, Chennai.",
-            participants: 100
-        }
-    ];
+            <div className="container mx-auto px-6 relative z-10">
+                <div className="mb-16 text-center">
+                    <span className="text-[#0061FE] font-bold tracking-widest uppercase text-sm mb-4 block">Impact</span>
+                    <h2 className="text-4xl md:text-6xl font-bold mb-6">By The Numbers</h2>
+                    <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                        We are growing fast. Join the movement.
+                    </p>
+                </div>
 
-    // Testimonials
-    const testimonials = [
-        {
-            name: "Hayes Vincent",
-            quote: "The event featured several engaging sessions: Reshma G.V.S. introduced artificial intelligence and guided participants in building a chatbot using Chatling, which was a notable highlight. Koushik Ram delivered a thrilling live demonstration on Wi-Fi hacking and cybersecurity. Ashik D showcased his creative design work, inspiring the attendees. The event's highlight was a fun Developers vs Cybersecurity battle hosted by Keerthana M G. Overall, the event combined learning, networking, and fun, leaving me inspired to continue building, learning, and pushing boundaries as a developer."
-        }
-    ];
+                <div className="grid md:grid-cols-2 gap-16 items-center">
+                    {/* Left: Big Numbers */}
+                    <div className="grid grid-cols-2 gap-8">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            className="bg-[#1E1919] p-8 rounded-2xl border border-gray-800 text-center"
+                        >
+                            <Users className="w-10 h-10 text-[#0061FE] mx-auto mb-4" />
+                            <h3 className="text-5xl font-black text-white mb-2">
+                                {stats.totalUsers > 0 ? stats.totalUsers : "1500+"}
+                            </h3>
+                            <p className="text-gray-500 font-medium uppercase tracking-wider text-xs">Total Members</p>
+                        </motion.div>
 
-    // Activities for What We Do
-    const activities = [
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.1 }}
+                            className="bg-[#1E1919] p-8 rounded-2xl border border-gray-800 text-center"
+                        >
+                            <Award className="w-10 h-10 text-[#FA5D00] mx-auto mb-4" />
+                            <h3 className="text-5xl font-black text-white mb-2">
+                                {stats.totalColleges > 0 ? stats.totalColleges : "50+"}
+                            </h3>
+                            <p className="text-gray-500 font-medium uppercase tracking-wider text-xs">Colleges Reached</p>
+                        </motion.div>
+                    </div>
+
+                    {/* Right: Top Colleges Chart */}
+                    <div className="bg-[#1E1919] p-8 rounded-2xl border border-gray-800">
+                        <h4 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <Code className="text-[#0061FE]" /> Top Active Colleges
+                        </h4>
+                        <div className="space-y-4">
+                            {stats.topColleges.length > 0 ? (
+                                stats.topColleges.map((college, index) => (
+                                    <div key={index} className="relative">
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="font-medium text-gray-300 truncate w-3/4">{college.name}</span>
+                                            <span className="text-[#0061FE] font-bold">{college.count}</span>
+                                        </div>
+                                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                whileInView={{ width: `${(college.count / stats.topColleges[0].count) * 100}%` }}
+                                                transition={{ duration: 1, delay: index * 0.1 }}
+                                                className="h-full bg-gradient-to-r from-[#0061FE] to-[#00C6F7] rounded-full"
+                                            />
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center text-gray-500 py-10">Loading stats...</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+const CodeSapiensHero = () => {
+    // Force re-render for StickyScrollReveal update
+    const navigate = useNavigate();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [hallOfFameEntries, setHallOfFameEntries] = useState([]);
+    const [communityPhotos, setCommunityPhotos] = useState([]);
+
+    // Data Fetching
+    useEffect(() => {
+        const fetchData = async () => {
+            const { data: hof } = await supabase.from('hall_of_fame').select('*').eq('is_active', true).order('created_at', { ascending: false });
+            if (hof) setHallOfFameEntries(hof);
+
+            const { data: photos } = await supabase.from('community_photos').select('*').eq('is_active', true).order('order_number', { ascending: true });
+            if (photos) setCommunityPhotos(photos);
+        };
+        fetchData();
+    }, []);
+
+    // Scroll Progress
+    const { scrollY } = useScroll();
+
+    // Geometric Shape Animation - "Minimize Mathematically"
+    // The shapes will scale down into a singular point/line as if folding
+    const shapeScale = useTransform(scrollY, [0, 600], [1, 0.2]);
+    const shapeY = useTransform(scrollY, [0, 600], [0, 200]); // Move down slightly
+    const shapeOpacity = useTransform(scrollY, [0, 400], [0.8, 0]); // Fade out eventually
+
+    // Content for Sticky Scroll
+    const visionContent = [
         {
             title: "Meetups",
-            description: "We organize offline events and mini-hackathons where you can build and launch a project in minutes with the help of mentors and developers.",
-            icon: Users
+            description: "Offline events and mini-hackathons where you build and launch projects in minutes. Connect with like-minded peers.",
+            content: (
+                <div className="h-full w-full bg-[#0061FE] flex items-center justify-center text-white p-10">
+                    <Users size={100} />
+                </div>
+            )
         },
         {
             title: "Hackathons",
-            description: "Engage in fun, minimal hackathons to get hands-on experience and win prizes.",
-            icon: Code
+            description: "Fun, minimal hackathons to get hands-on experience and win prizes. Push your limits and build something amazing.",
+            content: (
+                <div className="h-full w-full bg-[#9B0032] flex items-center justify-center text-white p-10">
+                    <Code size={100} />
+                </div>
+            )
         },
         {
-            title: "Curated Online Sessions",
-            description: "We provide sessions focused on practical skills, with a mix of code examples and presentations, based on community feedback. Our two broader areas are 'Learn' (courses, sessions, soft skills) and 'Do' (projects, hackathons).",
-            icon: Calendar
+            title: "Nurturing Talent",
+            description: "We help you discover your interests and build a unique profile that stands out. Mentorship from seniors and industry experts.",
+            content: (
+                <div className="h-full w-full bg-[#FA5D00] flex items-center justify-center text-white p-10">
+                    <Award size={100} />
+                </div>
+            )
         },
         {
-            title: "Nurturing New Talents",
-            description: "We help students discover their interests and build a unique profile that stands out from the crowd.",
-            icon: Award
-        },
-        {
-            title: "Debates & Discussions",
-            description: "We are not just a formal tech community; we discuss everything from EV cars and Rajni movies to social media detox, because we care for our students.",
-            icon: UserPlus
+            title: "Curated Sessions",
+            description: "Practical skills, code examples, and presentations based on community feedback. Learn what matters.",
+            content: (
+                <div className="h-full w-full bg-purple-600 flex items-center justify-center text-white p-10">
+                    <Calendar size={100} />
+                </div>
+            )
         }
     ];
 
-    // Volunteers with original links from previous code
+    // Volunteers Data
     const volunteers = [
-        {
-            photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122516/2ABMHfqOsrpoL3OV-WhatsApp202025-08-312010.33.52_a8a27bbd_vzcgzq_1_bm8zch.jpg",
-            name: "Keerthana M G",
-            link: "https://in.linkedin.com/in/keerthana-m-g-12ba59256"
-        },
-        {
-            photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/iAckgTxMcALuPbEx-IMG-20250112-WA0012_1_fwyhoa_oxegdx.jpg",
-            name: "Mahaveer A",
-            link: "https://www.linkedin.com/in/mahaveer1013"
-        },
-        {
-            photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/4SrLYdwh0tpuLlkt-team_2.a2a0c6917be79e15dc29_wjosq7_ftgm6j.jpg",
-            name: "Justin Benito",
-            link: "https://www.linkedin.com/in/justinbenito"
-        },
-        {
-            photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/nLDGxnsr6bZkCx0A-team_3.d2fd9099126beb0b86a1_vxhpxo_z3eods.jpg",
-            name: "Koushik ram",
-            link: "https://www.linkedin.com/in/koushik-ram-118495239"
-        },
-        {
-            photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/Tlgueu6loMYMKJMs-team_1.150894ea4376f6423091_vrf0fr_weljyi.jpg",
-            name: "Athiram R S",
-            link: "https://www.linkedin.com/in/athi-ram-rs"
-        },
-        {
-            photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122516/5NmVUZRZI8sRCrZA-1735300455766_h8dhm2_dnully.jpg",
-            name: "Pranav Vikraman",
-            link: "https://www.linkedin.com/in/pranav-vikraman-322020242"
-        },
-        {
-            photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/JWz1OvtKurqSRsC7-WhatsApp202025-08-312011.22.52_bff7c8bd_mrok7q_b6meyd.jpg",
-            name: "Vignesh R",
-            link: "https://www.linkedin.com/in/vignesh-r-7727582b7"
-        },
-        {
-            photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122532/3S8YnOu77Rt2wDJD-WhatsApp202025-08-312010.32.42_9b5cee10_puasao_zekkfa.jpg",
-            name: "Anand S",
-            link: "https://codesapiens-management-website.vercel.app"
-        },
-        {
-            photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/q5tsA3KUOwgSOpIa-team_5.efc764325a5ffbaf1b6e_1_sidv9r_fhxmqv.jpg",
-            name: "Subhaharini P",
-            link: "https://www.linkedin.com/in/subhaharini-p-938568254"
-        },
-        {
-            photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/1732031130575_b834gr_1_slc9fw.jpg",
-            name: "Jayasurya R",
-            link: "https://www.linkedin.com/in/jayasurya-r-b37997279/"
-        }
+        { photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122516/2ABMHfqOsrpoL3OV-WhatsApp202025-08-312010.33.52_a8a27bbd_vzcgzq_1_bm8zch.jpg", name: "Keerthana M G", link: "https://in.linkedin.com/in/keerthana-m-g-12ba59256" },
+        { photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/iAckgTxMcALuPbEx-IMG-20250112-WA0012_1_fwyhoa_oxegdx.jpg", name: "Mahaveer A", link: "https://www.linkedin.com/in/mahaveer1013" },
+        { photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/4SrLYdwh0tpuLlkt-team_2.a2a0c6917be79e15dc29_wjosq7_ftgm6j.jpg", name: "Justin Benito", link: "https://www.linkedin.com/in/justinbenito" },
+        { photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/nLDGxnsr6bZkCx0A-team_3.d2fd9099126beb0b86a1_vxhpxo_z3eods.jpg", name: "Koushik ram", link: "https://www.linkedin.com/in/koushik-ram-118495239" },
+        { photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/Tlgueu6loMYMKJMs-team_1.150894ea4376f6423091_vrf0fr_weljyi.jpg", name: "Athiram R S", link: "https://www.linkedin.com/in/athi-ram-rs" },
+        { photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122516/5NmVUZRZI8sRCrZA-1735300455766_h8dhm2_dnully.jpg", name: "Pranav Vikraman", link: "https://www.linkedin.com/in/pranav-vikraman-322020242" },
+        { photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/JWz1OvtKurqSRsC7-WhatsApp202025-08-312011.22.52_bff7c8bd_mrok7q_b6meyd.jpg", name: "Vignesh R", link: "https://www.linkedin.com/in/vignesh-r-7727582b7" },
+        { photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122532/3S8YnOu77Rt2wDJD-WhatsApp202025-08-312010.32.42_9b5cee10_puasao_zekkfa.jpg", name: "Anand S", link: "https://codesapiens-management-website.vercel.app" },
+        { photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/q5tsA3KUOwgSOpIa-team_5.efc764325a5ffbaf1b6e_1_sidv9r_fhxmqv.jpg", name: "Subhaharini P", link: "https://www.linkedin.com/in/subhaharini-p-938568254" },
+        { photo: "https://res.cloudinary.com/druvxcll9/image/upload/v1761122531/1732031130575_b834gr_1_slc9fw.jpg", name: "Jayasurya R", link: "https://www.linkedin.com/in/jayasurya-r-b37997279/" }
     ];
-
-    // Updated stats based on real data
-    const stats = [
-        { icon: Users, number: "1500+", label: "Active Members" },
-        { icon: Calendar, number: "7+", label: "Events Hosted" }
-    ];
-
-    // Custom hook for intersection observer
-    const useInView = (id) => {
-        const ref = useRef(null);
-        useEffect(() => {
-            const observer = new IntersectionObserver(
-                ([entry]) => {
-                    if (entry.isIntersecting) {
-                        setSectionsInView(prev => ({ ...prev, [id]: true }));
-                        observer.unobserve(entry.target);
-                    }
-                },
-                { threshold: 0.1 }
-            );
-
-            if (ref.current) {
-                observer.observe(ref.current);
-            }
-
-            return () => observer.disconnect();
-        }, [id]);
-
-        return { ref, inView: sectionsInView[id] || false };
-    };
-
-    useEffect(() => {
-        setIsVisible(true);
-        const interval = setInterval(() => {
-            setCurrentImageIndex((prev) => (prev + 1) % pastEvents.length);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const scrollToSection = (sectionId) => {
-        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-    };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-stone-100 text-zinc-900 overflow-x-hidden">
-            {/* Global Styles for Animations */}
-            <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(50px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes slideDown {
-          from {
-            transform: translateY(-100px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(10px); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        .animate-fadeInUp {
-          animation: fadeInUp 1s ease-out forwards;
-        }
-        .animate-slideDown {
-          animation: slideDown 0.8s ease-out forwards;
-        }
-        .animate-bounce {
-          animation: bounce 1.5s infinite ease-in-out;
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.8s ease-out forwards;
-        }
-        .animate-scaleIn {
-          animation: scaleIn 0.5s ease-out forwards;
-        }
-        .stagger-child:nth-child(1) { animation-delay: 0.1s; }
-        .stagger-child:nth-child(2) { animation-delay: 0.2s; }
-        .stagger-child:nth-child(3) { animation-delay: 0.3s; }
-        .stagger-child:nth-child(4) { animation-delay: 0.4s; }
-        .stagger-child:nth-child(5) { animation-delay: 0.5s; }
-        .stagger-child:nth-child(6) { animation-delay: 0.6s; }
-        .stagger-child:nth-child(7) { animation-delay: 0.7s; }
-        .stagger-child:nth-child(8) { animation-delay: 0.8s; }
-        .stagger-child:nth-child(9) { animation-delay: 0.9s; }
-        .image-fade-enter { opacity: 0; transition: opacity 0.8s ease-in-out; }
-        .image-fade-enter-active { opacity: 1; }
-        .image-fade-exit { opacity: 1; transition: opacity 0.8s ease-in-out; }
-        .image-fade-exit-active { opacity: 0; }
-      `}</style>
+        <div className="bg-[#F7F5F2] text-[#1E1919] min-h-screen font-sans overflow-x-hidden selection:bg-[#0061FE] selection:text-white">
 
-            {/* Header Navigation with CSS animation - Responsive */}
-            <header
-                className={`fixed top-0 w-full z-50 bg-zinc-50/90 backdrop-blur-md border-b border-zinc-200/50 transition-all duration-300 ${isVisible ? 'animate-slideDown' : ''}`}
-            >
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                    <nav className="flex justify-between items-center py-4 sm:py-6">
-                        <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center">
-                                <img
-                                    src="https://res.cloudinary.com/druvxcll9/image/upload/v1761122530/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz_3_r4kp2u.jpg"
-                                    alt="Logo"
-                                    className="w-full h-full rounded-full object-cover transition-transform duration-300 hover:scale-105"
-                                    loading="lazy"
-                                />
-                            </div>
-                            <span className="text-lg sm:text-xl font-light tracking-wider">CodeSapiens</span>
-                        </div>
-                        <button
-                            onClick={() => navigate('/auth')}
-                            className="px-6 py-2 border border-zinc-300 text-zinc-700 text-xs sm:text-sm font-light tracking-widest uppercase hover:bg-zinc-900 hover:text-zinc-50 transition-all duration-300"
-                        >
-                            Login
+            {/* Navigation - Dark Mode for Hero */}
+            <nav className="fixed top-0 w-full z-50 mix-blend-difference text-white">
+                <div className="container mx-auto px-6 py-6 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-[#0061FE] rounded-sm"></div>
+                        <span className="text-xl font-bold tracking-tight">CodeSapiens</span>
+                    </div>
+
+                    <div className="hidden md:flex items-center gap-8 font-medium text-sm">
+                        <a href="#vision" className="hover:text-[#0061FE] transition-colors">Vision</a>
+                        <a href="#events" className="hover:text-[#0061FE] transition-colors">Events</a>
+                        <a href="#community" className="hover:text-[#0061FE] transition-colors">Community</a>
+                        <button onClick={() => navigate('/auth')} className="hover:text-[#0061FE]">Log in</button>
+                        <button onClick={() => navigate('/auth')} className="bg-white text-black px-5 py-2.5 rounded-sm hover:bg-gray-200 transition-colors font-bold">
+                            Get Started
                         </button>
-                    </nav>
+                    </div>
+
+                    <button className="md:hidden text-white" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                        {isMenuOpen ? <X /> : <Menu />}
+                    </button>
                 </div>
-            </header>
+            </nav>
 
-            {/* Auto Login Popup */}
-            <AnimatePresence>
-                {showLoginPopup && (
+            {/* Mobile Menu */}
+            {isMenuOpen && (
+                <div className="fixed inset-0 z-40 bg-[#101010] text-white pt-24 px-6 md:hidden">
+                    <div className="flex flex-col gap-6 text-2xl font-bold">
+                        <a href="#vision" onClick={() => setIsMenuOpen(false)}>Vision</a>
+                        <a href="#events" onClick={() => setIsMenuOpen(false)}>Events</a>
+                        <a href="#community" onClick={() => setIsMenuOpen(false)}>Community</a>
+                        <button onClick={() => navigate('/auth')} className="text-left text-[#0061FE]">Log in</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Hero Section - Dark Grid + Geometric Animation */}
+            <section className="relative min-h-screen bg-[#101010] text-white flex items-center overflow-hidden">
+                {/* Grid Background - Static but subtle */}
+                <div className="absolute inset-0 z-0 opacity-20"
+                    style={{
+                        backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)',
+                        backgroundSize: '50px 50px'
+                    }}>
+                </div>
+
+                {/* Geometric Shapes Animation - Responsive Positioning */}
+                {/* On Mobile: Positioned absolute center/bottom with lower opacity to not block text */}
+                {/* On Desktop: Positioned right side */}
+                <motion.div
+                    className="absolute inset-0 md:right-0 md:left-auto md:w-1/2 h-full pointer-events-none z-0 flex items-center justify-center md:justify-end"
+                    style={{ scale: shapeScale, y: shapeY, opacity: shapeOpacity }}
+                >
+                    <svg viewBox="0 0 800 800" className="w-full h-full md:w-full md:h-full opacity-40 md:opacity-60">
+                        {/* Rhombus Stack */}
+                        <motion.path
+                            d="M400,200 L600,300 L400,400 L200,300 Z"
+                            fill="none" stroke="#0061FE" strokeWidth="1.5"
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: 1, opacity: 1 }}
+                            transition={{ duration: 2, ease: "easeInOut" }}
+                        />
+                        <motion.path
+                            d="M400,400 L600,500 L400,600 L200,500 Z"
+                            fill="none" stroke="#F7F5F2" strokeWidth="1.5"
+                            initial={{ pathLength: 0, opacity: 1 }}
+                            animate={{ pathLength: 1, opacity: 1 }}
+                            transition={{ duration: 2, delay: 0.5, ease: "easeInOut" }}
+                        />
+                        <motion.path
+                            d="M400,600 L600,700 L400,800 L200,700 Z"
+                            fill="none" stroke="#9B0032" strokeWidth="1.5"
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: 1, opacity: 1 }}
+                            transition={{ duration: 2, delay: 1, ease: "easeInOut" }}
+                        />
+                        {/* Vertical Connectors */}
+                        <motion.line x1="200" y1="300" x2="200" y2="700" stroke="#333" strokeWidth="1" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5, delay: 1 }} />
+                        <motion.line x1="600" y1="300" x2="600" y2="700" stroke="#333" strokeWidth="1" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5, delay: 1 }} />
+                        <motion.line x1="400" y1="400" x2="400" y2="600" stroke="#333" strokeWidth="1" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5, delay: 1 }} />
+                    </svg>
+                </motion.div>
+
+                <div className="container mx-auto px-6 relative z-10 pt-20">
                     <motion.div
-                        initial={{ opacity: 0, y: -50 }}
+                        initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -50 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
-                        className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md bg-white rounded-xl shadow-2xl border border-zinc-200 p-6"
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="max-w-4xl"
                     >
-                        <button
-                            onClick={() => setShowLoginPopup(false)}
-                            className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 transition-colors"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-
-                        <div className="text-center">
-                            <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <UserPlus className="w-6 h-6 text-zinc-600" />
-                            </div>
-                            <h3 className="text-xl font-light text-zinc-900 mb-2">Join the Community</h3>
-                            <p className="text-zinc-500 font-light text-sm mb-6">
-                                Sign in to access exclusive events, mentorship programs, and connect with fellow developers.
-                            </p>
-
-                            <button
-                                onClick={handleGoogleLogin}
-                                className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors group"
-                            >
-                                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.56-.2-2.32H12v4.4h5.84c-.25 1.32-.98 2.44-2.04 3.2v2.55h3.3c1.92-1.77 3.03-4.38 3.03-7.13z" />
-                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-1.01 7.28-2.73l-3.3-2.55c-.9.62-2.05.98-3.98.98-3.06 0-5.66-2.06-6.6-4.84H1.04v2.62C2.84 20.42 6.72 23 12 23z" />
-                                    <path fill="#FBBC05" d="M5.4 14.08c-.43-1.26-.68-2.61-.68-4.02 0-1.41.25-2.76.68-4.02V3.46H1.04C.37 5.18 0 7.04 0 9.02c0 1.98.37 3.84 1.04 5.56l4.36-3.5z" />
-                                    <path fill="#EA4335" d="M12 6.98c1.62 0 3.06.55 4.2 1.63l3.15-3.15C17.46 3.05 14.97 2 12 2 6.72 2 2.84 4.58 1.04 8.52l4.36 3.5C6.34 9.16 8.94 6.98 12 6.98z" />
-                                </svg>
-                                <span className="text-zinc-700 font-medium group-hover:text-zinc-900">Continue with Google</span>
+                        <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-[1] tracking-tighter mb-8">
+                            Code<br />
+                            <span className="text-[#0061FE]">Sapiens</span>.
+                        </h1>
+                        <p className="text-xl md:text-2xl text-gray-400 max-w-2xl leading-relaxed mb-12 font-light">
+                            The biggest student-run tech community in TN.<br />
+                            <span className="text-white">We build the future, together.</span>
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-6">
+                            <button onClick={() => navigate('/auth')} className="bg-[#0061FE] text-white px-8 py-4 text-lg font-bold rounded-sm hover:bg-[#0050d6] transition-all flex items-center justify-center gap-3 group">
+                                Join Now <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                            <button onClick={() => document.getElementById('vision').scrollIntoView({ behavior: 'smooth' })} className="border border-gray-700 text-white px-8 py-4 text-lg font-medium rounded-sm hover:bg-white hover:text-black transition-all">
+                                Explore
                             </button>
                         </div>
                     </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Hero Section - Adjusted text sizes for better alignment on mobile/laptop */}
-            <section className="relative min-h-screen flex items-center justify-center pt-16 sm:pt-20">
-                {/* Background Pattern */}
-                <div className="absolute inset-0">
-                    <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-stone-100 transition-opacity duration-2000 opacity-100"></div>
-                    <div className="absolute inset-0" style={{
-                        backgroundImage: `radial-gradient(circle at 1px 1px, rgba(0,0,0,0.03) 1px, transparent 0)`,
-                        backgroundSize: '40px 40px'
-                    }}></div>
                 </div>
 
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className={`text-center max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto transition-all duration-1500 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
-                        {/* Main Headline */}
-                        <div className="mb-8 sm:mb-12 lg:mb-16">
-                            <div className="mb-4 sm:mb-6 lg:mb-8">
-                                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extralight tracking-wider text-zinc-900 mb-2 sm:mb-4 leading-tight">
-                                    CodeSapiens: The Biggest Student-Run Tech Community in TN.
-                                </h1>
-                                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-wider text-zinc-700 mb-4 sm:mb-6 lg:mb-8 leading-tight italic">
-                                    The only 'Inter-college students community' by the students for the students
-                                </h2>
-                            </div>
+                {/* Scroll Indicator */}
+                <motion.div
+                    animate={{ y: [0, 10, 0] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className="absolute bottom-10 left-1/2 -translate-x-1/2 text-gray-500"
+                >
+                    <ChevronDown size={32} />
+                </motion.div>
+            </section>
 
-                            <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-light text-zinc-600 mb-8 sm:mb-10 lg:mb-12 max-w-3xl mx-auto leading-relaxed tracking-wide px-4">
-                                We are here to help students build a career in Tech who say, “Perusa Pannanum, but enna Pannanum Therla” ("Want to do something big, but don't know what to do").
+            {/* Scrollytelling / Vision Section */}
+            <section id="vision" className="bg-[#F7F5F2] text-[#1E1919] py-24 md:py-32 relative">
+                {/* Connecting Line from Hero */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 h-32 w-px bg-gradient-to-b from-[#101010] to-[#0061FE]"></div>
+
+                <div className="container mx-auto px-6">
+                    <div className="grid md:grid-cols-2 gap-16 items-start">
+                        <div className="sticky top-32">
+                            <span className="text-[#0061FE] font-bold tracking-widest uppercase text-sm mb-4 block">Our Vision</span>
+                            <h2 className="text-4xl md:text-6xl font-bold mb-8 leading-tight">
+                                Not just a club.<br />
+                                A <span className="text-[#0061FE]">launchpad</span>.
+                            </h2>
+                            <p className="text-lg md:text-xl text-gray-600 leading-relaxed mb-8">
+                                Our vision is to bring students together to collaborate, share, and grow. We envision a platform managed by students, for students, where you can build your career based on your interests.
                             </p>
-
-                            <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 px-4">
-                                <button
-                                    onClick={() => navigate('/auth')}
-                                    className="group inline-flex items-center justify-center space-x-3 px-6 sm:px-8 py-3 sm:py-4 border border-zinc-300 text-zinc-700 font-light tracking-widest uppercase text-sm hover:bg-zinc-900 hover:text-zinc-50 hover:border-zinc-900 transition-all duration-500 w-full sm:w-auto"
-                                >
-                                    <span>Join Our Community</span>
-                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                                </button>
-                                <button
-                                    onClick={() => scrollToSection('events')}
-                                    className="group inline-flex items-center justify-center space-x-3 px-6 sm:px-8 py-3 sm:py-4 border border-zinc-300 text-zinc-700 font-light tracking-widest uppercase text-sm hover:bg-zinc-900 hover:text-zinc-50 hover:border-zinc-900 transition-all duration-500 w-full sm:w-auto"
-                                >
-                                    <span>View Upcoming Events</span>
-                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Our Vision Section (repurposed from Journey) - Responsive grid */}
-            <section className="py-16 sm:py-24 lg:py-32 bg-white" ref={useInView('vision').ref}>
-                <div className={`container mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-1000 ${useInView('vision').inView ? 'opacity-100' : 'opacity-0'}`}>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 lg:gap-24 items-center max-w-6xl mx-auto">
-                        <div className={`space-y-4 sm:space-y-6 lg:space-y-8 transition-all duration-1000 delay-200 ${useInView('vision').inView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'}`}>
-                            <div>
-                                <span className="text-xs sm:text-sm font-light tracking-widest uppercase text-zinc-400 mb-2 sm:mb-4 block">Our Vision</span>
-                                <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl xl:text-6xl font-extralight text-zinc-900 mb-4 sm:mb-6 lg:mb-8 leading-tight">
-                                    Our Vision
-                                </h2>
-                            </div>
-                            <p className="text-base sm:text-lg font-light text-zinc-600 leading-relaxed mb-4 sm:mb-6 lg:mb-8">
-                                Our vision is to bring our students to collaborate, share, grow and in the process have lots of fun together. We envision a platform managed and grown by students themselves, where they can build their career based on their interests and skills. We strive to Help, Empower, and ensure everything is Fun.
-                            </p>
-                        </div>
-                        <div className={`relative transition-all duration-1000 order-first lg:order-last ${useInView('vision').inView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'}`}>
-                            <img
-                                src="https://res.cloudinary.com/druvxcll9/image/upload/v1761122530/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz_3_r4kp2u.jpg"
-                                alt="Coding workspace"
-                                className="w-full h-auto rounded-lg shadow-xl transition-transform duration-700 hover:scale-105"
-                                loading="lazy"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* What We Do Section - Responsive grid */}
-            <section className="py-16 sm:py-24 lg:py-32 bg-zinc-50" ref={useInView('whatwedo').ref}>
-                <div className={`container mx-auto px-4 sm:px-6 lg:px-8 ${useInView('whatwedo').inView ? 'opacity-100' : 'opacity-0 transition-opacity duration-700'}`}>
-                    <div className="text-center mb-12 sm:mb-16 lg:mb-20 transition-all duration-1000">
-                        <span className="text-xs sm:text-sm font-light tracking-widest uppercase text-zinc-400 mb-4 sm:mb-8 block">What We Do</span>
-                        <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl xl:text-6xl font-extralight text-zinc-900 mb-6 sm:mb-8 lg:mb-12 leading-tight">
-                            What We Do
-                        </h2>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                        {activities.map((activity, index) => {
-                            const Icon = activity.icon;
-                            return (
-                                <div
-                                    key={index}
-                                    className={`bg-white p-4 sm:p-6 rounded-lg shadow-md transition-all duration-700 stagger-child ${useInView('whatwedo').inView ? 'animate-scaleIn opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-                                    style={{ animationDelay: `${index * 0.1}s` }}
-                                >
-                                    <Icon className="w-8 h-8 sm:w-12 sm:h-12 text-zinc-700 mb-3 sm:mb-4 mx-auto" />
-                                    <h3 className="text-lg sm:text-xl font-light mb-3 sm:mb-4 text-center">{activity.title}</h3>
-                                    <p className="text-zinc-600 font-light text-sm sm:text-base text-center">{activity.description}</p>
+                            <div className="grid grid-cols-2 gap-8 border-t border-gray-200 pt-8">
+                                <div>
+                                    <h3 className="text-4xl font-bold text-[#1E1919] mb-2">1500+</h3>
+                                    <p className="text-sm text-gray-500 uppercase tracking-widest">Active Members</p>
                                 </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* Stats Section - Responsive */}
-            <section className="py-16 sm:py-20 lg:py-24 bg-zinc-900 text-zinc-50" ref={useInView('stats').ref}>
-                <div className={`container mx-auto px-4 sm:px-6 lg:px-8 ${useInView('stats').inView ? 'animate-fadeInUp' : ''}`}>
-                    <div className="text-center mb-12 sm:mb-16 transition-all duration-800">
-                        <span className="text-xs sm:text-sm font-light tracking-widest uppercase text-zinc-400 mb-4 sm:mb-8 block">Our Impact</span>
-                        <h2 className="text-2xl sm:text-3xl lg:text-4xl lg:text-5xl font-extralight tracking-wide mb-4 sm:mb-6 lg:mb-8">
-                            Numbers that Matter
-                        </h2>
-                    </div>
-
-                    <div className={`grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-16 max-w-4xl mx-auto ${useInView('stats').inView ? 'opacity-100' : 'opacity-0'}`}>
-                        {stats.map((stat, index) => {
-                            const Icon = stat.icon;
-                            return (
-                                <div
-                                    key={index}
-                                    className={`text-center transition-all duration-700 stagger-child ${useInView('stats').inView ? 'animate-scaleIn opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-                                    style={{ animationDelay: `${index * 0.1}s` }}
-                                >
-                                    <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-zinc-400 mx-auto mb-3 sm:mb-4 transition-colors duration-300 hover:text-zinc-300" />
-                                    <div className="text-2xl sm:text-3xl lg:text-4xl font-extralight text-zinc-50 mb-2">{stat.number}</div>
-                                    <div className="text-zinc-400 text-xs sm:text-sm font-light tracking-widest uppercase">{stat.label}</div>
+                                <div>
+                                    <h3 className="text-4xl font-bold text-[#1E1919] mb-2">50+</h3>
+                                    <p className="text-sm text-gray-500 uppercase tracking-widest">Events Hosted</p>
                                 </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* Events Section (combined past and upcoming) - Responsive */}
-            <section
-                id="events"
-                className="py-16 sm:py-24 lg:py-32 bg-white"
-                ref={useInView('events').ref}
-            >
-                <div className={`container mx-auto px-4 sm:px-6 lg:px-8 ${useInView('events').inView ? 'opacity-100' : 'opacity-0'}`}>
-                    <div className="text-center mb-12 sm:mb-16 lg:mb-20 transition-all duration-1000">
-                        <span className="text-xs sm:text-sm font-light tracking-widest uppercase text-zinc-400 mb-4 sm:mb-8 block">Events</span>
-                        <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl xl:text-6xl font-extralight text-zinc-900 mb-6 sm:mb-8 lg:mb-12 leading-tight">
-                            Events
-                        </h2>
-                    </div>
-
-                    {/* Upcoming Events */}
-                    <div className="mb-12 sm:mb-16 lg:mb-24">
-                        <h3 className="text-xl sm:text-2xl sm:text-3xl font-light text-zinc-900 mb-6 sm:mb-8 text-center">Upcoming Events</h3>
-                        <div className="w-full max-w-4xl mx-auto">
-                            <iframe
-                                src="https://luma.com/embed/calendar/cal-UvcJfwpSBZdMc61/events"
-                                width="100%"
-                                height="400"
-                                className="sm:h-96 lg:h-[450px]"
-                                frameBorder="0"
-                                style={{ border: '1px solid #bfcbda88', borderRadius: '4px' }}
-                                allowFullScreen=""
-                                aria-hidden="false"
-                                tabIndex="0"
-                            ></iframe>
-                        </div>
-                    </div>
-
-                    {/* Past Events Gallery */}
-                    <h3 className="text-xl sm:text-2xl sm:text-3xl font-light text-zinc-900 mb-6 sm:mb-8 text-center">Past Events</h3>
-                    <div className="max-w-4xl sm:max-w-5xl mx-auto mb-8 sm:mb-12">
-                        <div className="relative overflow-hidden rounded-lg shadow-2xl">
-                            <img
-                                key={currentImageIndex}
-                                src={pastEvents[currentImageIndex].image}
-                                alt={pastEvents[currentImageIndex].title}
-                                className={`w-full h-64 sm:h-80 lg:h-96 xl:h-[500px] object-cover transition-opacity duration-800`}
-                                style={{ opacity: 1 }}
-                                loading="lazy"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                            <div className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8 text-white transition-all duration-500">
-                                <h3 className="text-xl sm:text-2xl lg:text-3xl font-light mb-1 sm:mb-2">{pastEvents[currentImageIndex].title}</h3>
-                                <p className="text-zinc-200 font-light text-sm sm:text-base">{pastEvents[currentImageIndex].date}</p>
                             </div>
                         </div>
+                        <div className="col-span-2 mt-12">
+                            <StickyScrollReveal content={visionContent} />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Stats Section - Animated & Cool */}
+            <StatsSection />
+
+            {/* Events Section - Dark Mode Contrast */}
+            <section id="events" className="py-24 md:py-32 bg-[#1E1919] text-[#F7F5F2]">
+                <div className="container mx-auto px-6">
+                    <div className="flex flex-col md:flex-row justify-between items-end mb-16">
+                        <div>
+                            <span className="text-[#0061FE] font-bold tracking-widest uppercase text-sm mb-4 block">Events</span>
+                            <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">What's Happening</h2>
+                            <p className="text-xl text-gray-400">Join us at our upcoming events.</p>
+                        </div>
+                        <button className="hidden md:flex items-center gap-2 text-[#0061FE] font-medium hover:gap-3 transition-all mt-6 md:mt-0">
+                            View all events <ArrowRight size={20} />
+                        </button>
                     </div>
 
-                    <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 ${useInView('events').inView ? 'opacity-100' : 'opacity-0 transition-opacity duration-700'}`}>
-                        {pastEvents.map((event, index) => (
-                            <div
-                                key={index}
-                                className={`group cursor-pointer transform transition-all duration-700 hover:scale-105 stagger-child ${useInView('events').inView ? 'animate-fadeIn opacity-100' : 'opacity-0'}`}
-                                onClick={() => setCurrentImageIndex(index)}
-                                style={{ animationDelay: `${index * 0.1}s` }}
+                    {/* Luma Embed */}
+                    <div className="mb-24">
+                        <iframe
+                            src="https://luma.com/embed/calendar/cal-UvcJfwpSBZdMc61/events"
+                            width="100%"
+                            height="500"
+                            className="rounded-sm border border-gray-800 shadow-2xl bg-white"
+                            frameBorder="0"
+                            allowFullScreen=""
+                            aria-hidden="false"
+                            tabIndex="0"
+                        ></iframe>
+                    </div>
+
+                    {/* Past Events Gallery - Masonry Style */}
+                    <div className="flex items-center justify-between mb-12">
+                        <h3 className="text-3xl font-bold">Community Moments</h3>
+                        <div className="flex gap-2">
+                            <button className="p-2 rounded-full border border-gray-700 hover:bg-white hover:text-black transition-colors"><ArrowRight className="rotate-180" /></button>
+                            <button className="p-2 rounded-full border border-gray-700 hover:bg-white hover:text-black transition-colors"><ArrowRight /></button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {communityPhotos.slice(0, 6).map((photo, i) => (
+                            <motion.div
+                                key={photo.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="aspect-[4/3] bg-gray-800 overflow-hidden rounded-sm relative group cursor-pointer"
                             >
-                                <div className="relative overflow-hidden bg-zinc-100 rounded-md shadow-md">
-                                    <img
-                                        src={event.image}
-                                        alt={event.title}
-                                        className="w-full aspect-square object-cover group-hover:scale-110 transition-transform duration-700"
-                                        loading="lazy"
-                                    />
-                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <img src={photo.image_url} alt={photo.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
+                                    <p className="text-white font-bold text-lg">{photo.title}</p>
+                                    <p className="text-gray-300 text-sm">{photo.date}</p>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Testimonials - Responsive */}
-                    <div className="mt-12 sm:mt-16">
-                        <h3 className="text-xl sm:text-2xl sm:text-3xl font-light text-zinc-900 mb-6 sm:mb-8 text-center">What Attendees Say</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                            {testimonials.map((testimonial, index) => (
-                                <div key={index} className="bg-zinc-50 p-4 sm:p-6 rounded-lg shadow-md">
-                                    <p className="text-zinc-600 font-light mb-4 italic text-sm sm:text-base leading-relaxed">"{testimonial.quote}"</p>
-                                    <p className="text-zinc-900 font-light text-sm sm:text-base">- {testimonial.name}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Founder Section - Responsive */}
-            <section
-                className="py-16 sm:py-24 lg:py-32 bg-zinc-50"
-                ref={useInView('founder').ref}
-            >
-                <div className={`container mx-auto px-4 sm:px-6 lg:px-8 ${useInView('founder').inView ? 'opacity-100' : 'opacity-0 transition-opacity duration-700'}`}>
-                    <div className="text-center mb-12 sm:mb-16 lg:mb-20 transition-all duration-1000">
-                        <span className="text-xs sm:text-sm font-light tracking-widest uppercase text-zinc-400 mb-4 sm:mb-8 block">Leadership</span>
-                        <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl xl:text-6xl font-extralight text-zinc-900 mb-6 sm:mb-8 lg:mb-12 leading-tight">
-                            Our <span className="italic font-light">Founder</span>
-                        </h2>
-                    </div>
-
-                    <div className="flex justify-center">
-                        <div
-                            className={`transform transition-all duration-700 hover:scale-105 cursor-pointer flex flex-col items-center text-center ${useInView('founder').inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-                            onClick={() => window.open('https://www.linkedin.com/in/thiyagab/', '_blank')}
-                        >
-                            <div className="relative group mb-3 sm:mb-4 w-full max-w-[150px] sm:max-w-[200px] md:max-w-[300px]">
-                                <div className="aspect-square overflow-hidden rounded-full shadow-xl transition-transform duration-500 group-hover:scale-105">
-                                    <img
-                                        src="https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/1679197646322_n1svjq_s5w42a.jpg"
-                                        alt="Thiyaga B"
-                                        className="w-full h-full object-cover"
-                                        loading="lazy"
-                                    />
-                                </div>
-                                <Linkedin
-                                    className="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 text-white bg-blue-700 rounded-full p-0.5 sm:p-1 md:p-2 opacity-80 group-hover:opacity-100 transition-opacity duration-300"
-                                />
-                            </div>
-                            <p className="text-base sm:text-lg md:text-2xl font-light text-zinc-900 mt-2">Thiyaga B</p>
-                            <p className="text-sm sm:text-md md:text-lg text-zinc-500 italic">Founder</p>
-                            <a
-                                href="https://www.linkedin.com/in/thiyagab/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs sm:text-sm md:text-md text-zinc-500 hover:text-zinc-700 transition-colors mt-2"
-                            >
-                                View LinkedIn
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Our Mafia Gang Section - Responsive grid */}
-            <section
-                className="py-16 sm:py-24 lg:py-32 bg-white"
-                ref={useInView('team').ref}
-            >
-                <div className={`container mx-auto px-4 sm:px-6 lg:px-8 ${useInView('team').inView ? 'opacity-100' : 'opacity-0 transition-opacity duration-700'}`}>
-                    <div className="text-center mb-12 sm:mb-16 lg:mb-20 transition-all duration-1000">
-                        <span className="text-xs sm:text-sm font-light tracking-widest uppercase text-zinc-400 mb-4 sm:mb-8 block">Community</span>
-                        <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl xl:text-6xl font-extralight text-zinc-900 mb-6 sm:mb-8 lg:mb-12 leading-tight">
-                            Our <span className="italic font-light">Mafia Gang</span>
-                        </h2>
-                        <p className="text-base sm:text-lg font-light text-zinc-600 mb-6 sm:mb-8 lg:mb-12 max-w-3xl mx-auto px-4">
-                            Meet the family and the core members who run the community. We need genuine, consistent people to lead and administer this community.
-                        </p>
-                    </div>
-
-                    <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6 max-w-6xl mx-auto ${useInView('team').inView ? 'opacity-100' : 'opacity-0'}`}>
-                        {volunteers.map((volunteer, index) => (
-                            <div
-                                key={index}
-                                className={`transform transition-all duration-700 hover:scale-105 cursor-pointer flex flex-col items-center text-center stagger-child ${useInView('team').inView ? 'animate-scaleIn opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-                                onClick={() => window.open(volunteer.link.startsWith('http') ? volunteer.link : undefined, volunteer.link.startsWith('http') ? '_blank' : undefined) || (volunteer.link && navigate(volunteer.link))}
-                                style={{ animationDelay: `${index * 0.1}s` }}
-                            >
-                                <div className="relative group mb-2 w-full max-w-[100px] sm:max-w-[120px] md:max-w-[150px]">
-                                    <div className="aspect-square overflow-hidden rounded-full shadow-md w-full transition-transform duration-500 group-hover:scale-105">
-                                        <img
-                                            src={volunteer.photo}
-                                            alt={volunteer.name}
-                                            className="w-full h-full object-cover"
-                                            loading="lazy"
-                                        />
-                                    </div>
-                                    <Linkedin
-                                        className="absolute bottom-0.5 sm:bottom-1 right-0.5 sm:right-1 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white bg-blue-700 rounded-full p-0.5 sm:p-0.5 md:p-1 opacity-80 group-hover:opacity-100 transition-opacity duration-300"
-                                    />
-                                </div>
-                                <p className="text-xs sm:text-sm font-light text-zinc-900 mt-1 line-clamp-2 text-center px-1">{volunteer.name}</p>
-                                <a
-                                    href={volunteer.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-zinc-500 hover:text-zinc-700 transition-colors mt-1 hidden sm:block"
-                                >
-                                    View Profile
-                                </a>
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Footer Section - Single column for better mobile, updated social links */}
-            <section
-                id="contact"
-                className="py-16 sm:py-24 lg:py-32 bg-zinc-900 text-zinc-50"
-                ref={useInView('contact').ref}
-            >
-                <div className={`container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto ${useInView('contact').inView ? 'opacity-100' : 'opacity-0 transition-opacity duration-700'}`}>
-                    <div className="text-center mb-12 sm:mb-16 transition-all duration-1000">
-                        <span className="text-xs sm:text-sm font-light tracking-widest uppercase text-zinc-400 mb-4 sm:mb-8 block">CodeSapiens</span>
-                        <h2 className="text-2xl sm:text-3xl lg:text-4xl lg:text-5xl font-extralight tracking-wide mb-4 sm:mb-6 lg:mb-8">
-                            Building <span className="italic">Community</span> since
-                        </h2>
-                        <div className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extralight text-zinc-400 mb-6 sm:mb-8 lg:mb-12">©2023</div>
+            {/* Hall of Fame - Big Bold Typography */}
+            <section className="py-32 bg-[#0061FE] text-white overflow-hidden relative">
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+                <div className="container mx-auto px-6 relative z-10">
+                    <div className="text-center mb-20">
+                        <h2 className="text-5xl md:text-7xl font-bold mb-6">Hall of Fame</h2>
+                        <p className="text-xl md:text-2xl text-white/80 max-w-3xl mx-auto">Celebrating the outstanding achievements of our community members.</p>
                     </div>
 
-                    {/* Social Media - Single column responsive */}
-                    <div className="space-y-6 mx-auto transition-all duration-700 text-center">
-                        <h3 className="text-lg sm:text-xl font-light tracking-wide mb-6">Follow</h3>
-                        <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-6">
-                            {[
-                                { icon: Linkedin, href: "https://www.linkedin.com/company/codesapiens-community/posts/", label: "LinkedIn" },
-                                { icon: Github, href: "https://github.com/Codesapiens-in", label: "Github" },
-                                { icon: Youtube, href: "https://youtube.com/@codesapiens-in?si=90EaPMYHcSZIHtMi", label: "Youtube" },
-                                { icon: Users2, href: "https://discord.gg/codesapiens", label: "Discord" }
-                            ].map((social, index) => {
-                                const Icon = social.icon;
-                                return (
-                                    <a
-                                        key={index}
-                                        href={social.href}
-                                        className="flex items-center justify-center space-x-3 text-sm font-light text-zinc-300 hover:text-zinc-50 transition-colors duration-300 stagger-child w-full sm:w-auto"
-                                        style={{ animationDelay: `${index * 0.1}s` }}
-                                    >
-                                        <Icon className="w-4 h-4 transition-transform duration-300 hover:scale-110" />
-                                        <span>{social.label}</span>
+                    <div className="flex flex-wrap justify-center gap-10">
+                        {hallOfFameEntries.map((entry, i) => (
+                            <motion.div
+                                key={entry.id}
+                                initial={{ opacity: 0, y: 50 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="bg-white text-[#1E1919] p-1 rounded-sm shadow-xl w-full max-w-xs transform hover:-translate-y-2 transition-transform duration-300"
+                            >
+                                <div className="h-64 overflow-hidden bg-gray-200 mb-4">
+                                    <img src={entry.image_url} alt={entry.student_name} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="px-6 pb-8 text-center">
+                                    <h3 className="text-2xl font-bold mb-2">{entry.student_name}</h3>
+                                    <div className="w-12 h-1 bg-[#0061FE] mx-auto mb-4"></div>
+                                    <p className="text-gray-600 text-sm italic leading-relaxed">"{entry.description}"</p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Team / Mafia Gang */}
+            <section id="community" className="py-24 md:py-32 bg-[#F7F5F2] text-[#1E1919]">
+                <div className="container mx-auto px-6 text-center">
+                    <span className="text-[#0061FE] font-bold tracking-widest uppercase text-sm mb-4 block">Community</span>
+                    <h2 className="text-4xl md:text-6xl font-bold mb-6">The Mafia Gang</h2>
+                    <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-20">
+                        Meet the core members who run the community. We are students, just like you.
+                    </p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-12 gap-x-8">
+                        {/* Founder */}
+                        <div className="col-span-2 md:col-span-1 flex flex-col items-center group">
+                            <div className="w-40 h-40 rounded-full overflow-hidden mb-6 border-4 border-[#FA5D00] shadow-lg group-hover:scale-105 transition-transform">
+                                <img src="https://res.cloudinary.com/druvxcll9/image/upload/v1761122517/1679197646322_n1svjq_s5w42a.jpg" alt="Thiyaga B" className="w-full h-full object-cover" />
+                            </div>
+                            <h3 className="font-bold text-xl mb-1">Thiyaga B</h3>
+                            <p className="text-[#FA5D00] text-sm font-bold uppercase tracking-widest mb-3">Founder</p>
+                            <a href="https://www.linkedin.com/in/thiyagab/" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-[#0061FE] transition-colors"><Linkedin size={20} /></a>
+                        </div>
+
+                        {volunteers.map((vol, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.05 }}
+                                className="flex flex-col items-center group"
+                            >
+                                <div className="w-32 h-32 rounded-full overflow-hidden mb-5 grayscale group-hover:grayscale-0 transition-all duration-500 border-2 border-transparent group-hover:border-[#0061FE] shadow-md">
+                                    <img src={vol.photo} alt={vol.name} className="w-full h-full object-cover" />
+                                </div>
+                                <h3 className="font-bold text-lg mb-1">{vol.name}</h3>
+                                {vol.link && (
+                                    <a href={vol.link} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-[#0061FE] transition-colors mt-2">
+                                        <Linkedin size={18} />
                                     </a>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Footer Links - Responsive flex */}
-                    <div className="text-center pt-12 sm:pt-16 mt-12 sm:mt-16 border-t border-zinc-800 transition-all duration-700">
-                        <div className="flex flex-wrap justify-center space-x-4 sm:space-x-6 mb-4 px-4">
-                            <a href="#vision" className="text-zinc-300 hover:text-zinc-50 text-sm font-light py-1">About Us</a>
-                            <a href="#events" className="text-zinc-300 hover:text-zinc-50 text-sm font-light py-1">Events</a>
-                            <a href="#contact" className="text-zinc-300 hover:text-zinc-50 text-sm font-light py-1">Contact Us</a>
-                            <a href="/privacy" className="text-zinc-300 hover:text-zinc-50 text-sm font-light py-1">Privacy Policy</a>
-                            <a href="/terms" className="text-zinc-300 hover:text-zinc-50 text-sm font-light py-1">Terms of Use</a>
-                        </div>
-                        <p className="text-xs font-light text-zinc-500 tracking-wider">
-                            © 2025 CodeSapiens. All rights reserved.
-                        </p>
+                                )}
+                            </motion.div>
+                        ))}
                     </div>
                 </div>
             </section>
+
+            {/* Footer */}
+            <footer className="bg-[#101010] text-gray-400 py-16 border-t border-gray-900">
+                <div className="container mx-auto px-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-12">
+                        <div className="max-w-sm">
+                            <div className="flex items-center gap-2 mb-6">
+                                <div className="w-6 h-6 bg-[#0061FE] rounded-sm"></div>
+                                <span className="text-2xl font-bold text-white tracking-tight">CodeSapiens</span>
+                            </div>
+                            <p className="text-gray-500 leading-relaxed mb-8">
+                                Empowering students to build, learn, and grow together. Join the biggest student tech community in Tamil Nadu.
+                            </p>
+                            <div className="flex gap-6">
+                                <a href="https://github.com/Codesapiens-in" className="text-gray-400 hover:text-white transition-colors"><Github size={20} /></a>
+                                <a href="https://www.linkedin.com/company/codesapiens-community/posts/" className="text-gray-400 hover:text-white transition-colors"><Linkedin size={20} /></a>
+                                <a href="https://youtube.com/@codesapiens-in?si=90EaPMYHcSZIHtMi" className="text-gray-400 hover:text-white transition-colors"><Youtube size={20} /></a>
+                                <a href="https://discord.gg/codesapiens" className="text-gray-400 hover:text-white transition-colors"><Users size={20} /></a>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-16">
+                            <div>
+                                <h4 className="text-white font-bold mb-6">Community</h4>
+                                <ul className="space-y-4 text-sm">
+                                    <li><a href="#vision" className="hover:text-[#0061FE] transition-colors">About Us</a></li>
+                                    <li><a href="#events" className="hover:text-[#0061FE] transition-colors">Events</a></li>
+                                    <li><a href="#community" className="hover:text-[#0061FE] transition-colors">Team</a></li>
+                                    <li><a href="#" className="hover:text-[#0061FE] transition-colors">Join Discord</a></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold mb-6">Legal</h4>
+                                <ul className="space-y-4 text-sm">
+                                    <li><a href="#" className="hover:text-[#0061FE] transition-colors">Privacy Policy</a></li>
+                                    <li><a href="#" className="hover:text-[#0061FE] transition-colors">Terms of Service</a></li>
+                                    <li><a href="#" className="hover:text-[#0061FE] transition-colors">Code of Conduct</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-16 pt-8 border-t border-gray-900 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600">
+                        <p>© 2025 CodeSapiens Community. All rights reserved.</p>
+                        <p>Designed & Built by Students.</p>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 };

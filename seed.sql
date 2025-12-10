@@ -349,6 +349,41 @@ ALTER TABLE IF EXISTS public.mentorship_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.mentorship_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.blogs ENABLE ROW LEVEL SECURITY;
 
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blogs' AND policyname = 'blogs_select_published') THEN
+    CREATE POLICY blogs_select_published ON public.blogs FOR SELECT TO anon, authenticated USING (status = 'published');
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blogs' AND policyname = 'blogs_select_admin') THEN
+    CREATE POLICY blogs_select_admin ON public.blogs FOR SELECT TO authenticated USING (public.is_admin());
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blogs' AND policyname = 'blogs_insert_admin') THEN
+    CREATE POLICY blogs_insert_admin ON public.blogs FOR INSERT TO authenticated WITH CHECK (public.is_admin());
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blogs' AND policyname = 'blogs_update_admin') THEN
+    CREATE POLICY blogs_update_admin ON public.blogs FOR UPDATE TO authenticated USING (public.is_admin());
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blogs' AND policyname = 'blogs_delete_admin') THEN
+    CREATE POLICY blogs_delete_admin ON public.blogs FOR DELETE TO authenticated USING (public.is_admin());
+  END IF;
+END$$;
+
 -- Note: storage.objects RLS is already enabled by Supabase. DO NOT run ALTER TABLE on it.
 
 -- --- Policies for Public Tables ---
@@ -398,6 +433,11 @@ BEGIN
   END IF;
 END$$;
 
+-- Ensure the bucket exists
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('user-uploads', 'user-uploads', true)
+ON CONFLICT (id) DO NOTHING;
+
 -- =========================
 -- 6) Custom Trigger Functions
 -- =========================
@@ -422,3 +462,90 @@ BEGIN
   RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =========================
+-- 7) Hall of Fame Table
+-- =========================
+CREATE TABLE IF NOT EXISTS public.hall_of_fame (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  image_url text NOT NULL,
+  student_name text,
+  description text,
+  created_at timestamptz DEFAULT now(),
+  is_active boolean DEFAULT true
+);
+
+ALTER TABLE IF EXISTS public.hall_of_fame ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hall_of_fame' AND policyname = 'hall_of_fame_select_all') THEN
+    CREATE POLICY hall_of_fame_select_all ON public.hall_of_fame FOR SELECT TO anon, authenticated USING (true);
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hall_of_fame' AND policyname = 'hall_of_fame_insert_admin') THEN
+    CREATE POLICY hall_of_fame_insert_admin ON public.hall_of_fame FOR INSERT TO anon, authenticated WITH CHECK (true);
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hall_of_fame' AND policyname = 'hall_of_fame_update_admin') THEN
+    CREATE POLICY hall_of_fame_update_admin ON public.hall_of_fame FOR UPDATE TO authenticated USING (public.is_admin());
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'hall_of_fame' AND policyname = 'hall_of_fame_delete_admin') THEN
+    CREATE POLICY hall_of_fame_delete_admin ON public.hall_of_fame FOR DELETE TO authenticated USING (public.is_admin());
+  END IF;
+END$$;
+
+-- =========================
+-- 8) Community Photos Table
+-- =========================
+CREATE TABLE IF NOT EXISTS public.community_photos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  image_url text NOT NULL,
+  date text,
+  description text,
+  participants integer DEFAULT 0,
+  order_number integer DEFAULT 0,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE IF EXISTS public.community_photos ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'community_photos' AND policyname = 'community_photos_select_all') THEN
+    CREATE POLICY community_photos_select_all ON public.community_photos FOR SELECT TO anon, authenticated USING (true);
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'community_photos' AND policyname = 'community_photos_insert_admin') THEN
+    CREATE POLICY community_photos_insert_admin ON public.community_photos FOR INSERT TO anon, authenticated WITH CHECK (true);
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'community_photos' AND policyname = 'community_photos_update_admin') THEN
+    CREATE POLICY community_photos_update_admin ON public.community_photos FOR UPDATE TO authenticated USING (public.is_admin());
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'community_photos' AND policyname = 'community_photos_delete_admin') THEN
+    CREATE POLICY community_photos_delete_admin ON public.community_photos FOR DELETE TO authenticated USING (public.is_admin());
+  END IF;
+END$$;

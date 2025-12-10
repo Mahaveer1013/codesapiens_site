@@ -6,7 +6,7 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const API_BASE_URL = 'https://colleges-name-api.vercel.app';
+const API_BASE_URL = 'http://localhost:3001';
 
 const AdminBlogEmailer = () => {
     const { id } = useParams();
