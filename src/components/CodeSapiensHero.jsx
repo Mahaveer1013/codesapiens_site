@@ -194,7 +194,7 @@ const CodeSapiensHero = () => {
             <nav className="fixed top-0 w-full z-50 mix-blend-difference text-white">
                 <div className="container mx-auto px-6 py-6 flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-[#0061FE] rounded-sm"></div>
+                        <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1756797708/WhatsApp_Image_2025-09-02_at_12.45.18_b15791ea_rnlwrz.jpg" alt="CodeSapiens Logo" className="w-10 h-10 rounded-full object-cover" />
                         <span className="text-xl font-bold tracking-tight">CodeSapiens</span>
                     </div>
 
@@ -281,12 +281,16 @@ const CodeSapiensHero = () => {
                         className="max-w-4xl"
                     >
                         <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-[1] tracking-tighter mb-8">
-                            Code<br />
-                            <span className="text-[#0061FE]">Sapiens</span>.
+                            Code<span className="text-[#0061FE]">Sapiens</span>.
                         </h1>
-                        <p className="text-xl md:text-2xl text-gray-400 max-w-2xl leading-relaxed mb-12 font-light">
-                            The biggest student-run tech community in TN.<br />
-                            <span className="text-white">We build the future, together.</span>
+                        <p className="text-xl md:text-2xl text-gray-400 max-w-3xl leading-relaxed mb-12 font-light">
+                            The Biggest Student-Run Tech Community in TN.<br />
+                            <span className="text-white block mt-2">The only 'Inter-college students community' by the students for the students</span>
+                            <span className="text-gray-400 block mt-4 text-lg italic">
+                                We are here to help students build a career in Tech who say, <br />
+                                <span className="text-white not-italic">“Perusa Pannanum, but enna Pannanum Therla”</span> <br />
+                                ("Want to do something big, but don't know what to do").
+                            </span>
                         </p>
                         <div className="flex flex-col sm:flex-row gap-6">
                             <button onClick={() => navigate('/auth')} className="bg-[#0061FE] text-white px-8 py-4 text-lg font-bold rounded-sm hover:bg-[#0050d6] transition-all flex items-center justify-center gap-3 group">
@@ -336,6 +340,16 @@ const CodeSapiensHero = () => {
                                 </div>
                             </div>
                         </div>
+                        <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200">
+                            <video
+                                src="https://res.cloudinary.com/dqudvximt/video/upload/v1765443313/66c503d081b2f012369fc5d2_674798e5512046ff64125032_Collaboration_Top-Down_Table-transcode_jgafvj.mp4"
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
                         <div className="col-span-2 mt-12">
                             <StickyScrollReveal content={visionContent} />
                         </div>
@@ -383,19 +397,32 @@ const CodeSapiensHero = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {communityPhotos.slice(0, 6).map((photo, i) => (
                             <motion.div
                                 key={photo.id}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
+                                initial={{ opacity: 0, rotate: -2 }}
+                                whileInView={{ opacity: 1, rotate: (i % 2 === 0 ? 2 : -2) }}
                                 transition={{ delay: i * 0.1 }}
-                                className="aspect-[4/3] bg-gray-800 overflow-hidden rounded-sm relative group cursor-pointer"
+                                className="relative group cursor-pointer"
+                                style={{ transform: `rotate(${i % 2 === 0 ? 2 : -2}deg)` }}
                             >
-                                <img src={photo.image_url} alt={photo.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
-                                    <p className="text-white font-bold text-lg">{photo.title}</p>
-                                    <p className="text-gray-300 text-sm">{photo.date}</p>
+                                {/* Sticky Note Card */}
+                                <div className="bg-[#FFFBEA] border-2 border-[#D4A574] shadow-lg p-3 rounded-sm transform hover:scale-105 hover:rotate-0 transition-all duration-300 relative">
+                                    {/* Tape Effects */}
+                                    <div className="absolute -top-3 -left-3 w-16 h-6 bg-gradient-to-b from-amber-200/80 to-amber-300/60 rounded-sm shadow-sm z-20" style={{ transform: 'rotate(-45deg)' }}></div>
+                                    <div className="absolute -bottom-3 -right-3 w-16 h-6 bg-gradient-to-b from-amber-200/80 to-amber-300/60 rounded-sm shadow-sm z-20" style={{ transform: 'rotate(-45deg)' }}></div>
+
+                                    {/* Photo */}
+                                    <div className="aspect-[4/3] overflow-hidden rounded-sm mb-3 border border-[#D4A574]/50 relative z-10">
+                                        <img src={photo.image_url} alt={photo.title} className="w-full h-full object-cover" />
+                                    </div>
+
+                                    {/* Info - Always Visible */}
+                                    <div className="text-[#1E1919] relative z-10">
+                                        <p className="font-bold text-lg mb-1" style={{ fontFamily: 'Georgia, serif' }}>{photo.title}</p>
+                                        <p className="text-sm text-gray-600">{photo.description || photo.date}</p>
+                                    </div>
                                 </div>
                             </motion.div>
                         ))}
