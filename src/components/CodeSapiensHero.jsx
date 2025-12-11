@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ChevronDown, Menu, X, Github, Linkedin, Youtube, Users, Calendar, Code, Award } from 'lucide-react';
+import { BACKEND_URL } from '../config';
 
 // --- Stats Section ---
 const StatsSection = () => {
@@ -10,7 +11,7 @@ const StatsSection = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('http://localhost:3001/api/public-stats')
+        fetch(`${BACKEND_URL}/api/public-stats`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -75,25 +76,32 @@ const StatsSection = () => {
                             <Code className="text-[#0061FE]" /> Top Active Colleges
                         </h4>
                         <div className="space-y-4">
-                            {stats.topColleges.length > 0 ? (
-                                stats.topColleges.map((college, index) => (
-                                    <div key={index} className="relative">
-                                        <div className="flex justify-between text-sm mb-1">
-                                            <span className="font-medium text-gray-300 truncate w-3/4">{college.name}</span>
-                                            <span className="text-[#0061FE] font-bold">{college.count}</span>
-                                        </div>
-                                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                whileInView={{ width: `${(college.count / stats.topColleges[0].count) * 100}%` }}
-                                                transition={{ duration: 1, delay: index * 0.1 }}
-                                                className="h-full bg-gradient-to-r from-[#0061FE] to-[#00C6F7] rounded-full"
-                                            />
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
+                            {loading ? (
                                 <div className="text-center text-gray-500 py-10">Loading stats...</div>
+                            ) : stats.topColleges.filter(c => c.name && c.name !== "Not specified").length > 0 ? (
+                                stats.topColleges
+                                    .filter(c => c.name && c.name !== "Not specified")
+                                    .map((college, index) => (
+                                        <div key={index} className="relative">
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="font-medium text-gray-300 truncate w-3/4">{college.name}</span>
+                                                <span className="text-[#0061FE] font-bold">{college.count}</span>
+                                            </div>
+                                            <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    whileInView={{ width: `${(college.count / stats.topColleges[0].count) * 100}%` }}
+                                                    transition={{ duration: 1, delay: index * 0.1 }}
+                                                    className="h-full bg-gradient-to-r from-[#0061FE] to-[#00C6F7] rounded-full"
+                                                />
+                                            </div>
+                                        </div>
+                                    ))
+                            ) : (
+                                <div className="text-center text-gray-500 py-10">
+                                    <p>Stats currently unavailable</p>
+                                    <p className="text-xs mt-2">Backend: {BACKEND_URL}</p>
+                                </div>
                             )}
                         </div>
                     </div>
