@@ -54,6 +54,8 @@ import AdminBlogEditor from './admin/AdminBlogEditor';
 import AdminBlogEmailer from './admin/AdminBlogEmailer';
 import BlogListPage from './components/BlogListPage';
 import BlogDetail from './user/BlogDetail';
+import AdminHallOfFame from './admin/AdminHallOfFame';
+import AdminCommunityPhotos from './admin/AdminCommunityPhotos';
 
 
 const AnimatedRoutes = () => {
@@ -100,6 +102,12 @@ const AnimatedRoutes = () => {
         <Route path="/admin/blog/email/:id" element={<PageTransition><AdminBlogEmailer /></PageTransition>} />
         <Route path="/blogs" element={<PageTransition><BlogListPage /></PageTransition>} />
         <Route path="/blog/:slug" element={<PageTransition><BlogDetail /></PageTransition>} />
+
+        {/* Hall of Fame */}
+        <Route path="/admin/hall-of-fame" element={<PageTransition><AdminHallOfFame /></PageTransition>} />
+
+        {/* Community Photos */}
+        <Route path="/admin/community-photos" element={<PageTransition><AdminCommunityPhotos /></PageTransition>} />
 
         <Route path="*" element={<PageTransition><NotFoundPage /></PageTransition>} />
       </Routes>
