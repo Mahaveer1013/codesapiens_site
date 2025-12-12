@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, BarChart3, Loader2, X, Award, Image } from 'lucide-react';
+import { Users, Search, BarChart3, Loader2, X, Award, Image, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
@@ -178,7 +178,15 @@ const Dashboard = () => {
       label: "Community Photos",
       shortLabel: "Photos",
       color: "bg-teal-600 hover:bg-teal-700",
+      color: "bg-teal-600 hover:bg-teal-700",
       onClick: () => navigate('/admin/community-photos')
+    },
+    {
+      icon: MessageSquare,
+      label: "User Feedback",
+      shortLabel: "Feedback",
+      color: "bg-pink-600 hover:bg-pink-700",
+      onClick: () => navigate('/admin/feedback')
     }
   ];
 

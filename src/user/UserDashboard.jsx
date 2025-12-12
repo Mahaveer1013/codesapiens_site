@@ -125,6 +125,7 @@ const TransitionOverlay = ({ data, onComplete }) => {
 };
 
 import CompleteProfileDialog from "../components/CompleteProfileDialog";
+import FeedbackPopup from "../components/FeedbackPopup";
 
 export default function UserDashboard() {
   const user = useUser();
@@ -133,6 +134,7 @@ export default function UserDashboard() {
   const [meetups, setMeetups] = useState([]);
   const [showBlogPopup, setShowBlogPopup] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
   const navigate = useNavigate();
 
   // Transition State
@@ -143,6 +145,28 @@ export default function UserDashboard() {
     y: 0,
     path: ""
   });
+
+  // Show Feedback Popup after 10 seconds (if not given in last 10 days)
+  useEffect(() => {
+    if (!userData) return;
+
+    const checkFeedbackEligibility = () => {
+      if (!userData.last_feedback_at) return true;
+
+      const lastFeedback = new Date(userData.last_feedback_at);
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
+      return lastFeedback < tenDaysAgo;
+    };
+
+    if (checkFeedbackEligibility()) {
+      const timer = setTimeout(() => {
+        setShowFeedbackPopup(true);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [userData]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -172,7 +196,10 @@ export default function UserDashboard() {
             points: profile.points || 1250,
             college: profile.college, // Keep raw value
             department: profile.department,
-            year: profile.year
+            department: profile.department,
+            year: profile.year,
+            uid: profile.uid, // Add uid to userData for FeedbackPopup
+            last_feedback_at: profile.last_feedback_at
           });
 
           // Check if profile is incomplete
@@ -501,7 +528,21 @@ export default function UserDashboard() {
 
       {/* Blog Popup */}
       <AnimatePresence>
-        {showBlogPopup && <BlogPopup onClose={() => setShowBlogPopup(false)} />}
+        {showBlogPopup && (
+          <BlogPopup
+            onClose={() => setShowBlogPopup(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Feedback Popup */}
+      <AnimatePresence>
+        {showFeedbackPopup && userData && (
+          <FeedbackPopup
+            userId={userData.uid}
+            onClose={() => setShowFeedbackPopup(false)}
+          />
+        )}
       </AnimatePresence>
 
       {/* Profile Completion Dialog */}

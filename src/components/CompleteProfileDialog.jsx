@@ -19,6 +19,7 @@ const CompleteProfileDialog = ({ isOpen, onClose, userId, onComplete, initialDat
     const [colleges, setColleges] = useState([]);
     const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
     const [collegeLoading, setCollegeLoading] = useState(false);
+    const [lastSelectedCollege, setLastSelectedCollege] = useState("");
     const collegeInputRef = useRef(null);
     const collegeDropdownRef = useRef(null);
 
@@ -30,6 +31,7 @@ const CompleteProfileDialog = ({ isOpen, onClose, userId, onComplete, initialDat
                 year: initialData.year || ''
             });
             setCollegeSearch(initialData.college || '');
+            setLastSelectedCollege(initialData.college || '');
         }
     }, [initialData]);
 
@@ -51,7 +53,7 @@ const CompleteProfileDialog = ({ isOpen, onClose, userId, onComplete, initialDat
 
     // College Search Effect
     useEffect(() => {
-        if (collegeSearch.length < 3 || collegeSearch === formData.college) {
+        if (collegeSearch.length < 3 || collegeSearch === lastSelectedCollege) {
             setShowCollegeDropdown(false);
             setColleges([]);
             return;
@@ -93,11 +95,12 @@ const CompleteProfileDialog = ({ isOpen, onClose, userId, onComplete, initialDat
 
         const timeoutId = setTimeout(fetchColleges, 300);
         return () => clearTimeout(timeoutId);
-    }, [collegeSearch]);
+    }, [collegeSearch, lastSelectedCollege]);
 
     const handleCollegeSelect = (collegeName) => {
         setFormData(prev => ({ ...prev, college: collegeName }));
         setCollegeSearch(collegeName);
+        setLastSelectedCollege(collegeName);
         setShowCollegeDropdown(false);
     };
 
