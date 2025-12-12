@@ -57,6 +57,7 @@ import BlogListPage from './components/BlogListPage';
 import BlogDetail from './user/BlogDetail';
 import AdminHallOfFame from './admin/AdminHallOfFame';
 import AdminCommunityPhotos from './admin/AdminCommunityPhotos';
+import AdminFeedbackList from './admin/AdminFeedbackList';
 
 
 const AnimatedRoutes = () => {
@@ -109,6 +110,7 @@ const AnimatedRoutes = () => {
 
         {/* Community Photos */}
         <Route path="/admin/community-photos" element={<PageTransition><AdminCommunityPhotos /></PageTransition>} />
+        <Route path="/admin/feedback" element={<PageTransition><AdminFeedbackList /></PageTransition>} />
 
         <Route path="*" element={<PageTransition><NotFoundPage /></PageTransition>} />
       </Routes>
@@ -138,6 +140,9 @@ function Root() {
           <Routes>
             <Route path="/" element={<CodeSapiensHero />} />
             <Route path="/auth" element={<AuthForm />} />
+            <Route path="/admin/hall-of-fame" element={<AdminHallOfFame />} />
+            <Route path="/admin/community-photos" element={<AdminCommunityPhotos />} />
+            <Route path="/admin/feedback" element={<AdminFeedbackList />} />
             <Route path="/profile/:username" element={<PublicProfile />} />
 
             <Route path="/forgot-password" element={<ResetPassword />} />
