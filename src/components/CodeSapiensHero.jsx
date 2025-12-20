@@ -145,8 +145,8 @@ const CodeSapiensHero = () => {
             title: "Meetups",
             description: "Offline events and mini-hackathons where you build and launch projects in minutes. Connect with like-minded peers.",
             content: (
-                <div className="h-full w-full bg-[#0061FE] flex items-center justify-center text-white p-0">
-                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1765446924/Gemini_Generated_Image_g1g8reg1g8reg1g8_aqqe3e.png" alt="Meetups" className="w-full h-full object-cover" />
+                <div className="h-full w-full flex items-center justify-center p-4">
+                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1766237324/535075304196Creating_Application_ltgkv8.gif" alt="Meetups" className="max-w-full max-h-full object-contain" />
                 </div>
             )
         },
@@ -154,8 +154,8 @@ const CodeSapiensHero = () => {
             title: "Hackathons",
             description: "Fun, minimal hackathons to get hands-on experience and win prizes. Push your limits and build something amazing.",
             content: (
-                <div className="h-full w-full bg-[#9B0032] flex items-center justify-center text-white p-0">
-                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1765446926/Gemini_Generated_Image_7vm7h67vm7h67vm7_ixfxbu.png" alt="Hackathons" className="w-full h-full object-cover" />
+                <div className="h-full w-full flex items-center justify-center p-4">
+                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1766237519/717277059554Digital_Portal_lcpxdz.gif" alt="Hackathons" className="max-w-full max-h-full object-contain" />
                 </div>
             )
         },
@@ -163,17 +163,8 @@ const CodeSapiensHero = () => {
             title: "Nurturing Talent",
             description: "We help you discover your interests and build a unique profile that stands out. Mentorship from seniors and industry experts.",
             content: (
-                <div className="h-full w-full bg-[#FA5D00] flex items-center justify-center text-white p-0">
-                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1765446901/Gemini_Generated_Image_j2rd2bj2rd2bj2rd_h2pygn.png" alt="Nurturing Talent" className="w-full h-full object-cover" />
-                </div>
-            )
-        },
-        {
-            title: "Curated Sessions",
-            description: "Practical skills, code examples, and presentations based on community feedback. Learn what matters.",
-            content: (
-                <div className="h-full w-full bg-purple-600 flex items-center justify-center text-white p-0">
-                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1765446916/Gemini_Generated_Image_3or3oi3or3oi3or3_htqozy.png" alt="Curated Sessions" className="w-full h-full object-cover" />
+                <div className="h-full w-full flex items-center justify-center p-4">
+                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1766237583/209622909016Secure_Data_rbqrqq.gif" alt="Nurturing Talent" className="max-w-full max-h-full object-contain" />
                 </div>
             )
         }
@@ -334,7 +325,7 @@ const CodeSapiensHero = () => {
                             </div>
                         </div>
 
-                        <div className="relative h-64 md:h-96 w-full rounded-lg overflow-hidden shadow-lg border border-gray-200">
+                        <div className="relative h-72 sm:h-80 md:h-96 w-full rounded-lg overflow-hidden shadow-lg border border-gray-200 mt-8 md:mt-0">
                             <video
                                 src="https://res.cloudinary.com/dqudvximt/video/upload/v1765443313/66c503d081b2f012369fc5d2_674798e5512046ff64125032_Collaboration_Top-Down_Table-transcode_jgafvj.mp4"
                                 autoPlay
@@ -346,7 +337,7 @@ const CodeSapiensHero = () => {
                         </div>
 
                         <div className="col-span-2 mt-12">
-                            <div className="space-y-20">
+                            <div className="space-y-16 md:space-y-24">
                                 {visionContent.map((item, index) => (
                                     <motion.div
                                         key={index}
@@ -354,13 +345,13 @@ const CodeSapiensHero = () => {
                                         whileInView={{ opacity: 1, y: 0 }}
                                         viewport={{ once: true }}
                                         transition={{ delay: index * 0.1 }}
-                                        className="flex flex-col md:flex-row gap-10 items-center"
+                                        className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 md:gap-12 items-center`}
                                     >
-                                        <div className="flex-1">
-                                            <h3 className="text-3xl font-bold mb-4 text-[#1E1919]">{item.title}</h3>
-                                            <p className="text-lg text-gray-600 leading-relaxed">{item.description}</p>
+                                        <div className="w-full md:w-2/5 text-center md:text-left">
+                                            <h3 className="text-2xl md:text-3xl font-bold mb-3 md:mb-4 text-[#1E1919]">{item.title}</h3>
+                                            <p className="text-base md:text-lg text-gray-600 leading-relaxed">{item.description}</p>
                                         </div>
-                                        <div className="flex-1 h-64 w-full rounded-lg overflow-hidden shadow-lg transform hover:scale-105 transition-transform duration-300">
+                                        <div className="w-full md:w-3/5 h-56 sm:h-72 md:h-80 rounded-xl overflow-hidden shadow-xl transform hover:scale-[1.02] transition-transform duration-300">
                                             {item.content}
                                         </div>
                                     </motion.div>
