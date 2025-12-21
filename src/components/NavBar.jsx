@@ -440,6 +440,11 @@ export default function NavBar() {
                   <span>Resources</span>
                 </button>
 
+                <button onClick={() => { setIsProfileDropdownOpen(false); navigate('/resume-analyzer'); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
+                  <BrainCircuit className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span>Resume Analyze</span>
+                </button>
+
                 <button onClick={() => { setIsProfileDropdownOpen(false); navigate('/mentorship'); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
                   <BrainCircuit className="w-4 h-4 mr-3 flex-shrink-0" />
                   <span>Mentorship</span>

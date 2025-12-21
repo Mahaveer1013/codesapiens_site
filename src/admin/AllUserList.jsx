@@ -19,7 +19,7 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf'; // Use specific import for pdfjs-dist
-import AdminLayout from '../components/AdminLayout';
+import ReactMarkdown from 'react-markdown';
 
 const AllUserList = () => {
   const [users, setUsers] = useState([]);
@@ -37,11 +37,11 @@ const AllUserList = () => {
   const usersPerPage = 10;
 
   // Gemini API Key (Store securely in environment variables in production)
-  const GEMINI_API_KEY = 'AIzaSyD-q7Ky0_NIz7x1mjp458yNRVZYVw0HEbk';
-  const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+  const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+  const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
   // Configure pdf.js worker to match version 3.11.174
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
 
   // Format date function
   const formatDate = (dateString) => {
@@ -195,7 +195,12 @@ const AllUserList = () => {
           }
 
           // Send extracted text to Gemini AI
-          const prompt = `Analyze the following resume text and provide detailed feedback on its quality, structure, and content. Highlight strengths, weaknesses, and suggestions for improvement. Also, assign a score from 0 to 100 based on its overall effectiveness. Return the response in JSON format with fields "feedback" (string) and "score" (number).
+          if (!GEMINI_API_KEY) {
+            console.error('Gemini API Key is missing');
+            throw new Error('Gemini API Key is not configured. Please check your .env file and restart the server.');
+          }
+
+          const prompt = `Analyze the following resume text and provide detailed feedback on its quality, structure, and content. Highlight strengths, weaknesses, and suggestions for improvement. Also, assign a score from 0 to 100 based on its overall effectiveness. Return ONLY the raw JSON response (no markdown formatting) with fields "feedback" (string) and "score" (number).
 
 Resume text:
 ${text}`;
@@ -215,17 +220,27 @@ ${text}`;
           });
 
           if (!response.ok) {
-            throw new Error(`Gemini API error: ${response.statusText}`);
+            const errorText = await response.text();
+            console.error('Gemini API Error Details:', {
+              status: response.status,
+              statusText: response.statusText,
+              body: errorText
+            });
+            throw new Error(`Gemini API error: ${response.status} ${response.statusText} - ${errorText}`);
           }
 
           const result = await response.json();
           const generatedText = result.candidates[0].content.parts[0].text;
 
+          // Clean up the text (remove markdown code blocks if present)
+          const cleanText = generatedText.replace(/```json\n?|\n?```/g, '').trim();
+
           // Parse the JSON response from Gemini
           let feedbackData;
           try {
-            feedbackData = JSON.parse(generatedText);
+            feedbackData = JSON.parse(cleanText);
           } catch (e) {
+            console.error('Failed to parse text:', generatedText);
             throw new Error('Invalid JSON response from Gemini AI');
           }
 
@@ -324,212 +339,210 @@ ${text}`;
   }
 
   return (
-    <AdminLayout>
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header and Search */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Users</h1>
-          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Browse through the list of all registered users</p>
-          <div className="mt-3 sm:mt-4 relative">
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-2 sm:p-3 pl-8 sm:pl-10 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-            <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2" />
-          </div>
+    <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8 py-4 sm:py-8 flex flex-col">
+      {/* Header and Search */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Users</h1>
+        <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Browse through the list of all registered users</p>
+        <div className="mt-3 sm:mt-4 relative">
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full p-2 sm:p-3 pl-8 sm:pl-10 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2" />
         </div>
+      </div>
 
-        {/* Mobile Card View */}
-        <div className="flex-1 block md:hidden">
-          <div className="space-y-4">
-            {currentUsers.map((user) => (
-              <div
-                key={user.uid}
-                className="bg-white rounded-lg shadow-sm border p-4"
-              >
-                <div className="flex items-start space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={user.displayName}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-white font-bold text-lg">
-                        {user.displayName?.charAt(0).toUpperCase() || 'U'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">{user.displayName}</h3>
-                    <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">
-                        {user.role}
-                      </span>
-                      <span className="inline-block bg-green-50 text-green-700 text-xs px-2 py-1 rounded-full">
-                        {user.college}
-                      </span>
-                    </div>
-                    <div className="mt-2">
-                      <p className="text-xs text-gray-600">
-                        Skills: {user.skills.length > 0 ? user.skills.slice(0, 2).join(', ') + (user.skills.length > 2 ? '...' : '') : 'No skills'}
-                      </p>
-                    </div>
-                  </div>
+      {/* Mobile Card View */}
+      <div className="flex-1 block md:hidden">
+        <div className="space-y-4">
+          {currentUsers.map((user) => (
+            <div
+              key={user.uid}
+              className="bg-white rounded-lg shadow-sm border p-4"
+            >
+              <div className="flex items-start space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.displayName}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-lg">
+                      {user.displayName?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  )}
                 </div>
-                <div className="mt-4">
-                  <button
-                    onClick={() => handleViewDetails(user)}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                  >
-                    View Details
-                  </button>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-900 truncate">{user.displayName}</h3>
+                  <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">
+                      {user.role}
+                    </span>
+                    <span className="inline-block bg-green-50 text-green-700 text-xs px-2 py-1 rounded-full">
+                      {user.college}
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-600">
+                      Skills: {user.skills.length > 0 ? user.skills.slice(0, 2).join(', ') + (user.skills.length > 2 ? '...' : '') : 'No skills'}
+                    </p>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => handleViewDetails(user)}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
+      </div>
 
-        {/* Desktop Table View */}
-        <div className="flex-1 overflow-auto hidden md:block">
-          <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-            <div className="block sm:hidden">
-              <div className="divide-y divide-gray-200">
-                {currentUsers.map((user) => (
-                  <div key={user.uid} className="p-4 hover:bg-gray-50">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
-                          {user.avatar ? (
-                            <img
-                              src={user.avatar}
-                              alt={user.displayName}
-                              className="w-full h-full rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-white font-bold text-sm">
-                              {user.displayName?.charAt(0).toUpperCase() || 'U'}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900 text-sm">{user.displayName}</h3>
-                          <p className="text-xs text-gray-500">{user.role}</p>
-                        </div>
+      {/* Desktop Table View */}
+      <div className="flex-1 overflow-auto hidden md:block">
+        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+          <div className="block sm:hidden">
+            <div className="divide-y divide-gray-200">
+              {currentUsers.map((user) => (
+                <div key={user.uid} className="p-4 hover:bg-gray-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
+                        {user.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.displayName}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white font-bold text-sm">
+                            {user.displayName?.charAt(0).toUpperCase() || 'U'}
+                          </span>
+                        )}
                       </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900 text-sm">{user.displayName}</h3>
+                        <p className="text-xs text-gray-500">{user.role}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleViewDetails(user)}
+                      className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                    >
+                      Details
+                    </button>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Email:</span>
+                      <span className="text-gray-900 truncate ml-2">{user.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">College:</span>
+                      <span className="text-gray-900 truncate ml-2">{user.college}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Skills:</span>
+                      <span className="text-gray-900 truncate ml-2">
+                        {user.skills.length > 0 ? user.skills.slice(0, 2).join(', ') + (user.skills.length > 2 ? '...' : '') : 'No skills'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-20">
+                <tr>
+                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
+                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Skills</th>
+                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentUsers.map((user, index) => (
+                  <tr
+                    key={user.uid}
+                    className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-200`}
+                  >
+                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900 text-center">{user.displayName}</td>
+                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">{user.email}</td>
+                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">{user.role}</td>
+                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">{user.college}</td>
+                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">
+                      {user.skills.length > 0 ? user.skills.slice(0, 3).join(', ') + (user.skills.length > 3 ? '...' : '') : 'No skills'}
+                    </td>
+                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-center">
                       <button
                         onClick={() => handleViewDetails(user)}
-                        className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                        className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
                       >
-                        Details
+                        More Details
                       </button>
-                    </div>
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Email:</span>
-                        <span className="text-gray-900 truncate ml-2">{user.email}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">College:</span>
-                        <span className="text-gray-900 truncate ml-2">{user.college}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Skills:</span>
-                        <span className="text-gray-900 truncate ml-2">
-                          {user.skills.length > 0 ? user.skills.slice(0, 2).join(', ') + (user.skills.length > 2 ? '...' : '') : 'No skills'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0 z-20">
-                  <tr>
-                    <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                    <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
-                    <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Skills</th>
-                    <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {currentUsers.map((user, index) => (
-                    <tr
-                      key={user.uid}
-                      className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-200`}
-                    >
-                      <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900 text-center">{user.displayName}</td>
-                      <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">{user.email}</td>
-                      <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">{user.role}</td>
-                      <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">{user.college}</td>
-                      <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">
-                        {user.skills.length > 0 ? user.skills.slice(0, 3).join(', ') + (user.skills.length > 3 ? '...' : '') : 'No skills'}
-                      </td>
-                      <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-center">
-                        <button
-                          onClick={() => handleViewDetails(user)}
-                          className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
-                        >
-                          More Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
-            <div className="text-sm text-gray-600">
-              Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} users
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handlePrevPage}
-                disabled={currentPage === 1}
-                className={`p-2 rounded-full ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'} transition-colors duration-200`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <div className="flex space-x-1">
-                {Array.from({ length: totalPages }, (_, index) => (
-                  <button
-                    key={index + 1}
-                    onClick={() => handlePageChange(index + 1)}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium ${currentPage === index + 1
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-100'
-                      } transition-colors duration-200 border border-gray-200`}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-                className={`p-2 rounded-full ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'} transition-colors duration-200`}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+          <div className="text-sm text-gray-600">
+            Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} users
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handlePrevPage}
+              disabled={currentPage === 1}
+              className={`p-2 rounded-full ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'} transition-colors duration-200`}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="flex space-x-1">
+              {Array.from({ length: totalPages }, (_, index) => (
+                <button
+                  key={index + 1}
+                  onClick={() => handlePageChange(index + 1)}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium ${currentPage === index + 1
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                    } transition-colors duration-200 border border-gray-200`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              className={`p-2 rounded-full ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'} transition-colors duration-200`}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Details Panel */}
       {isDetailsOpen && (
@@ -732,7 +745,9 @@ ${text}`;
                                 </div>
                                 <div>
                                   <span className="text-sm font-medium text-gray-600">Feedback:</span>
-                                  <p className="text-sm text-gray-700 mt-1">{resumeFeedback}</p>
+                                  <div className="text-sm text-gray-700 mt-1 prose prose-sm max-w-none">
+                                    <ReactMarkdown>{resumeFeedback}</ReactMarkdown>
+                                  </div>
                                 </div>
                               </div>
                             ) : (
@@ -802,7 +817,7 @@ ${text}`;
           </div>
         </>
       )}
-    </AdminLayout>
+    </div>
   );
 };
 

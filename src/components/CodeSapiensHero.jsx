@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ChevronDown, Menu, X, Github, Linkedin, Youtube, Users, Calendar, Code, Award } from 'lucide-react';
+import { ArrowRight, ChevronDown, Menu, X, Github, Linkedin, Youtube, Users, Calendar, Code, Award, Crown } from 'lucide-react';
 import { BACKEND_URL } from '../config';
 import LandingPopup from './LandingPopup';
 
@@ -72,32 +72,68 @@ const StatsSection = () => {
                     </div>
 
                     {/* Right: Top Colleges Chart */}
-                    <div className="bg-[#1E1919] p-8 rounded-2xl border border-gray-800">
+                    <div className="bg-[#1E1919] p-8 rounded-2xl border border-gray-800 h-full">
                         <h4 className="text-xl font-bold mb-6 flex items-center gap-2">
                             <Code className="text-[#0061FE]" /> Top Active Colleges
                         </h4>
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                             {loading ? (
                                 <div className="text-center text-gray-500 py-10">Loading stats...</div>
                             ) : stats.topColleges.filter(c => c.name && c.name !== "Not specified").length > 0 ? (
                                 stats.topColleges
                                     .filter(c => c.name && c.name !== "Not specified")
-                                    .map((college, index) => (
-                                        <div key={index} className="relative">
-                                            <div className="flex justify-between text-sm mb-1">
-                                                <span className="font-medium text-gray-300 truncate w-3/4">{college.name}</span>
-                                                <span className="text-[#0061FE] font-bold">{college.count}</span>
+                                    .slice(0, 5) // Show top 5
+                                    .map((college, index) => {
+                                        // Rank Styles
+                                        let rankColor = "text-gray-400";
+                                        let rankBg = "bg-gray-800";
+                                        let barGradient = "from-gray-600 to-gray-500";
+                                        let icon = null;
+
+                                        if (index === 0) {
+                                            rankColor = "text-yellow-400";
+                                            rankBg = "bg-yellow-400/10";
+                                            barGradient = "from-yellow-400 to-orange-500";
+                                            icon = <Crown className="w-4 h-4 text-yellow-400 fill-yellow-400/20" />;
+                                        } else if (index === 1) {
+                                            rankColor = "text-gray-300";
+                                            rankBg = "bg-gray-300/10";
+                                            barGradient = "from-gray-300 to-gray-500";
+                                        } else if (index === 2) {
+                                            rankColor = "text-amber-600";
+                                            rankBg = "bg-amber-600/10";
+                                            barGradient = "from-amber-600 to-amber-800";
+                                        } else {
+                                            barGradient = "from-[#0061FE] to-[#00C6F7]";
+                                        }
+
+                                        return (
+                                            <div key={index} className="relative group">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm ${rankBg} ${rankColor}`}>
+                                                        {index + 1}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`font-medium truncate ${index === 0 ? 'text-white text-lg' : 'text-gray-300'}`}>
+                                                                {college.name}
+                                                            </span>
+                                                            {icon}
+                                                        </div>
+                                                    </div>
+                                                    <span className={`font-bold ${rankColor}`}>{college.count}</span>
+                                                </div>
+                                                <div className="h-2 bg-gray-800 rounded-full overflow-hidden ml-11">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        whileInView={{ width: `${(college.count / stats.topColleges[0].count) * 100}%` }}
+                                                        transition={{ duration: 1, delay: index * 0.1 }}
+                                                        className={`h-full bg-gradient-to-r ${barGradient} rounded-full`}
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    whileInView={{ width: `${(college.count / stats.topColleges[0].count) * 100}%` }}
-                                                    transition={{ duration: 1, delay: index * 0.1 }}
-                                                    className="h-full bg-gradient-to-r from-[#0061FE] to-[#00C6F7] rounded-full"
-                                                />
-                                            </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                             ) : (
                                 <div className="text-center text-gray-500 py-10">
                                     <p>Stats currently unavailable</p>
@@ -260,33 +296,55 @@ const CodeSapiensHero = () => {
                 </motion.div>
 
                 <div className="container mx-auto px-6 relative z-10 pt-20">
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="max-w-4xl"
-                    >
-                        <h1 className="text-6xl md:text-8xl lg:text-9xl font-extrabold leading-[1] tracking-tighter mb-8 font-archivo-black">
-                            CodeSapiens<span className="text-[#0061FE]">.</span>
-                        </h1>
-                        <p className="text-xl md:text-2xl text-gray-400 max-w-3xl leading-relaxed mb-12 font-light">
-                            The Biggest Student-Run Tech Community in TN.<br />
-                            <span className="text-white block mt-2">The only 'Inter-college students community' by the students for the students</span>
-                            <span className="text-gray-400 block mt-4 text-lg italic">
-                                We are here to help students build a career in Tech who say, <br />
-                                <span className="text-white not-italic">“Perusa Pannanum, but enna Pannanum Therla”</span> <br />
-                                ("Want to do something big, but don't know what to do").
-                            </span>
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-6">
-                            <button onClick={() => navigate('/auth')} className="bg-[#0061FE] text-white px-8 py-4 text-lg font-bold rounded-sm hover:bg-[#0050d6] transition-all flex items-center justify-center gap-3 group">
-                                Join Now <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-                            </button>
-                            <button onClick={() => document.getElementById('vision').scrollIntoView({ behavior: 'smooth' })} className="border border-gray-700 text-white px-8 py-4 text-lg font-medium rounded-sm hover:bg-white hover:text-black transition-all">
-                                Explore
-                            </button>
-                        </div>
-                    </motion.div>
+                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                            className="max-w-4xl"
+                        >
+                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[1] tracking-tighter mb-8 font-archivo-black">
+                                CodeSapiens<span className="text-[#0061FE]">.</span>
+                            </h1>
+                            <p className="text-xl md:text-2xl text-gray-400 max-w-2xl leading-relaxed mb-10 font-light">
+                                The Biggest Student-Run Tech Community in TN.<br />
+                                <span className="text-white block mt-2">The only 'Inter-college students community' by the students for the students</span>
+                                <span className="text-gray-400 block mt-4 text-lg italic">
+                                    We are here to help students build a career in Tech who say, <br />
+                                    <span className="text-white not-italic">“Perusa Pannanum, but enna Pannanum Therla”</span> <br />
+                                    ("Want to do something big, but don't know what to do").
+                                </span>
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-6">
+                                <button onClick={() => navigate('/auth')} className="bg-[#0061FE] text-white px-8 py-4 text-lg font-bold rounded-sm hover:bg-[#0050d6] transition-all flex items-center justify-center gap-3 group">
+                                    Join Now <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+                                </button>
+                                <button onClick={() => document.getElementById('vision').scrollIntoView({ behavior: 'smooth' })} className="border border-gray-700 text-white px-8 py-4 text-lg font-medium rounded-sm hover:bg-white hover:text-black transition-all">
+                                    Explore
+                                </button>
+                            </div>
+                        </motion.div>
+
+                        {/* Right: Dashboard Preview Image */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 1, delay: 0.4 }}
+                            className="relative mt-12 lg:mt-0"
+                        >
+                            <div className="relative rounded-xl overflow-hidden shadow-2xl border border-gray-800 group transition-transform duration-500">
+                                <div className="absolute inset-0 bg-gradient-to-tr from-[#0061FE]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none"></div>
+                                <img
+                                    src="https://res.cloudinary.com/dqudvximt/image/upload/v1766304825/preview-4_qcqokz.png"
+                                    alt="CodeSapiens Dashboard"
+                                    className="w-full h-auto object-cover"
+                                />
+                            </div>
+                            {/* Decorative Elements */}
+                            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[#0061FE] rounded-full blur-[80px] opacity-30"></div>
+                            <div className="absolute -top-10 -left-10 w-40 h-40 bg-[#9B0032] rounded-full blur-[80px] opacity-30"></div>
+                        </motion.div>
+                    </div>
                 </div>
                 <motion.div
                     animate={{ y: [0, 10, 0] }}

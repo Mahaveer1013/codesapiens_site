@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   ArrowUpRight, Settings, Users, Star,
   Zap, LogOut, ChevronRight, PenTool, Calendar,
-  FileText, Handshake, MapPin, X, BookOpen
+  FileText, Handshake, MapPin, X, BookOpen, BrainCircuit
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { useUser } from '@supabase/auth-helpers-react';
@@ -382,6 +382,28 @@ export default function UserDashboard() {
                 <div className="mt-auto">
                   <h3 className="text-3xl font-bold mb-2">Resume<br />Builder</h3>
                   <p className="text-white/80 font-medium">Create your professional CV</p>
+                </div>
+              </>
+            )}
+          </BentoCard>
+
+          {/* 3.1 RESUME ANALYZER (New) - Purple */}
+          <BentoCard
+            className="bg-[#7C3AED] text-white"
+            onClick={(e) => handleCardClick(e, '/resume-analyzer', '#7C3AED')}
+            delay={0.25}
+          >
+            {(isHovered) => (
+              <>
+                <div className="flex justify-between items-start">
+                  <BrainCircuit className="w-10 h-10 stroke-[2]" />
+                  <motion.div animate={isHovered ? { rotate: 180 } : { rotate: 0 }}>
+                    <ArrowUpRight className="w-8 h-8" />
+                  </motion.div>
+                </div>
+                <div className="mt-auto">
+                  <h3 className="text-3xl font-bold mb-2">Resume<br />Analyzer</h3>
+                  <p className="text-white/80 font-medium">Check JD Match</p>
                 </div>
               </>
             )}

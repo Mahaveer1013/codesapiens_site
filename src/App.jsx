@@ -37,6 +37,7 @@ import PublicProfile from './components/PublicProfile';
 import UserPlayGround from './user/UserPlayGround';
 import UserMentorshipFormList from './user/UserMentorshipFormList';
 import UserCodingPlatform from './user/UserCodingPlatform';
+import ResumeAnalyzer from './components/ResumeAnalyzer';
 import AdminScannerMeetup from './admin/AdminScannerMeetup';
 import AdminMeetupList from './admin/AdminMeetupList';
 import AdminMeetup from './admin/AdminMeetup';
@@ -75,6 +76,7 @@ const AnimatedRoutes = () => {
         <Route path="/events" element={<PageTransition><UserEvents /></PageTransition>} />
         <Route path="/resource" element={<PageTransition><UserResource /></PageTransition>} />
         <Route path="/resume" element={<PageTransition><UserResumeBuilder /></PageTransition>} />
+        <Route path="/resume-analyzer" element={<PageTransition><ResumeAnalyzer /></PageTransition>} />
         <Route path="/mentorship" element={<PageTransition><UserMentorshipForm /></PageTransition>} />
         <Route path="/mentorship-form" element={<PageTransition><AdminMentorshipSubmission /></PageTransition>} />
         <Route path="/profile/:username" element={<PageTransition><PublicProfile /></PageTransition>} />
