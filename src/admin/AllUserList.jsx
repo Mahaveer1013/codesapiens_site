@@ -14,12 +14,34 @@ import {
   Download,
   Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  TrendingUp
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf'; // Use specific import for pdfjs-dist
 import ReactMarkdown from 'react-markdown';
+
+const AvatarWithFallback = ({ src, alt, name, className, textSize }) => {
+  const [error, setError] = useState(false);
+
+  if (!src || error) {
+    return (
+      <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold ${textSize || 'text-sm'}`}>
+        {name?.charAt(0).toUpperCase() || 'U'}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setError(true)}
+    />
+  );
+};
 
 const AllUserList = () => {
   const [users, setUsers] = useState([]);
@@ -357,51 +379,55 @@ ${text}`;
       </div>
 
       {/* Mobile Card View */}
-      <div className="flex-1 block md:hidden">
+      <div className="block md:hidden">
         <div className="space-y-4">
           {currentUsers.map((user) => (
             <div
               key={user.uid}
-              className="bg-white rounded-lg shadow-sm border p-4"
+              className="bg-white rounded-xl shadow-md border-l-4 border-l-blue-600 p-5 hover:shadow-lg transition-all duration-300"
             >
-              <div className="flex items-start space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
-                  {user.avatar ? (
-                    <img
+              <div className="flex items-start space-x-4">
+                <div className="relative">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                    <AvatarWithFallback
                       src={user.avatar}
                       alt={user.displayName}
+                      name={user.displayName}
                       className="w-full h-full rounded-full object-cover"
+                      textSize="text-xl"
                     />
-                  ) : (
-                    <span className="text-white font-bold text-lg">
-                      {user.displayName?.charAt(0).toUpperCase() || 'U'}
-                    </span>
-                  )}
+                  </div>
+                  {/* Status indicator */}
+                  <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${user.emailVerified ? 'bg-green-500' : 'bg-amber-500'}`}></span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">{user.displayName}</h3>
+                  <h3 className="text-lg font-black text-gray-900 truncate">{user.displayName}</h3>
                   <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className={`inline-block text-xs px-3 py-1 rounded-full font-bold ${user.role === 'Admin' ? 'bg-red-100 text-red-700' :
+                      user.role === 'Volunteer' ? 'bg-purple-100 text-purple-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
                       {user.role}
                     </span>
-                    <span className="inline-block bg-green-50 text-green-700 text-xs px-2 py-1 rounded-full">
-                      {user.college}
-                    </span>
+                    {user.emailVerified && (
+                      <span className="inline-block bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-bold">
+                        ✓ Verified
+                      </span>
+                    )}
                   </div>
-                  <div className="mt-2">
-                    <p className="text-xs text-gray-600">
-                      Skills: {user.skills.length > 0 ? user.skills.slice(0, 2).join(', ') + (user.skills.length > 2 ? '...' : '') : 'No skills'}
-                    </p>
-                  </div>
+                  <p className="mt-2 text-xs text-gray-600 font-medium truncate">
+                    📍 {user.college}
+                  </p>
                 </div>
               </div>
-              <div className="mt-4">
+              <div className="mt-4 pt-4 border-t border-gray-100">
                 <button
                   onClick={() => handleViewDetails(user)}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                  className="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-bold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
                 >
-                  View Details
+                  <Eye className="w-4 h-4" />
+                  View Full Profile
                 </button>
               </div>
             </div>
@@ -411,90 +437,92 @@ ${text}`;
 
       {/* Desktop Table View */}
       <div className="flex-1 overflow-auto hidden md:block">
-        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-          <div className="block sm:hidden">
-            <div className="divide-y divide-gray-200">
-              {currentUsers.map((user) => (
-                <div key={user.uid} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
-                        {user.avatar ? (
-                          <img
-                            src={user.avatar}
-                            alt={user.displayName}
-                            className="w-full h-full rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-white font-bold text-sm">
-                            {user.displayName?.charAt(0).toUpperCase() || 'U'}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900 text-sm">{user.displayName}</h3>
-                        <p className="text-xs text-gray-500">{user.role}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleViewDetails(user)}
-                      className="text-blue-600 hover:text-blue-800 text-xs font-medium"
-                    >
-                      Details
-                    </button>
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Email:</span>
-                      <span className="text-gray-900 truncate ml-2">{user.email}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">College:</span>
-                      <span className="text-gray-900 truncate ml-2">{user.college}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Skills:</span>
-                      <span className="text-gray-900 truncate ml-2">
-                        {user.skills.length > 0 ? user.skills.slice(0, 2).join(', ') + (user.skills.length > 2 ? '...' : '') : 'No skills'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="hidden sm:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0 z-20">
+              <thead className="bg-[#101010] sticky top-0 z-20 text-white">
                 <tr>
-                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">College</th>
-                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Skills</th>
-                  <th className="px-3 sm:px-4 lg:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">User Profile</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Contact</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Education</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Skills</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {currentUsers.map((user, index) => (
                   <tr
                     key={user.uid}
-                    className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-200`}
+                    className="hover:bg-blue-50/50 transition-colors duration-200 group"
                   >
-                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900 text-center">{user.displayName}</td>
-                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">{user.email}</td>
-                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">{user.role}</td>
-                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">{user.college}</td>
-                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 text-center">
-                      {user.skills.length > 0 ? user.skills.slice(0, 3).join(', ') + (user.skills.length > 3 ? '...' : '') : 'No skills'}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md">
+                            <AvatarWithFallback
+                              src={user.avatar}
+                              alt=""
+                              name={user.displayName}
+                              className="h-10 w-10 rounded-full object-cover"
+                              textSize="text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{user.displayName}</div>
+                          <div className="text-xs text-gray-500">Joined {formatDate(user.createdAt).split(',')[0]}</div>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-3 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-center">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 font-medium">{user.email}</div>
+                      {user.emailVerified ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Verified
+                        </span>
+                      ) : (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                          Unverified
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${user.role === 'Admin' ? 'bg-red-100 text-red-700' :
+                        user.role === 'Volunteer' ? 'bg-purple-100 text-purple-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="font-medium text-gray-900">{user.college}</div>
+                      <div className="text-xs">{user.major || 'Major not set'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex flex-wrap gap-1">
+                        {user.skills.length > 0 ? (
+                          user.skills.slice(0, 2).map((skill, i) => (
+                            <span key={i} className="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600 border border-gray-200">
+                              {skill}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-gray-400 text-xs italic">No skills</span>
+                        )}
+                        {user.skills.length > 2 && (
+                          <span className="px-2 py-0.5 rounded text-xs bg-gray-50 text-gray-500">
+                            +{user.skills.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                       <button
                         onClick={() => handleViewDetails(user)}
-                        className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
+                        className="text-white bg-black hover:bg-gray-800 px-4 py-2 rounded-lg text-xs font-bold transition-all transform hover:scale-105 shadow-sm"
                       >
-                        More Details
+                        View Details
                       </button>
                     </td>
                   </tr>
@@ -507,27 +535,27 @@ ${text}`;
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
-          <div className="text-sm text-gray-600">
-            Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} users
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 pb-8">
+          <div className="text-sm font-medium text-gray-500 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
+            Showing <span className="font-bold text-gray-900">{indexOfFirstUser + 1}</span> to <span className="font-bold text-gray-900">{Math.min(indexOfLastUser, filteredUsers.length)}</span> of <span className="font-bold text-gray-900">{filteredUsers.length}</span> users
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
             <button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className={`p-2 rounded-full ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'} transition-colors duration-200`}
+              className={`p-2 rounded-lg transition-all duration-200 ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'}`}
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <div className="flex space-x-1">
+            <div className="flex space-x-1 px-2 border-x border-gray-100">
               {Array.from({ length: totalPages }, (_, index) => (
                 <button
                   key={index + 1}
                   onClick={() => handlePageChange(index + 1)}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium ${currentPage === index + 1
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                    } transition-colors duration-200 border border-gray-200`}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all duration-200 ${currentPage === index + 1
+                    ? 'bg-black text-white shadow-md transform scale-105'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
                 >
                   {index + 1}
                 </button>
@@ -536,7 +564,7 @@ ${text}`;
             <button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className={`p-2 rounded-full ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'} transition-colors duration-200`}
+              className={`p-2 rounded-lg transition-all duration-200 ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'}`}
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -558,257 +586,306 @@ ${text}`;
           >
             {selectedUser && (
               <>
-                <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate pr-2">
-                    {selectedUser.displayName}'s Profile
-                  </h2>
-                  <button
-                    onClick={handleCloseDetails}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200 flex-shrink-0"
-                    title="Close"
-                  >
-                    <X className="w-6 h-6 text-gray-500 hover:text-gray-700" />
-                  </button>
-                </div>
-
-                <div className="p-4 sm:p-6 space-y-6">
-                  <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      {selectedUser.avatar ? (
-                        <img
-                          src={selectedUser.avatar}
-                          alt={selectedUser.displayName}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-white font-bold text-2xl sm:text-3xl">
-                          {selectedUser.displayName?.charAt(0).toUpperCase() || 'U'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-3">
-                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{selectedUser.displayName}</h3>
-                        {selectedUser.emailVerified && (
-                          <span className="text-green-500 text-sm bg-green-50 px-2 py-1 rounded-full w-fit">
-                            ✓ Verified
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm sm:text-base text-gray-600 mb-4">{selectedUser.bio}</p>
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <div className="flex items-center space-x-2">
-                          <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="truncate">{selectedUser.email}</span>
+                <div className="relative">
+                  {/* Detailed Panel Hero Header */}
+                  <div className="h-40 bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 relative rounded-t-2xl">
+                    <button
+                      onClick={handleCloseDetails}
+                      className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-sm z-20"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                    <div className="absolute -bottom-12 left-6 sm:left-10">
+                      <div className="w-32 h-32 rounded-full p-1.5 bg-white shadow-xl">
+                        <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden">
+                          <AvatarWithFallback
+                            src={selectedUser.avatar}
+                            alt={selectedUser.displayName}
+                            name={selectedUser.displayName}
+                            className="w-full h-full object-cover"
+                            textSize="text-4xl"
+                          />
                         </div>
-                        {selectedUser.phoneNumber && (
-                          <div className="flex items-center space-x-2">
-                            <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span>{selectedUser.phoneNumber}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Profile Content */}
+                  <div className="pt-16 pb-8 px-6 sm:px-10">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
+                      <div>
+                        <h2 className="text-3xl font-black text-gray-900 flex items-center gap-3">
+                          {selectedUser.displayName}
+                          {selectedUser.emailVerified && (
+                            <span className="text-blue-500" title="Verified">
+                              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                              </svg>
+                            </span>
+                          )}
+                        </h2>
+                        <p className="text-lg text-gray-500 font-medium mt-1">{selectedUser.bio || "No bio provided"}</p>
+
+                        <div className="flex flex-wrap text-sm text-gray-600 mt-3 gap-y-2 gap-x-6">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-blue-500" />
+                            <span className="font-medium">{selectedUser.email}</span>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow-sm border">
-                    <div className="p-3 sm:p-4 border-b flex items-center space-x-2">
-                      <Clock className="w-5 h-5 text-gray-500" />
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Account Information</h3>
-                    </div>
-                    <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
-                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Account Created</span>
-                        <span className="text-sm text-gray-900">{formatDate(selectedUser.createdAt)}</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
-                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Profile Updated</span>
-                        <span className="text-sm text-gray-900">{formatDate(selectedUser.updatedAt)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow-sm border">
-                    <div className="p-3 sm:p-4 border-b">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Personal Information</h3>
-                    </div>
-                    <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
-                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">College</span>
-                        <span className="text-sm text-gray-900">{selectedUser.college}</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
-                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Role</span>
-                        <span className="text-sm text-gray-900">{selectedUser.role}</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
-                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Major</span>
-                        <span className="text-sm text-gray-900">{selectedUser.major}</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
-                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Department</span>
-                        <span className="text-sm text-gray-900">{selectedUser.department}</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
-                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Graduating Year</span>
-                        <span className="text-sm text-gray-900">{selectedUser.year}</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between py-2">
-                        <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">Volunteering Hours</span>
-                        <span className="text-sm text-gray-900">{selectedUser.volunteeringHours}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow-sm border">
-                    <div className="p-3 sm:p-4 border-b">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Social Links</h3>
-                    </div>
-                    <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-                      {socialLinks.map((link, index) => {
-                        const IconComponent = link.icon;
-                        return (
-                          <div key={index} className="flex items-center justify-between py-2">
-                            <div className="flex items-center space-x-3">
-                              <div className="p-2 bg-gray-100 rounded-lg">
-                                <IconComponent className="w-4 h-4 text-gray-600" />
-                              </div>
-                              <span className="text-sm font-medium text-gray-700">{link.label}</span>
+                          {selectedUser.phoneNumber && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-green-500" />
+                              <span className="font-medium">{selectedUser.phoneNumber}</span>
                             </div>
-                            {link.available ? (
-                              <a
-                                href={link.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline transition-colors duration-200"
-                              >
-                                View
-                              </a>
-                            ) : (
-                              <span className="text-gray-400 text-sm">Not set</span>
-                            )}
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-purple-500" />
+                            <span className="font-medium">Joined {formatDate(selectedUser.createdAt)}</span>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
 
-                  <div className="bg-white rounded-lg shadow-sm border">
-                    <div className="p-3 sm:p-4 border-b">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center space-x-2">
-                        <Download className="w-5 h-5" />
-                        <span>Resume</span>
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-4 py-2 rounded-lg font-bold text-sm ${selectedUser.role === 'Admin' ? 'bg-red-100 text-red-700' :
+                          selectedUser.role === 'Volunteer' ? 'bg-purple-100 text-purple-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                          {selectedUser.role}
+                        </span>
+                      </div>
                     </div>
-                    <div className="p-3 sm:p-4">
-                      {selectedUser.resumeUrl ? (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Resume:</span>
-                            <div className="flex items-center space-x-2">
-                              <a
-                                href={selectedUser.resumeUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
-                              >
-                                <Eye className="w-4 h-4" />
-                                <span>View Resume</span>
-                              </a>
-                              <a
-                                href={selectedUser.resumeUrl}
-                                download
-                                className="flex items-center space-x-1 text-green-600 hover:text-green-800 text-sm font-medium hover:underline"
-                              >
-                                <Download className="w-4 h-4" />
-                                <span>Download</span>
-                              </a>
+
+                    <div className="space-y-8">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Left Column */}
+                        <div className="space-y-6">
+                          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-4 border-b border-gray-100 bg-gray-50">
+                              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                                <Trophy className="w-5 h-5 text-blue-500" />
+                                Academic & Personal
+                              </h3>
+                            </div>
+                            <div className="p-4 space-y-4">
+                              <div className="flex justify-between border-b border-gray-100 pb-2">
+                                <span className="text-sm font-medium text-gray-500">College</span>
+                                <span className="text-sm font-bold text-gray-900 text-right">{selectedUser.college}</span>
+                              </div>
+                              <div className="flex justify-between border-b border-gray-100 pb-2">
+                                <span className="text-sm font-medium text-gray-500">Major</span>
+                                <span className="text-sm font-bold text-gray-900 text-right">{selectedUser.major}</span>
+                              </div>
+                              <div className="flex justify-between border-b border-gray-100 pb-2">
+                                <span className="text-sm font-medium text-gray-500">Department</span>
+                                <span className="text-sm font-bold text-gray-900 text-right">{selectedUser.department}</span>
+                              </div>
+                              <div className="flex justify-between border-b border-gray-100 pb-2">
+                                <span className="text-sm font-medium text-gray-500">Year</span>
+                                <span className="text-sm font-bold text-gray-900 text-right">{selectedUser.year}</span>
+                              </div>
+                              <div className="flex justify-between pt-2">
+                                <span className="text-sm font-medium text-gray-500">Volunteering</span>
+                                <span className="text-sm font-bold text-green-600 text-right">{selectedUser.volunteeringHours} Hours</span>
+                              </div>
                             </div>
                           </div>
-                          <div className="border-t pt-4">
-                            <h4 className="text-sm font-semibold text-gray-900 mb-2">Resume Feedback</h4>
-                            {ocrLoading ? (
-                              <div className="text-center">
-                                <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-2" />
-                                <p className="text-sm text-gray-600">Processing resume...</p>
+
+                          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-4 border-b border-gray-100 bg-gray-50">
+                              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                                <Clock className="w-5 h-5 text-purple-500" />
+                                Key Milestones
+                              </h3>
+                            </div>
+                            <div className="p-4 space-y-4">
+                              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                                <span className="text-sm font-medium text-gray-500">Joined</span>
+                                <span className="text-sm font-bold text-gray-900">{formatDate(selectedUser.createdAt)}</span>
                               </div>
-                            ) : ocrError ? (
-                              <div className="text-center">
-                                <X className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                                <p className="text-sm text-red-600">{ocrError}</p>
+                              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                                <span className="text-sm font-medium text-gray-500">Last Updated</span>
+                                <span className="text-sm font-bold text-gray-900">{formatDate(selectedUser.updatedAt)}</span>
                               </div>
-                            ) : resumeFeedback && resumeScore !== null ? (
-                              <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-gray-600">Score:</span>
-                                  <span className="text-sm font-bold text-gray-900">{resumeScore}/100</span>
-                                </div>
-                                <div>
-                                  <span className="text-sm font-medium text-gray-600">Feedback:</span>
-                                  <div className="text-sm text-gray-700 mt-1 prose prose-sm max-w-none">
-                                    <ReactMarkdown>{resumeFeedback}</ReactMarkdown>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right Column */}
+                        <div className="space-y-6">
+                          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-4 border-b border-gray-100 bg-gray-50">
+                              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                                <Globe className="w-5 h-5 text-green-500" />
+                                Social Presence
+                              </h3>
+                            </div>
+                            <div className="p-4 space-y-3">
+                              {socialLinks.map((link, index) => {
+                                const IconComponent = link.icon;
+                                return (
+                                  <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                                    <div className="flex items-center space-x-3">
+                                      <div className="p-2 bg-white border border-gray-100 rounded-lg shadow-sm">
+                                        <IconComponent className="w-4 h-4 text-gray-600" />
+                                      </div>
+                                      <span className="text-sm font-bold text-gray-700">{link.label}</span>
+                                    </div>
+                                    {link.available ? (
+                                      <a
+                                        href={link.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-200 hover:bg-blue-50 px-3 py-1 rounded-full transition-all"
+                                      >
+                                        Visit
+                                      </a>
+                                    ) : (
+                                      <span className="text-gray-400 text-xs italic">Not Connected</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-4 border-b border-gray-100 bg-gray-50">
+                              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                                <Download className="w-5 h-5 text-amber-500" />
+                                Resume Analysis
+                              </h3>
+                            </div>
+                            <div className="p-4">
+                              {selectedUser.resumeUrl ? (
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                    <span className="text-sm font-bold text-blue-900">Resume File</span>
+                                    <div className="flex items-center space-x-2">
+                                      <a
+                                        href={selectedUser.resumeUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-2 bg-white text-blue-600 rounded-md hover:scale-105 transition-transform shadow-sm"
+                                        title="View"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </a>
+                                      <a
+                                        href={selectedUser.resumeUrl}
+                                        download
+                                        className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 hover:scale-105 transition-all shadow-sm"
+                                        title="Download"
+                                      >
+                                        <Download className="w-4 h-4" />
+                                      </a>
+                                    </div>
+                                  </div>
+
+                                  <div className="border-t border-gray-100 pt-4">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">AI Evaluation</h4>
+                                    {ocrLoading ? (
+                                      <div className="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                        <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-2" />
+                                        <p className="text-xs font-medium text-gray-500">Analyzing resume content...</p>
+                                      </div>
+                                    ) : ocrError ? (
+                                      <div className="text-center py-6 bg-red-50 rounded-xl border border-red-100">
+                                        <X className="w-6 h-6 text-red-500 mx-auto mb-2" />
+                                        <p className="text-xs text-red-600 font-medium max-w-xs mx-auto">{ocrError}</p>
+                                      </div>
+                                    ) : resumeFeedback && resumeScore !== null ? (
+                                      <div className="space-y-4">
+                                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl text-white shadow-lg">
+                                          <span className="text-sm font-bold opacity-80">Overall Score</span>
+                                          <div className="flex items-end gap-1">
+                                            <span className="text-3xl font-black text-white">{resumeScore}</span>
+                                            <span className="text-sm font-medium mb-1 opacity-60">/100</span>
+                                          </div>
+                                        </div>
+                                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                          <div className="text-xs font-bold text-gray-400 uppercase mb-2">Detailed Feedback</div>
+                                          <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none prose-p:my-1">
+                                            <ReactMarkdown>{resumeFeedback}</ReactMarkdown>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                        <p className="text-sm text-gray-400 italic">No analysis available yet</p>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
-                              </div>
-                            ) : (
-                              <p className="text-sm text-gray-500">No feedback available</p>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-6 sm:py-8">
-                          <Download className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                          <p className="text-gray-500 text-sm">No resume uploaded</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow-sm border">
-                    <div className="p-3 sm:p-4 border-b">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Technical Skills</h3>
-                    </div>
-                    <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-                      {selectedUser.skills.length > 0 ? (
-                        technicalSkills.map((item, index) => (
-                          <div key={index} className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-gray-700">{item.skill}</span>
-                              <span className="text-sm text-gray-500">{item.level}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full ${item.color} transition-all duration-300`}
-                                style={{ width: `${item.level}%` }}
-                              ></div>
+                              ) : (
+                                <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <Download className="w-6 h-6 text-gray-400" />
+                                  </div>
+                                  <p className="text-gray-500 text-sm font-medium">No resume uploaded</p>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-6 sm:py-8">
-                          <p className="text-gray-500 text-sm">No technical skills added yet</p>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </div>
 
-                  <div className="bg-white rounded-lg shadow-sm border">
-                    <div className="p-3 sm:p-4 border-b">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Achievements</h3>
-                    </div>
-                    <div className="p-3 sm:p-4 text-center">
-                      <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                      <p className="text-gray-500 text-sm">No achievements available</p>
-                    </div>
-                  </div>
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-4 border-b border-gray-100 bg-gray-50">
+                          <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-indigo-500" />
+                            Technical Skills
+                          </h3>
+                        </div>
+                        <div className="p-4 space-y-4">
+                          {selectedUser.skills.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {technicalSkills.map((item, index) => (
+                                <div key={index} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-bold text-gray-700">{item.skill}</span>
+                                    <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded border border-gray-200">{item.level}%</span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${item.color} transition-all duration-500 ease-out`}
+                                      style={{ width: `${item.level}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                              <p className="text-gray-500 text-sm font-medium">No technical skills added yet</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
-                  <div className="bg-white rounded-lg shadow-sm border">
-                    <div className="p-3 sm:p-4 border-b">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Activity Timeline</h3>
-                    </div>
-                    <div className="p-3 sm:p-4 text-center">
-                      <Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                      <p className="text-gray-500 text-sm">No activity available</p>
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-4 border-b border-gray-100 bg-gray-50">
+                          <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                            <Trophy className="w-5 h-5 text-yellow-500" />
+                            Achievements
+                          </h3>
+                        </div>
+                        <div className="p-8 text-center bg-gray-50">
+                          <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                          <p className="text-gray-500 text-sm font-medium">No achievements to display</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-4 border-b border-gray-100 bg-gray-50">
+                          <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                            <Calendar className="w-5 h-5 text-pink-500" />
+                            Activity Timeline
+                          </h3>
+                        </div>
+                        <div className="p-8 text-center bg-gray-50">
+                          <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                          <p className="text-gray-500 text-sm font-medium">No recent activity</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
