@@ -181,8 +181,8 @@ const CodeSapiensHero = () => {
             title: "Meetups",
             description: "Offline events and mini-hackathons where you build and launch projects in minutes. Connect with like-minded peers.",
             content: (
-                <div className="h-full w-full flex items-center justify-center p-4">
-                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1766237324/535075304196Creating_Application_ltgkv8.gif" alt="Meetups" className="max-w-full max-h-full object-contain" />
+                <div className="w-full">
+                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1759740834/users_cme79i2lk00qls401ar5qxqnc_OadwAYSr5ySuegEn-IMG-20250914-WA0012_gvyeye.jpg" alt="Meetups" className="w-full h-auto object-cover" />
                 </div>
             )
         },
@@ -190,8 +190,8 @@ const CodeSapiensHero = () => {
             title: "Hackathons",
             description: "Fun, minimal hackathons to get hands-on experience and win prizes. Push your limits and build something amazing.",
             content: (
-                <div className="h-full w-full flex items-center justify-center p-4">
-                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1766237519/717277059554Digital_Portal_lcpxdz.gif" alt="Hackathons" className="max-w-full max-h-full object-contain" />
+                <div className="w-full">
+                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1759740764/width_800_pmtms3.webp" alt="Hackathons" className="w-full h-auto object-cover" />
                 </div>
             )
         },
@@ -199,8 +199,8 @@ const CodeSapiensHero = () => {
             title: "Nurturing Talent",
             description: "We help you discover your interests and build a unique profile that stands out. Mentorship from seniors and industry experts.",
             content: (
-                <div className="h-full w-full flex items-center justify-center p-4">
-                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1766237583/209622909016Secure_Data_rbqrqq.gif" alt="Nurturing Talent" className="max-w-full max-h-full object-contain" />
+                <div className="w-full">
+                    <img src="https://res.cloudinary.com/dqudvximt/image/upload/v1759741375/users_cme79i2lk00qls401ar5qxqnc_tYvYry0ll1qJY9Cr-sZlcWmpyKLCEVr3R-WhatsApp25202025-08-10252015.15.02_25567a3d_c0frk5.jpg" alt="Nurturing Talent" className="w-full h-auto object-cover" />
                 </div>
             )
         }
@@ -409,7 +409,7 @@ const CodeSapiensHero = () => {
                                             <h3 className="text-2xl md:text-3xl font-bold mb-3 md:mb-4 text-[#1E1919]">{item.title}</h3>
                                             <p className="text-base md:text-lg text-gray-600 leading-relaxed">{item.description}</p>
                                         </div>
-                                        <div className="w-full md:w-3/5 h-56 sm:h-72 md:h-80 rounded-xl overflow-hidden shadow-xl transform hover:scale-[1.02] transition-transform duration-300">
+                                        <div className="w-full md:w-3/5 h-auto rounded-xl overflow-hidden shadow-xl transform hover:scale-[1.02] transition-transform duration-300">
                                             {item.content}
                                         </div>
                                     </motion.div>
