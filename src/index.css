@@ -10,6 +10,23 @@
     /* Dropbox Orange accent */
 }
 
+@layer base {
+
+    html,
+    body {
+        cursor: url('/pointer.png'), auto;
+    }
+
+    a,
+    button,
+    [role="button"],
+    input[type="submit"],
+    input[type="button"],
+    label {
+        cursor: url('/hover-pointer.png'), pointer;
+    }
+}
+
 @layer utilities {
     .bg-brand-blue {
         background-color: var(--brand-blue);
@@ -63,4 +80,5 @@
         scrollbar-width: none;
     }
 }
+
 @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
