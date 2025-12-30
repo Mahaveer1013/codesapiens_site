@@ -457,7 +457,7 @@ export default function UserDashboard() {
             {(isHovered) => (
               <>
                 <div className="flex justify-between">
-                  <h3 className="text-3xl font-bold">Tools</h3>
+                  <h3 className="text-3xl font-bold">Resource</h3>
                   <motion.div
                     animate={isHovered ? { rotate: 90 } : { rotate: 0 }}
                     transition={{ type: "spring", stiffness: 200 }}

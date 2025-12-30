@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch, BookPlus, CalendarSearch, FileCheck2, Computer, BrainCircuit, Code, BookOpen, LayoutDashboard, FileText } from 'lucide-react';
+import {House, Bell, Settings, Menu, X, ChevronDown, User, Loader2, Shield, Users, BarChart3, TextSearch, BookPlus, CalendarSearch, FileCheck2, Computer, BrainCircuit, Code, BookOpen, LayoutDashboard, FileText } from 'lucide-react';
 import BreadCrumbs from './ui/BreadCrumbs';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
@@ -435,6 +435,10 @@ export default function NavBar() {
                 <button onClick={() => { setIsProfileDropdownOpen(false); navigate('/profile'); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
                   <User className="w-4 h-4 mr-3 flex-shrink-0" />
                   <span>Profile</span>
+                </button>
+                <button onClick={() => { setIsProfileDropdownOpen(false); navigate('/'); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
+                  <House className="w-4 h-4 mr-3 flex-shrink-0" />
+                  <span>Dashboard</span>
                 </button>
                 <button onClick={() => { setIsProfileDropdownOpen(false); navigate('/resource'); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
                   <BookPlus className="w-4 h-4 mr-3 flex-shrink-0" />
