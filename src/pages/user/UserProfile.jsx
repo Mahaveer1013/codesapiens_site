@@ -41,6 +41,7 @@ import skillsList from "../../assets/skills.json";
 import academicData from "../../assets/academic.json";
 import "../../styles/profile-animations.css";
 import { BACKEND_URL } from '../../config';
+import { authFetch } from "../../lib/authFetch";
 
 // --- CUSTOM VISUAL COMPONENTS ---
 
@@ -372,7 +373,7 @@ const UserProfile = () => {
     const fetchColleges = async () => {
       try {
         console.log("[Frontend] : Fetching colleges with keyword:", collegeSearch);
-        const response = await fetch(`${BACKEND_URL}/colleges/search`, {
+        const response = await authFetch(`${BACKEND_URL}/colleges/search`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -473,7 +474,7 @@ const UserProfile = () => {
       formData.append("resume", file);
       formData.append("userId", userData.uid);
 
-      const response = await fetch(`${BACKEND_URL}/upload-resume`, {
+      const response = await authFetch(`${BACKEND_URL}/upload-resume`, {
         method: "POST",
         body: formData,
       });
@@ -518,7 +519,7 @@ const UserProfile = () => {
 
     try {
       console.log("[Frontend] : Starting resume removal for userId:", userData.uid, "Resume URL:", resumeUrl);
-      const response = await fetch(`${BACKEND_URL}/delete-resume`, {
+      const response = await authFetch(`${BACKEND_URL}/delete-resume`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

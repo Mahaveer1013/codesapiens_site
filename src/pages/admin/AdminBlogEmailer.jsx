@@ -6,6 +6,7 @@ import {
 import { supabase } from '../../lib/supabaseClient';
 import { useNavigate, useParams } from 'react-router-dom';
 import { BACKEND_URL } from '../../config';
+import { authFetch } from '../../lib/authFetch';
 
 const API_BASE_URL = BACKEND_URL;
 
@@ -93,7 +94,7 @@ const AdminBlogEmailer = () => {
 
     const fetchStudents = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/students`);
+            const response = await authFetch(`${API_BASE_URL}/api/students`);
             const data = await response.json();
 
             if (data.success) {
@@ -164,7 +165,7 @@ const AdminBlogEmailer = () => {
 
         setSending(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/send-blog-email`, {
+            const response = await authFetch(`${API_BASE_URL}/api/send-blog-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -202,7 +203,7 @@ const AdminBlogEmailer = () => {
 
         setSending(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/send-blog-email-all`, {
+            const response = await authFetch(`${API_BASE_URL}/api/send-blog-email-all`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

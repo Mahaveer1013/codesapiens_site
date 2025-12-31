@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { Loader2, Building, GraduationCap, Calendar, ArrowRight, X, ChevronDown } from 'lucide-react';
 import academicData from '../assets/academic.json';
 import { BACKEND_URL } from '../config';
+import { authFetch } from '../lib/authFetch';
 
 const CompleteProfileDialog = ({ isOpen, userId, onComplete, initialData }) => {
     const [loading, setLoading] = useState(false);
@@ -62,7 +63,7 @@ const CompleteProfileDialog = ({ isOpen, userId, onComplete, initialData }) => {
         const fetchColleges = async () => {
             setCollegeLoading(true);
             try {
-                const response = await fetch(`${BACKEND_URL}/colleges/search`, {
+                const response = await authFetch(`${BACKEND_URL}/colleges/search`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",

@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { Upload, Trash2, Save, Loader2, Image as ImageIcon, CheckCircle, XCircle } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import { BACKEND_URL } from '../../config';
+import { authFetch } from '../../lib/authFetch';
 
 const AdminHallOfFame = () => {
     const [entries, setEntries] = useState([]);
@@ -80,7 +81,7 @@ const AdminHallOfFame = () => {
             formData.append('studentName', studentName);
             formData.append('description', description);
 
-            const response = await fetch(`${BACKEND_URL}/upload-hall-of-fame`, {
+            const response = await authFetch(`${BACKEND_URL}/upload-hall-of-fame`, {
                 method: 'POST',
                 body: formData,
             });

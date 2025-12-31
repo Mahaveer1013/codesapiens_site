@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { Upload, Trash2, Loader2, Image as ImageIcon, CheckCircle, XCircle, Users, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import { BACKEND_URL } from '../../config';
+import { authFetch } from '../../lib/authFetch';
 
 const AdminCommunityPhotos = () => {
     const [entries, setEntries] = useState([]);
@@ -89,7 +90,7 @@ const AdminCommunityPhotos = () => {
             formData.append('participants', participants || '0');
             formData.append('orderNumber', orderNumber || '0');
 
-            const response = await fetch(`${BACKEND_URL}/upload-community-photo`, {
+            const response = await authFetch(`${BACKEND_URL}/upload-community-photo`, {
                 method: 'POST',
                 body: formData,
             });
@@ -180,7 +181,7 @@ const AdminCommunityPhotos = () => {
 
         // Update in database
         try {
-            const response = await fetch(`${BACKEND_URL}/update-community-photo-order`, {
+            const response = await authFetch(`${BACKEND_URL}/update-community-photo-order`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
