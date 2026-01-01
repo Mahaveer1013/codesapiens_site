@@ -319,7 +319,9 @@ const ResumeAnalyzer = () => {
             setParsingStatus('Analyzing with AI...');
             const response = await authFetch(`${BACKEND_URL}/api/analyze-resume`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json',
+                    'x-client-source': 'codesapiens-web'
+                 },
                 body: JSON.stringify({
                     resumeText,
                     jobDescription: analysisMode === 'jd' ? jobDescription : '',
