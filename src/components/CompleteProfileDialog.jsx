@@ -116,6 +116,12 @@ const CompleteProfileDialog = ({ isOpen, userId, onComplete, initialData }) => {
             return;
         }
 
+        // Enforce college selection from dropdown
+        if (formData.college !== lastSelectedCollege) {
+            setError('Please select a valid college from the dropdown list.');
+            return;
+        }
+
         try {
             setLoading(true);
             const { error: updateError } = await supabase

@@ -319,9 +319,10 @@ const ResumeAnalyzer = () => {
             setParsingStatus('Analyzing with AI...');
             const response = await authFetch(`${BACKEND_URL}/api/analyze-resume`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json',
+                headers: {
+                    'Content-Type': 'application/json',
                     'x-client-source': 'codesapiens-web'
-                 },
+                },
                 body: JSON.stringify({
                     resumeText,
                     jobDescription: analysisMode === 'jd' ? jobDescription : '',
@@ -359,13 +360,34 @@ const ResumeAnalyzer = () => {
             // So it returns the raw Gemini response.
             // So I must parse it here.
 
-            const generatedText = result.candidates[0].content.parts[0].text;
-            const cleanText = generatedText.replace(/```json\n?|\n?```/g, '').trim();
-            const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
-            const finalJson = jsonMatch ? jsonMatch[0] : cleanText;
+            if (!result.candidates || !result.candidates[0]?.content?.parts?.[0]?.text) {
+                throw new Error('AI returned an empty response.');
+            }
 
-            const parsedResult = JSON.parse(finalJson);
-            setAnalysisResult(parsedResult);
+            const generatedText = result.candidates[0].content.parts[0].text;
+
+            // robust json extraction
+            const cleanText = generatedText.replace(/```json\n?|\n?```/g, '').trim();
+            const firstOpen = cleanText.indexOf('{');
+            const lastClose = cleanText.lastIndexOf('}');
+
+            if (firstOpen === -1 || lastClose === -1) {
+                console.error("No JSON braces found in AI response:", generatedText);
+                throw new Error("AI response format was invalid (missing JSON structure).");
+            }
+
+            const finalJson = cleanText.substring(firstOpen, lastClose + 1);
+
+            try {
+                const parsedResult = JSON.parse(finalJson);
+                setAnalysisResult(parsedResult);
+            } catch (jsonErr) {
+                console.error('JSON Parse Error:', jsonErr);
+                console.error('Offending JSON string:', finalJson);
+
+                // Attempt to show what we have, or just fail
+                throw new Error("AI response contained invalid characters. Please try again (sometimes specialized formatting symbols cause this).");
+            }
 
         } catch (err) {
             console.error('Analysis error:', err);

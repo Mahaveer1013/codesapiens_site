@@ -1135,8 +1135,8 @@ app.post("/api/analyze-resume", async (req, res) => {
             Job Description:
             ${jobDescription}
             
-            Provide a detailed analysis in strictly raw JSON format (no markdown code blocks, no explanation text).
-            Ensure all strings are properly escaped.
+            Provide a detailed analysis in strictly raw JSON format (do not use markdown code blocks, do not include any explanation text).
+            IMPORTANT: Ensure all strings are properly escaped, especially double quotes inside strings (e.g., "quote" should be \"quote\").
             The JSON structure must be:
             {
               "matchPercentage": number (0-100),
@@ -1154,8 +1154,8 @@ app.post("/api/analyze-resume", async (req, res) => {
             Resume Text:
             ${resumeText}
             
-            Provide a detailed analysis in strictly raw JSON format (no markdown code blocks, no explanation text).
-            Ensure all strings are properly escaped.
+            Provide a detailed analysis in strictly raw JSON format (do not use markdown code blocks, do not include any explanation text).
+            IMPORTANT: Ensure all strings are properly escaped, especially double quotes inside strings.
             The JSON structure must be:
             {
               "matchPercentage": number (0-100, representing overall resume quality score),

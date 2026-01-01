@@ -374,27 +374,7 @@ export default function UserDashboard() {
             )}
           </BentoCard>
 
-          {/* 2. BLOGS - Red/Orange */}
-          <BentoCard
-            className="bg-[#FF5018] text-[#2B2929] relative overflow-hidden"
-            onClick={(e) => handleCardClick(e, '/blogs', '#FF5018')}
-            delay={0.1}
-          >
-            {(isHovered) => (
-              <>
-                <div className="z-10">
-                  <h3 className="text-3xl font-bold mb-2">Blogs &<br />Stories</h3>
-                  <p className="font-medium opacity-80">Read the latest insights.</p>
-                </div>
-                <TypographyVisual isHovered={isHovered} />
-                <div className="mt-auto z-10">
-                  <button className="bg-[#2B2929] text-white px-4 py-2 text-sm font-bold uppercase tracking-wider hover:bg-white hover:text-[#FF5018] transition-colors">
-                    Read Now
-                  </button>
-                </div>
-              </>
-            )}
-          </BentoCard>
+
 
 
 
