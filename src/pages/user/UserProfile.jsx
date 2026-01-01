@@ -144,7 +144,9 @@ const UserProfile = () => {
   const [error, setError] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingHeader, setIsEditingHeader] = useState(false);
+  const [isEditingPersonal, setIsEditingPersonal] = useState(false);
+  const [isEditingSocial, setIsEditingSocial] = useState(false);
   const [editedData, setEditedData] = useState(null);
   const [colleges, setColleges] = useState([]);
   const [collegeSearch, setCollegeSearch] = useState("");
@@ -154,14 +156,14 @@ const UserProfile = () => {
   const [lastSelectedCollege, setLastSelectedCollege] = useState("");
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
   const [showEditSkillDropdown, setShowEditSkillDropdown] = useState(false);
-  const [saveError, setSaveError] = useState(null);
+
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeUrl, setResumeUrl] = useState(null);
   const [uploadingResume, setUploadingResume] = useState(false);
   const [deletingResume, setDeletingResume] = useState(false);
   const [resumeError, setResumeError] = useState(null);
   const [dragActive, setDragActive] = useState(false);
-  const [usernameError, setUsernameError] = useState(null);
+
   const [isCopied, setIsCopied] = useState(false);
 
   const resumeDropRef = useRef(null);
@@ -312,49 +314,7 @@ const UserProfile = () => {
     };
   }, []);
 
-  // Username availability check (debounced)
-  useEffect(() => {
-    if (!isEditing || !editedData?.username) {
-      setUsernameError(null);
-      return;
-    }
 
-    const username = editedData.username.trim();
-    const usernameRegex = /^[a-z0-9_]{3,20}$/;
-
-    if (!username) {
-      setUsernameError("Username is required.");
-      return;
-    }
-
-    if (!usernameRegex.test(username)) {
-      setUsernameError("Username must be 3-20 characters, alphanumeric or underscores, lowercase.");
-      return;
-    }
-
-    const checkUsername = debounce(async () => {
-      try {
-        console.log("[Frontend] : Checking username availability:", username);
-        const { data: existingUser } = await supabase
-          .from("users")
-          .select("username")
-          .eq("username", username)
-          .neq("uid", userData.uid)
-          .maybeSingle();
-
-        if (existingUser) {
-          setUsernameError("This username is already taken. Please choose another.");
-        } else {
-          setUsernameError(null);
-        }
-      } catch (err) {
-        console.error("[Frontend] : Error checking username:", err.message);
-        setUsernameError("Error checking username availability. Please try again.");
-      }
-    }, 500);
-
-    checkUsername();
-  }, [editedData?.username, isEditing, userData?.uid]);
 
   // College search API
   useEffect(() => {
@@ -556,22 +516,9 @@ const UserProfile = () => {
   };
 
   // Editing helpers
-  const handleEditStart = () => {
-    setIsEditing(true);
-    setCollegeSearch(editedData.college || "");
-    setLastSelectedCollege(editedData.college || "");
-    setShowCollegeDropdown(false);
-    setSaveError(null);
-    setUsernameError(null);
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedData((prev) => ({ ...prev, [name]: value }));
-    setSaveError(null);
-    if (name === "username") {
-      setUsernameError(null);
-    }
   };
 
   const handleCollegeChange = (e) => {
@@ -579,7 +526,6 @@ const UserProfile = () => {
     setCollegeSearch(value);
     setEditedData((prev) => ({ ...prev, college: value }));
     setCollegeError(null);
-    setSaveError(null);
   };
 
   const handleCollegeSelect = (e, collegeName) => {
@@ -592,7 +538,6 @@ const UserProfile = () => {
     setColleges([]);
     setShowCollegeDropdown(false);
     setCollegeError(null);
-    setSaveError(null);
     if (collegeInputRef.current) {
       collegeInputRef.current.blur();
     }
@@ -658,123 +603,133 @@ const UserProfile = () => {
     }
   };
 
-  // Save profile
-  const handleSave = async () => {
-    setSaveError(null);
-    setUsernameError(null);
-    const finalCollege = editedData.college?.trim() || "Not specified";
-    const username = editedData.username?.trim();
-
-    if (!username) {
-      setUsernameError("Username is required.");
-      setSaveError("Username is required.");
-      toast.error("Username is required");
-      return;
-    }
-
-    const usernameRegex = /^[a-z0-9_]{3,20}$/;
-    if (!usernameRegex.test(username)) {
-      setUsernameError("Username must be 3-20 characters, alphanumeric or underscores, lowercase.");
-      setSaveError("Invalid username format.");
-      return;
-    }
-
-    try {
-      const { data: existingUser } = await supabase
-        .from("users")
-        .select("username")
-        .eq("username", username)
-        .neq("uid", userData.uid)
-        .maybeSingle();
-
-      if (existingUser) {
-        setUsernameError("This username is already taken. Please choose another.");
-        setSaveError("This username is already taken. Please choose another.");
-        return;
-      }
-    } catch (err) {
-      console.error("[Frontend] : Error checking username in save:", err.message);
-      setUsernameError("Error checking username availability. Please try again.");
-      setSaveError("Error checking username availability.");
-      return;
-    }
-
-    if (finalCollege.length >= 3 && finalCollege !== lastSelectedCollege && !colleges.includes(finalCollege)) {
-      setCollegeError("Please select a valid college from the dropdown.");
-      setSaveError("Invalid college selection.");
-      return;
-    }
-
+  // Save Header
+  const handleSaveHeader = async () => {
     try {
       const updateData = {
         display_name: editedData.displayName?.trim() || "User",
-        phone_number: editedData.phoneNumber?.trim() || "",
         bio: editedData.bio?.trim() || "No bio available",
-        college: finalCollege,
-        github_url: validateUrl(editedData.githubUrl?.trim()),
-        linkedin_url: validateUrl(editedData.linkedinUrl?.trim()),
-        portfolio_url: validateUrl(editedData.portfolioUrl?.trim()),
-        // Fix the year handling here
+        major: editedData.major?.trim() || "Not specified",
         year: editedData.graduatingyear === "Already Graduated"
           ? "Already Graduated"
           : editedData.graduatingyear
             ? parseInt(editedData.graduatingyear, 10)
             : null,
-        major: editedData.major?.trim() || "Not specified",
-        department: editedData.department?.trim() || "Not specified",
-        username,
-        is_public: editedData.isPublic || false,
       };
-
-      console.log("[Frontend] : Updating user data:", updateData);
 
       const { error } = await supabase
         .from("users")
         .update(updateData)
         .eq("uid", editedData.uid);
 
-      if (error) {
-        console.error("[Frontend] : Supabase update error:", error.message);
-        throw new Error(`Failed to save profile: ${error.message}`);
-      }
+      if (error) throw error;
 
-      const updatedUserData = {
-        ...editedData,
-        ...updateData,
-      };
-      setUserData(updatedUserData);
-      setEditedData(updatedUserData);
-      setIsEditing(false);
-      setColleges([]);
-      setCollegeSearch("");
-      setShowCollegeDropdown(false);
-      setCollegeError(null);
-      setLastSelectedCollege(finalCollege);
-      setUsernameError(null);
+      setUserData({ ...userData, ...updateData });
+      setIsEditingHeader(false);
       toast.success("Profile updated successfully!");
     } catch (err) {
-      console.error("[Frontend] : Save error:", err.message);
-      setSaveError(err.message || "Failed to save profile. Please try again.");
-      if (err.message.includes("duplicate key value violates unique constraint")) {
-        setUsernameError("This username is already taken. Please choose another.");
-      }
+      console.error("[Frontend] : Save header error:", err.message);
+      toast.error("Failed to update profile info");
     }
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
+  // Save Personal Details
+  const handleSavePersonal = async () => {
+    const username = editedData.username?.trim();
+    if (!username) {
+      toast.error("Username is required");
+      return;
+    }
+
+    const usernameRegex = /^[a-z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+      toast.error("Invalid username format (3-20 chars, a-z, 0-9, _)");
+      return;
+    }
+
+    // Check availability if changed - Debounced check already handles UI feedback, but we check again here
+    if (username !== userData.username) {
+      try {
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("username")
+          .eq("username", username)
+          .neq("uid", userData.uid)
+          .maybeSingle();
+
+        if (existingUser) {
+          toast.error("Username is already taken");
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Error checking username");
+        return;
+      }
+    }
+
+    try {
+      const updateData = {
+        username: username,
+        college: editedData.college?.trim() || "Not specified",
+        major: editedData.major?.trim() || "Not specified",
+        department: editedData.department?.trim() || "Not specified",
+        year: editedData.graduatingyear === "Already Graduated"
+          ? "Already Graduated"
+          : editedData.graduatingyear
+            ? parseInt(editedData.graduatingyear, 10)
+            : null,
+      };
+
+      const { error } = await supabase.from("users").update(updateData).eq("uid", userData.uid);
+      if (error) throw error;
+
+      setUserData({ ...userData, ...updateData });
+      setIsEditingPersonal(false);
+      toast.success("Personal details updated!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update personal details");
+    }
+  };
+
+  // Save Social Profiles
+  const handleSaveSocial = async () => {
+    try {
+      const updateData = {
+        github_url: validateUrl(editedData.githubUrl?.trim()),
+        linkedin_url: validateUrl(editedData.linkedinUrl?.trim()),
+        portfolio_url: validateUrl(editedData.portfolioUrl?.trim()),
+      };
+
+      const { error } = await supabase.from("users").update(updateData).eq("uid", userData.uid);
+      if (error) throw error;
+
+      setUserData({ ...userData, ...updateData });
+      setIsEditingSocial(false);
+      toast.success("Social profiles updated!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update social profiles");
+    }
+  };
+
+  const cancelEditHeader = () => {
+    setIsEditingHeader(false);
+    setEditedData({ ...userData });
+  };
+
+  const cancelEditPersonal = () => {
+    setIsEditingPersonal(false);
     setEditedData({ ...userData });
     setColleges([]);
     setCollegeSearch("");
     setShowCollegeDropdown(false);
-    setCollegeError(null);
-    setSaveError(null);
-    setUsernameError(null);
-    setLastSelectedCollege("");
-    setEditingSkillIndex(null);
-    setEditingSkillValue("");
-    setShowSkillDropdown(false);
-    setShowEditSkillDropdown(false);
+  };
+
+  const cancelEditSocial = () => {
+    setIsEditingSocial(false);
+    setEditedData({ ...userData });
   };
 
   // Data for UI sections
@@ -923,8 +878,8 @@ const UserProfile = () => {
 
           {/* Left: Profile Info */}
           <div className="flex-1 w-full md:max-w-2xl">
-            <div className="mb-6">
-              {isEditing ? (
+            <div className="mb-6 relative group">
+              {isEditingHeader ? (
                 <input
                   name="displayName"
                   value={editedData.displayName}
@@ -940,7 +895,7 @@ const UserProfile = () => {
               <p className="text-[#0061FE] font-mono text-lg">@{userData.username || "username"}</p>
             </div>
 
-            {isEditing ? (
+            {isEditingHeader ? (
               <textarea
                 name="bio"
                 value={editedData.bio}
@@ -956,7 +911,7 @@ const UserProfile = () => {
             <div className="flex flex-wrap gap-6 text-sm font-bold text-gray-400 uppercase tracking-wider">
               <div className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-[#C2E812]" />
-                {isEditing ? <input name="major" value={editedData.major} onChange={handleInputChange} className="bg-transparent border-b border-gray-500 text-white w-32" /> : (userData.major || "N/A")}
+                {isEditingHeader ? <input name="major" value={editedData.major} onChange={handleInputChange} className="bg-transparent border-b border-gray-500 text-white w-32" /> : (userData.major || "N/A")}
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-[#0061FE]" />
@@ -964,7 +919,7 @@ const UserProfile = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-[#FF5018]" />
-                Class of {isEditing ? <input name="graduatingyear" value={editedData.graduatingyear} onChange={handleInputChange} className="bg-transparent border-b border-gray-500 text-white w-20" /> : (userData.graduatingyear || "N/A")}
+                Class of {isEditingHeader ? <input name="graduatingyear" value={editedData.graduatingyear} onChange={handleInputChange} className="bg-transparent border-b border-gray-500 text-white w-20" /> : (userData.graduatingyear || "N/A")}
               </div>
             </div>
           </div>
@@ -987,13 +942,14 @@ const UserProfile = () => {
             </div>
 
             <div className="flex gap-3">
-              {!isEditing ? (
+              {!isEditingHeader ? (
                 <>
                   <button
-                    onClick={handleEditStart}
-                    className="bg-white text-[#1E1E1E] px-6 py-3 font-bold rounded-xl hover:bg-[#C2E812] transition-colors shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]"
+                    onClick={() => setIsEditingHeader(true)}
+                    className="p-3 border-2 border-white/20 rounded-xl hover:bg-white/10 text-white transition-colors"
+                    title="Edit Basic Info"
                   >
-                    Edit Profile
+                    <Edit className="w-5 h-5" />
                   </button>
                   {userData.isPublic && userData.username && (
                     <button
@@ -1001,6 +957,7 @@ const UserProfile = () => {
                         const profileUrl = `${window.location.origin}/profile/${userData.username}`;
                         navigator.clipboard.writeText(profileUrl);
                         setIsCopied(true);
+                        toast.success("Profile link copied!");
                         setTimeout(() => setIsCopied(false), 2000);
                       }}
                       className={`p-3 border-2 border-white/20 rounded-xl transition-colors ${isCopied ? "bg-[#C2E812] text-black border-[#C2E812]" : "hover:bg-white/10 text-white"}`}
@@ -1012,8 +969,8 @@ const UserProfile = () => {
                 </>
               ) : (
                 <>
-                  <button onClick={handleSave} className="bg-[#C2E812] text-black px-6 py-3 font-bold rounded-xl hover:bg-[#aacc00]">Save</button>
-                  <button onClick={handleCancel} className="bg-white/10 text-white px-6 py-3 font-bold rounded-xl border border-white/20">Cancel</button>
+                  <button onClick={handleSaveHeader} className="bg-[#C2E812] text-black px-6 py-3 font-bold rounded-xl hover:bg-[#aacc00]">Save Info</button>
+                  <button onClick={cancelEditHeader} className="bg-white/10 text-white px-6 py-3 font-bold rounded-xl border border-white/20">Cancel</button>
                 </>
               )}
             </div>
@@ -1115,12 +1072,24 @@ const UserProfile = () => {
 
                 {/* Personal Information */}
                 <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm">
-                  <h3 className="text-xl font-black text-[#1E1E1E] mb-6">Personal Details</h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-black text-[#1E1E1E]">Personal Details</h3>
+                    {!isEditingPersonal ? (
+                      <button onClick={() => setIsEditingPersonal(true)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-[#0061FE]">
+                        <Edit className="w-5 h-5" />
+                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button onClick={handleSavePersonal} className="px-4 py-2 bg-[#C2E812] text-black text-sm font-bold rounded-lg hover:bg-[#aacc00]">Save</button>
+                        <button onClick={cancelEditPersonal} className="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-bold rounded-lg hover:bg-gray-200">Cancel</button>
+                      </div>
+                    )}
+                  </div>
                   <div className="space-y-4">
                     {personalInfo.map((info, index) => (
                       <div key={index} className="flex flex-col sm:flex-row sm:justify-between py-2 border-b border-gray-50 last:border-0">
                         <span className="font-bold text-gray-500 mb-1 sm:mb-0">{info.label}</span>
-                        {isEditing && info.editable ? (
+                        {isEditingPersonal && info.editable ? (
                           <div className="sm:text-right sm:max-w-xs w-full relative">
                             {info.type === "college" ? (
                               <div className="relative" ref={collegeInputRef}>
@@ -1181,13 +1150,25 @@ const UserProfile = () => {
 
                 {/* Social Profiles */}
                 <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm">
-                  <h3 className="text-xl font-black text-[#1E1E1E] mb-6">Social Profiles</h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-black text-[#1E1E1E]">Social Profiles</h3>
+                    {!isEditingSocial ? (
+                      <button onClick={() => setIsEditingSocial(true)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-[#0061FE]">
+                        <Edit className="w-5 h-5" />
+                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button onClick={handleSaveSocial} className="px-4 py-2 bg-[#C2E812] text-black text-sm font-bold rounded-lg hover:bg-[#aacc00]">Save</button>
+                        <button onClick={cancelEditSocial} className="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-bold rounded-lg hover:bg-gray-200">Cancel</button>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex flex-col gap-4">
                     {socialLinks.map((link, index) => (
                       <SocialLink
                         key={index}
                         {...link}
-                        isEditing={isEditing}
+                        isEditing={isEditingSocial}
                         onChange={handleInputChange}
                         value={editedData[link.name] || ""}
                       />
@@ -1311,7 +1292,16 @@ const SocialLink = ({ icon: Icon, label, url, isEditing, name, onChange, value }
     )
   }
 
-  if (!url) return null;
+  if (!url) {
+    return (
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F7F5F2]/50 border border-transparent">
+        <div className="bg-[#F7F5F2] p-2 rounded-lg">
+          <Icon className="w-5 h-5 text-gray-400" />
+        </div>
+        <span className="font-bold text-sm text-gray-400">{label}</span>
+      </div>
+    );
+  }
 
   return (
     <a href={url} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F7F5F2] transition-colors group">
